@@ -3,6 +3,8 @@ import pickle
 import os
 from prediction_models.att_mil.datasets import trainval_slides, test_slides
 from torchvision import transforms
+from preprocessing.normalization import reinhard_bg
+import torch
 
 
 class GaussianBlur(object):
@@ -22,7 +24,7 @@ def compute_meanstd():
     return meanstd
 
 
-def build_dataset(batch_size, num_workers, dataset_params, split, phase, fold=None):
+def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None):
     """
 
     :param batch_size:
@@ -58,8 +60,6 @@ def build_dataset(batch_size, num_workers, dataset_params, split, phase, fold=No
 
     if split == "train":
         transform = transforms.Compose(augmentation)
-        dataset = BiopsyTiles.BiopsySampleSlideDataset(data_dir, dataset_params, train_transform,
-                                                             split='train')
     elif split == "val" or split == "test":
         transform = transforms.Compose([transforms.Resize(dataset_params.input_size)] + normalize)
     else:
@@ -67,6 +67,17 @@ def build_dataset(batch_size, num_workers, dataset_params, split, phase, fold=No
 
     if split == "train" or split == "val":
         dataset = trainval_slides.BiopsySlides(dataset_params, transform, fold, split, phase=phase)
+    else:
+        tile_normalizer = reinhard_bg.ReinhardNormalizer()
+        # use the pre-computed LAB mean and std values
+        tile_normalizer.fit(None)
+        dataset = test_slides.BiopsySlides(dataset_params, transform, tile_normalizer)
+    shuffle = True if phase == "train" else False
+
+    loader = \
+        torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=False,
+                                    num_workers=num_workers, pin_memory=True)
+    return loader
 
 
 
