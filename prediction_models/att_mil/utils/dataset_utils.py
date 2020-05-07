@@ -66,8 +66,8 @@ def generate_cv_split(trainval_file, out_dir, n_fold, seed, delete_dir=False):
     train_df = pd.read_csv(trainval_file)
     splits = StratifiedKFold(n_splits=n_fold, random_state=seed, shuffle=True)
     for fold, (train_ids, valid_ids) in enumerate(splits.split(train_df, train_df.isup_grade)):
-        cur_train_df = train_df[train_ids]
-        cur_val_df = train_df[valid_ids]
+        cur_train_df = train_df.iloc[train_ids]
+        cur_val_df = train_df.iloc[valid_ids]
         cur_train_df.to_csv(f"{out_dir}/train_{fold}.csv")
         cur_val_df.to_csv(f"{out_dir}/val_{fold}.csv")
     print("Finish generate cross valiadtion file")
