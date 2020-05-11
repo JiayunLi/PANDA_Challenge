@@ -4,6 +4,7 @@ DataLoader to extract tiles from a slide
 import pandas as pd
 from preprocessing.tile_generation import generate_grid
 import torch
+import torch.utils.data as data
 
 
 class BiopsySlides(data.Dataset):

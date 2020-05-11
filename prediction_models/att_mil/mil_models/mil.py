@@ -1,6 +1,8 @@
 import torchvision.models as models
 from prediction_models.att_mil.utils import model_utils, init_helper
 import torch.nn as nn
+import torch
+import torch.nn.functional as F
 
 
 def config_encoder(input_size, num_classes, arch, pretrained):
@@ -15,7 +17,7 @@ def config_encoder(input_size, num_classes, arch, pretrained):
         feature_dim = model_utils.config_resnet_layers(encoder, arch, num_classes)
     else:
         raise NotImplementedError(f"{arch} Haven't implemented")
-    return feature_dim
+    return encoder, feature_dim
 
 
 class AttMIL(nn.Module):
@@ -25,7 +27,8 @@ class AttMIL(nn.Module):
         self.feature_dim = feature_dim
         self.pretrained = pretrained
         self.hp = {"input_size": input_size, "n_tile_classes": n_tile_classes, "encoder_arch": arch,
-                   "feature_dim": feature_dim, "pretrained": pretrained, "mil_params": mil_params}
+                   "feature_dim": feature_dim, "pretrained": pretrained,
+                   "mil_params": mil_params, "arch": arch}
         self.mil_params = mil_params
 
         self.instance_embed = self._config_instance_embed()
@@ -35,7 +38,7 @@ class AttMIL(nn.Module):
         self._initialize()
 
     def _config_instance_embed(self):
-        nn.Sequential(
+        instance_embed = nn.Sequential(
             nn.AdaptiveAvgPool2d(output_size=(self.mil_params['mil_in_feat_size'],
                                               self.mil_params['mil_in_feat_size'])),
             nn.Conv2d(self.feature_dim, self.mil_params["instance_embed_dim"],

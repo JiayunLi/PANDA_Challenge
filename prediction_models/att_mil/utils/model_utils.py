@@ -47,10 +47,10 @@ def config_vgg_layers(model, arch, input_size, num_classes):
     model.classifier = nn.Sequential(
         nn.AdaptiveAvgPool2d(output_size=(feat_map_size//2, feat_map_size//2)),
         nn.Linear(in_features=in_features, out_features=4096, bias=True),
-        nn.ReLU(inplace),
+        nn.ReLU(inplace=True),
         nn.Dropout(p=0.5),
         nn.Linear(in_features=4096, out_features=4096, bias=True),
-        nn.ReLU(inplace),
+        nn.ReLU(inplace=True),
         nn.Dropout(p=0.5),
         nn.Linear(in_features=4096, out_features=num_classes, bias=True)
     )
@@ -69,3 +69,116 @@ def config_resnet_layers(model, arch, num_classes):
         return 512
     else:
         return 2048
+
+
+def set_train_layers_vgg(model, train_layers):
+    if train_layers >= 5:
+        model.tile_encoder.layer1.train()
+        for p in model.tile_encoder.layer1.parameters():
+            p.requires_grad = True
+    if train_layers >= 4:
+        model.tile_encoder.layer2.train()
+        for p in model.tile_encoder.layer2.parameters():
+            p.requires_grad = True
+    if train_layers >= 3:
+        model.tile_encoder.layer3.train()
+        for p in model.tile_encoder.layer3.parameters():
+            p.requires_grad = True
+    if train_layers >= 2:
+        model.tile_encoder.layer4.train()
+        for p in model.tile_encoder.layer4.parameters():
+            p.requires_grad = True
+    if train_layers >= 1:
+        model.tile_encoder.layer5.train()
+        for p in model.tile_encoder.layer5.parameters():
+            p.requires_grad = True
+
+
+def set_train_layers_resnet(model, train_layers):
+    if train_layers >= 5:
+        model.tile_encoder.conv1.train()
+        model.tile_encoder.bn1.train()
+        # model.feature_extractor.layer1.train()
+        for p in model.tile_encoder.conv1.parameters():
+            p.requires_grad = True
+        for p in model.tile_encoder.bn1.parameters():
+            p.requires_grad = True
+    if train_layers >= 4:
+        model.tile_encoder.layer1.train()
+        for p in model.tile_encoder.layer1.parameters():
+            p.requires_grad = True
+    if train_layers >= 3:
+        model.tile_encoder.layer2.train()
+        for p in model.tile_encoder.layer2.parameters():
+            p.requires_grad = True
+    if train_layers >= 2:
+        model.tile_encoder.layer3.train()
+        for p in model.tile_encoder.layer3.parameters():
+            p.requires_grad = True
+    if train_layers >= 1:
+        model.tile_encoder.layer4.train()
+        for p in model.tile_encoder.layer4.parameters():
+            p.requires_grad = True
+
+
+def set_train_parameters_tile_encoder(model, arch, optim, feat_lr, cls_lr, wd, train_layer=0, fix=True):
+    model.tile_encoder.classifier.train()
+    for p in model.tile_encoder.classifier.parameters():
+        p.requires_grad = True
+    if fix:
+        model.tile_encoder.features.eval()
+        for p in model.tile_encoder.features.parameters():
+            p.requires_grad = False
+    else:
+        if arch.startswith("vgg"):
+            set_train_layers_vgg(model, train_layer)
+        elif arch.startswith("res"):
+            set_train_layers_resnet(model, train_layer)
+        else:
+            raise NotImplementedError(f"{arch} Not implemented!")
+
+    # Get all parameters that require gradients
+    feat_p = []
+    for p in model.tile_encoder.features.parameters():
+        if p.requires_grad:
+            feat_p.append(p)
+
+    classifier_p = []
+    for p in model.tile_encoder.classifier.parameters():
+        if p.requires_grad:
+            classifier_p.append(p)
+
+    params = []
+
+    if len(feat_p) > 0:
+        if optim == "sgd":
+            params.append({'params': feat_p, 'lr': feat_lr, 'momentum': 0.9})
+        else:
+            params.append({'params': feat_p, 'lr': feat_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+
+    if optim == "sgd":
+        params.append({'params': classifier_p, 'lr': cls_lr, 'momentum': 0.9})
+    else:
+        params.append({'params': classifier_p, 'lr': cls_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+    return params
+
+
+def set_train_parameters_mil(model, lr, optim, wd):
+    params = []
+    for p in model.instance_embed.parameters():
+        p.requires_grad = True
+        params.append(p)
+    for p in model.embed_bag_feat.parameters():
+        p.requires_grad = True
+        params.append(p)
+    for p in model.attention.parameters():
+        p.requires_grad = True
+        params.append(p)
+    for p in model.slide_classifier.parameters():
+        p.requires_grad = True
+        params.append(p)
+    if optim == "sgd":
+        params.append({'params': params, 'lr': lr, 'momentum': 0.9})
+    else:
+        params.append({'params': params, 'lr': lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+    return params

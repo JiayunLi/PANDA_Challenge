@@ -1,12 +1,27 @@
 import os
 import torch
 import shutil
+import pickle
+
+
+def load_ckp(load_best, ckp_dir, device):
+    if load_best:
+        ckp_path = f"{ckp_dir}/checkpoint_best.pth"
+    else:
+        ckp_path = f"{ckp_dir}/checkpoint.pth"
+
+    if device == 'cuda':
+        ckp = torch.load(ckp_path)
+    else:
+        ckp = torch.load(ckp_path, map_location=lambda storage, loc: storage)
+    return ckp
 
 
 class Checkpointer:
-    def __init__(self, fold, output_dir=None):
+    def __init__(self, fold, exp_dir):
         # set output dir will this checkpoint will save itself
-        self.output_dir = output_dir
+        self.output_dir = f"{exp_dir}/{fold}/"
+        self.exp_dir = exp_dir
         self.epoch = 0
         self.step = 0
         self.model = None
@@ -16,35 +31,34 @@ class Checkpointer:
         self.best_score = 0
 
     def track_new_model(self, model, optimizer, scheduler):
+        if not os.path.isdir(self.output_dir):
+            os.mkdir(self.output_dir)
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
 
-    def restore_model_from_checkpoint(self, cpt_path, device='cpu'):
-        if device == 'cuda':
-            ckp = torch.load(cpt_path)
-        else:
-            ckp = torch.load(cpt_path, map_location=lambda storage, loc: storage)
+    def restore_model_from_checkpoint(self, ckp):
 
         self.epoch = ckp['cursor']['epoch'] + 1
         self.step = ckp['cursor']['step'] + 1
         self.fold = ckp['cursor']['fold']
+        self.output_dir = f"{self.exp_dir}/{self.fold}/"
 
         hp = ckp['hyperparams']
         params = ckp['model']
         self.best_score = ckp['best_score']
 
         from prediction_models.att_mil.mil_models import mil
-        base_encoder = mil.config_encoder(hp['input_size'], hp['n_tile_classes'], hp['encoder_arch'], hp['pretrained'])
+
+        base_encoder, feature_dim = \
+            mil.config_encoder(hp['input_size'], hp['n_tile_classes'], hp['encoder_arch'], hp['pretrained'])
         self.model = mil.AttMIL(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
-                                hp['n_tile_classes'], hp['feature_dim'], hp['mil_params'])
+                                hp['n_tile_classes'], feature_dim, hp['mil_params'])
         self.model.load_state_dict(params)
 
-        self.optimizer.load_state_dict(ckp['optimizer'])
-        self.scheduler.load_state_dict(ckp['scheduler'])
+        print(f"***** CHECKPOINTING *****\n Model restored from checkpoint.\n MIL training epoch {self.epoch}\n")
 
-        print(f"***** CHECKPOINTING *****\n Model restored from checkpoint.\n MIL training epoch {epoch}\n")
-        return self.model, self.optimizer, self.scheduler
+        return self.model
 
     def _get_state(self):
         return {
@@ -52,6 +66,7 @@ class Checkpointer:
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
             'hyperparams': self.model.hp,
+            'best_score': self.best_score,
             'cursor': {
                 'epoch': self.epoch,
                 'step': self.step,
@@ -75,3 +90,17 @@ class Checkpointer:
 
     def get_current_position(self):
         return self.epoch, self.step
+
+
+def load_options(ckp_dir, opts):
+    ckp = load_ckp(opts.load_best, ckp_dir, opts.cuda)
+    fold = ckp['cursor']['fold']
+
+    model_opts = pickle.load(open(f"{ckp_dir}/options.pkl", "rb"))
+    model_opts.cuda = opts.cuda
+    model_opts.num_workers = opts.num_workers
+    model_opts.data_dir = opts.data_dir
+    model_opts.start_fold = fold
+    model_opts.load_best = opts.load_best
+
+    return model_opts, ckp

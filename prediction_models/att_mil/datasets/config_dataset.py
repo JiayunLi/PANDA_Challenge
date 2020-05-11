@@ -19,8 +19,32 @@ class GaussianBlur(object):
         return x
 
 
-def compute_meanstd():
-    meanstd = dict()
+def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=1000):
+    cur_transform = T.Compose([
+        T.ToTensor()
+    ])
+    dataset = trainval_slides.BiopsySlides(dataset_params, cur_transform, fold, split="val", phase="meanstd")
+    train_mean = torch.zeros(3)
+    train_std = torch.zeros(3)
+    loader = \
+        torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=True, drop_last=False,
+                                    num_workers=num_workers, pin_memory=True)
+    loader_iter = iter(loader)
+
+    cur_num, step = 0, 0
+    while step < len(loader) and step < from_k_slides:
+        tiles, _, _, _ = loader_iter.next()
+        tiles = torch.squeeze(tiles, dim=0)
+        train_mean += torch.sum(torch.mean(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
+        train_std += torch.sum(torch.std(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
+        cur_num += tiles.size(0)
+        step += 1
+    train_std /= cur_num
+    train_mean /= cur_num
+    meanstd = {
+        "mean": float(train_mean),
+        "std": float(train_std),
+    }
     return meanstd
 
 
@@ -38,7 +62,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     meanstd_file = f"{dataset_params.cache_dir}/{fold}/meanstd.pkl" if fold else f"{dataset_params.cache_dir}"
 
     if not os.path.isfile(meanstd_file):
-        meanstd = compute_meanstd()
+        meanstd = compute_meanstd(dataset_params, fold, num_workers)
         pickle.dump(meanstd, open(meanstd_file, "wb"))
     meanstd = pickel.load(open(meanstd_file, "rb"))
 
