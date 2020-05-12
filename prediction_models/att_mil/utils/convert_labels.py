@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append("..")
 
 
 class ConvertRad:
@@ -43,8 +45,13 @@ class ConvertKaro:
             return -1
         unique, counts = np.unique(mask, return_counts=True)
         pattern_counts = dict(zip(unique, counts))
-        if pattern_counts[2] > 0:
+        # If there is any cancerous regions
+        if 2 in pattern_counts and pattern_counts[2] > 0:
             if self.binary:
                 return 1
             else:
-                return slide_pg
+                # 1: G3, 2: G4
+                return slide_pg - 2
+        # No cancerous regions: return 0: benign/stroma/background
+        else:
+            return 0

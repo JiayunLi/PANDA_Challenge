@@ -19,22 +19,24 @@ def parse_gleason(raw_gleason):
 # Generate tile label given a tile label mask
 def generate_tile_label(lmdb_dir, tile_info_dir, mask_size, trainval_file, binary_label=False):
     tile_label_data = []
-    env_label_masks = lmdb.open(f"{lmdb_dir}/label_masks", max_readers=3, readonly=True, lock=False,
+    env_label_masks = lmdb.open(f"{lmdb_dir}", max_readers=3, readonly=True, lock=False,
                                 readahead=False, meminit=False)
     logs = []
     rad_converter = convert_labels.ConvertRad(logs, binary_label)
     karo_converter = convert_labels.ConvertKaro(logs, binary_label)
 
     trainval_df = pd.read_csv(trainval_file, index_col='image_id')
-
+    with env_label_masks.begin() as txn:
+        tot = txn.stat()['entries']
+    counter = 0
     with env_label_masks.begin(write=False) as txn_labels:
         for tile_name, mask_buff in txn_labels.cursor():
             tile_name = str(tile_name.decode('ascii'))
             slide_name = tile_name.split("_")[0]
             tile_mask = file_utils.decode_buffer(mask_buff, (mask_size, mask_size), np.uint8)
             slide_info = trainval_df.loc[slide_name]
+            slide_pg, slide_sg = parse_gleason(slide_info.gleason_score)
             if slide_info.data_provider == "radboud":
-                slide_pg, slide_sg = parse_gleason(slide_info.gleason_score)
                 tile_label = rad_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
             else:
                 tile_label = karo_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
@@ -46,6 +48,8 @@ def generate_tile_label(lmdb_dir, tile_info_dir, mask_size, trainval_file, binar
                 "loc_x": tile_loc_x,
                 "loc_y": tile_loc_y
             })
+            print(f"Finished tile_label generation: {counter + 1}/{tot}")
+            counter += 1
 
     tiles_data_df = pd.DataFrame(columns=["tile_name", "tile_label", "loc_x", "loc_y"],
                                  data=tile_label_data)

@@ -184,7 +184,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
             locations = locations.reshape(-1, 2)
             for loc in locations:
                 slides_tiles_mapping[slide_name].append(f"{slide_name}_{loc[0]}_{loc[1]}")
-    json.dump(slides_tiles_mapping, open(f"{out_dir}/slides_tiles_mappding.json", "w"))
+    json.dump(slides_tiles_mapping, open(f"{out_dir}/slides_tiles_mapping.json", "w"))
 
 
 def main(opts):

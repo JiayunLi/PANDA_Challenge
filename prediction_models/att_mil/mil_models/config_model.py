@@ -14,11 +14,12 @@ def config_model_optimizer(opts, ckp, fold, mil_params):
         epoch, step = 0, 0
         base_encoder, feature_dim = mil.config_encoder(opts.input_size, opts.n_tile_classes, opts.arch, opts.pretrained)
         model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size,
-                           opts.tile_classes, feature_dim., mil_params)
+                           opts.tile_classes, feature_dim, mil_params)
     train_params = \
         model_utils.set_train_parameters_tile_encoder(model, opts.arch, opts.optim, opts.feat_lr,
                                                       opts.lr, opts.wd, train_layer=opts.train_blocks,
                                                       fix=opts.feat_ft <= epoch)
+    train_params += model_utils.set_train_parameters_mil(model, opts.lr, opts.optim, opts.wd)
     train_params += model_utils.set_train_parameters_mil(model, opts.lr, opts.optim, opts.wd)
 
     if opts.optim == 'sgd':

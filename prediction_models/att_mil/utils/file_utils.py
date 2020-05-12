@@ -4,7 +4,7 @@ from PIL import Image
 import torch
 
 
-def decode_buffer(buff, data_type, data_shape):
+def decode_buffer(buff, data_shape, data_type):
     buff = np.frombuffer(buff, dtype=data_type)
     buff = buff.reshape(data_shape)
     return buff

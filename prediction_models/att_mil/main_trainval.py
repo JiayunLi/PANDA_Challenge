@@ -1,13 +1,13 @@
 import torch
 import os
 import argparse
-from prediction_models.att_mil.utils import config_params, checkpoint_utils
+import pickle
 import random
 import numpy as np
 from prediction_models.att_mil.datasets import config_dataset
 from prediction_models.att_mil.mil_models import config_model
 from prediction_models.att_mil import train_att_mil
-import pickle
+from prediction_models.att_mil.utils import config_params, checkpoint_utils
 
 
 def seed_torch(seed=1029):
@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
     # File location
     parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
-    parser.add_argument('--info_dir', type=str, default='./info/', help='Directory for cross validation information')
-    parser.add_argument('--cache_dir', type=str, default='./cache/', help='Directory to save trained models')
+    parser.add_argument('--info_dir', type=str, default='.../info/', help='Directory for cross validation information')
+    parser.add_argument('--cache_dir', type=str, default='.../cache/', help='Directory to save trained models')
 
     # Cross validation
     parser.add_argument('--start_fold', type=int, default=0)
@@ -128,3 +128,4 @@ if __name__ == "__main__":
     args.exp_dir = f"{args.cache_dir}/{args.exp}/"
     if not os.path.isdir(args.exp_dir):
         os.mkdir(args.exp_dir)
+    trainval(args)
