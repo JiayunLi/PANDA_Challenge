@@ -13,10 +13,10 @@ class BiopsySlides(data.Dataset):
         self.transform = transform
         self.params = dataset_params
         self.phase = phase
-        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}", max_readers=3, readonly=True,
+        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
 
-        self.slide_tiles_map = json.load(open(f"{dataset_params.data_dir}/slides_tiles_mappding.json", "r"))
+        self.slide_tiles_map = json.load(open(f"{dataset_params.data_dir}/slides_tiles_mapping.json", "r"))
         self.tiles_df = pd.read_csv(f"{dataset_params.info_dir}/trainval_tiles.csv", index_col='tile_name')
 
     def __len__(self):
@@ -29,7 +29,8 @@ class BiopsySlides(data.Dataset):
         tile_names = self.slide_tiles_map[slide_name]
         # If tile-level is not usable, labels will be -1 (e.g., Karo slides with different PG and SG)
         tiles, labels = file_utils.read_lmdb_tiles_tensor(f"{self.params.data_dir}",
-                                                           (self.params.im_size, self.params.im_size, self.params.num_channels),
+                                                           (self.params.im_size, self.params.im_size,
+                                                            self.params.num_channels),
                                                            tile_names, self.transform,
                                                            out_im_size=(self.params.num_channels, self.params.input_size,
                                                                         self.params.input_size),

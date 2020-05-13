@@ -29,6 +29,7 @@ def generate_tile_label(lmdb_dir, tile_info_dir, mask_size, trainval_file, binar
     with env_label_masks.begin() as txn:
         tot = txn.stat()['entries']
     counter = 0
+    # Only for slide with label!!!
     with env_label_masks.begin(write=False) as txn_labels:
         for tile_name, mask_buff in txn_labels.cursor():
             tile_name = str(tile_name.decode('ascii'))
@@ -59,7 +60,7 @@ def generate_tile_label(lmdb_dir, tile_info_dir, mask_size, trainval_file, binar
 
 # Generate n files for n fold cross validation
 def generate_cv_split(trainval_file, out_dir, n_fold, seed, delete_dir=False):
-    if not delete_dir and os.path.isdir(out_dir):
+    if not delete_dir and os.path.isdir(out_dir) and os.path.isfile(f"{out_dir}/train_{n_fold-1}.csv"):
         print("Cross validation file already generate!")
         return
 

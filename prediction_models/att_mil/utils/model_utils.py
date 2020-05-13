@@ -7,6 +7,12 @@ def _initialize_helper(all_modules):
         init_helper.weight_init(m)
 
 
+class Flatten(nn.Module):
+    def forward(self, x):
+        x = x.view(x.size()[0], -1)
+        return x
+
+
 def config_vgg_layers(model, arch, input_size, num_classes):
     stride, feat_dim = 32, 512
     feat_map_size = input_size // stride
@@ -46,6 +52,7 @@ def config_vgg_layers(model, arch, input_size, num_classes):
     in_features = (feat_map_size // 2) * (feat_map_size // 2) * 512
     model.classifier = nn.Sequential(
         nn.AdaptiveAvgPool2d(output_size=(feat_map_size//2, feat_map_size//2)),
+        Flatten(),
         nn.Linear(in_features=in_features, out_features=4096, bias=True),
         nn.ReLU(inplace=True),
         nn.Dropout(p=0.5),
@@ -62,7 +69,7 @@ def config_vgg_layers(model, arch, input_size, num_classes):
 def config_resnet_layers(model, arch, num_classes):
     model.features = nn.Sequential(model.conv1, model.bn1, model.relu, model.maxpool,
                                    model.layer1, model.layer2, model.layer3, model.layer4)
-    model.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)),
+    model.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
                                      nn.Linear(in_features=model.fc.in_features, out_features=num_classes, bias=True))
     _initialize_helper(model.classifier)
     if arch == "resnet18" or arch == "resnet34":
@@ -148,19 +155,19 @@ def set_train_parameters_tile_encoder(model, arch, optim, feat_lr, cls_lr, wd, t
         if p.requires_grad:
             classifier_p.append(p)
 
-    params = []
+    params_group = []
 
     if len(feat_p) > 0:
         if optim == "sgd":
-            params.append({'params': feat_p, 'lr': feat_lr, 'momentum': 0.9})
+            params_group.append({'params': feat_p, 'lr': feat_lr, 'momentum': 0.9})
         else:
-            params.append({'params': feat_p, 'lr': feat_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+            params_group.append({'params': feat_p, 'lr': feat_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
 
     if optim == "sgd":
-        params.append({'params': classifier_p, 'lr': cls_lr, 'momentum': 0.9})
+        params_group.append({'params': classifier_p, 'lr': cls_lr, 'momentum': 0.9})
     else:
-        params.append({'params': classifier_p, 'lr': cls_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
-    return params
+        params_group.append({'params': classifier_p, 'lr': cls_lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+    return params_group
 
 
 def set_train_parameters_mil(model, lr, optim, wd):
@@ -177,8 +184,9 @@ def set_train_parameters_mil(model, lr, optim, wd):
     for p in model.slide_classifier.parameters():
         p.requires_grad = True
         params.append(p)
+    params_group = []
     if optim == "sgd":
-        params.append({'params': params, 'lr': lr, 'momentum': 0.9})
+        params_group.append({'params': params, 'lr': lr, 'momentum': 0.9})
     else:
-        params.append({'params': params, 'lr': lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
-    return params
+        params_group.append({'params': params, 'lr': lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
+    return params_group

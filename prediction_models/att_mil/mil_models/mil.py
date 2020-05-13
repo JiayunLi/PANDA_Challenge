@@ -21,12 +21,12 @@ def config_encoder(input_size, num_classes, arch, pretrained):
 
 
 class AttMIL(nn.Module):
-    def __init__(self, base_encoder, pretrained, arch, input_size, n_tile_classes, feature_dim, mil_params):
+    def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super(AttMIL, self).__init__()
         self.tile_encoder = base_encoder
         self.feature_dim = feature_dim
         self.pretrained = pretrained
-        self.hp = {"input_size": input_size, "n_tile_classes": n_tile_classes, "encoder_arch": arch,
+        self.hp = {"input_size": input_size,  "encoder_arch": arch,
                    "feature_dim": feature_dim, "pretrained": pretrained,
                    "mil_params": mil_params, "arch": arch}
         self.mil_params = mil_params
@@ -34,7 +34,7 @@ class AttMIL(nn.Module):
         self.instance_embed = self._config_instance_embed()
 
         self.embed_bag_feat, self.attention = self._config_attention()
-        self.slide_classifier = self._config_classifer()
+        self.slide_classifier = self._config_classifier()
         self._initialize()
 
     def _config_instance_embed(self):
@@ -55,17 +55,17 @@ class AttMIL(nn.Module):
         )
 
         attention = nn.Sequential(
-            nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_embed_dim']),
+            nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_hidden_dim']),
             nn.Tanh(),
             nn.Dropout(),
-            nn.Linear(self.mil_params["bag_hidden_dim"], self.mil_params["slide_n_classes"])
+            nn.Linear(self.mil_params["bag_hidden_dim"], self.mil_params["n_slide_classes"])
         )
         return embed_bag_feat, attention
 
-    def _config_classifer(self):
+    def _config_classifier(self):
         classifier = nn.Sequential(
-            nn.Linear(self.mil_params["bag_hidden_dim"] * self.mil_params["slide_n_classes"],
-                      self.mil_params["slide_n_classes"]),
+            nn.Linear(self.mil_params["bag_embed_dim"] * self.mil_params["n_slide_classes"],
+                      self.mil_params["n_slide_classes"]),
         )
         return classifier
 
@@ -85,7 +85,7 @@ class AttMIL(nn.Module):
         tiles_probs = self.tile_encoder.classifier(feats)
 
         feats = self.instance_embed(feats)
-        feats = self.embed_bag_feat(feats)
+        feats = self.embed_bag_feat(feats.view(feats.size(0), -1).contiguous())
 
         if phase == 'extract_feats':
             return feats

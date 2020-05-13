@@ -42,13 +42,13 @@ def trainval(opts):
 
     # Write options
     print(opts)
-    pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "rb"))
+    pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
 
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
-                                                 opts.data_dir, opts.cache_dir, opts.num_channels)
+                                                 opts.data_dir, opts.cache_dir, opts.exp_dir, opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
-                                              opts.bag_hidden, opts.slide_classes)
-    trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.train_blocks,
+                                              opts.bag_hidden, opts.slide_classes, opts.tile_classes)
+    trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha)
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # Input data options
     parser.add_argument('--im_size', default=512, type=int, help="original extracted tile size")
-    parser.add_argument('--input_size', default=256, type=int, help="input size to the network")
+    parser.add_argument('--input_size', default=128, type=int, help="input size to the network")
     parser.add_argument('--num_channels', default=3, type=int, help="# of input image channels")
 
     # Restart
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     # Training options
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate for classifier')
     parser.add_argument('--feat_lr', default=0.00005, type=float, help='learning rate for features')
+    parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='adam', help="Optimizer used for model training")
     parser.add_argument('--epochs', default=100, type=int)
@@ -126,6 +127,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     args.exp_dir = f"{args.cache_dir}/{args.exp}/"
+    seed_torch(args.manual_seed)
     if not os.path.isdir(args.exp_dir):
         os.mkdir(args.exp_dir)
     trainval(args)

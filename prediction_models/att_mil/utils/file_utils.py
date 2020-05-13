@@ -2,11 +2,13 @@ import lmdb
 import numpy as np
 from PIL import Image
 import torch
+import gc
 
 
 def decode_buffer(buff, data_shape, data_type):
     buff = np.frombuffer(buff, dtype=data_type)
     buff = buff.reshape(data_shape)
+    gc.collect()
     return buff
 
 
@@ -18,7 +20,7 @@ def read_lmdb(lmdb_dir, data_shape, keys, env=None, data_type=np.uint8):
     with env.begin(write=False) as txn:
         for key in keys:
             buffer = txn.get(str(key).encode())
-            buffer = decode_buffer(buffer, data_type, data_shape)
+            buffer = decode_buffer(buffer, data_shape, data_type)
         results.append(buffer)
     return np.asarray(results)
 
@@ -35,11 +37,16 @@ def read_lmdb_tiles_tensor(lmdb_dir, data_shape, keys, transform, out_im_size,
     with env.begin(write=False) as txn:
         for i, key in enumerate(keys):
             buffer = txn.get(str(key).encode())
-            buffer = decode_buffer(buffer, data_type, data_shape)
+            buffer = decode_buffer(buffer, data_shape, data_type)
             buffer = Image.fromarray(buffer)
             if transform:
                 buffer = transform(buffer)
             results[i, :, :, :] = buffer
-            if tiles_df:
-                labels.append(int(tiles_df.loc[key].tile_label))
+            if tiles_df is None:
+                continue
+            if key not in tiles_df.index:
+                continue
+            labels.append(int(tiles_df.loc[key].tile_label))
+            gc.collect()
+    gc.collect()
     return results, labels
