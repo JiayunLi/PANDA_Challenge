@@ -90,7 +90,7 @@ def save_downsample_tiles(orig_tiles_lmdb_dir, dw_lmdb_dir, tile_size=512, dw_ra
     counter = 0
     with orig_env.begin(write=False) as txn_orig, dw_lmdb_env.begin(write=True) as txn_dw:
         for tile_name, tile_buff in txn_orig.cursor():
-            tile = file_utils.decode_buffer(tile_buff, (tile_size, tile_size), np.uint8)
+            tile = file_utils.decode_buffer(tile_buff, (tile_size, tile_size, 3), np.uint8)
             tile = Image.fromarray(tile)
             tile_dw = tile.resize((tile_size // dw_rate, tile_size // dw_rate), Image.ANTIALIAS)
             tile_name = str(tile_name.decode('ascii'))
