@@ -7,7 +7,7 @@ import torch.optim as optim
 def config_model_optimizer(opts, ckp, fold, mil_params):
     checkpointer = checkpoint_utils.Checkpointer(fold, opts.exp_dir)
     if ckp:
-        model, optimizer, scheduler = checkpointer.restore_model_from_checkpoint(ckp)
+        model = checkpointer.restore_model_from_checkpoint(ckp)
         epoch, step = checkpointer.get_current_position()
     else:
         # Start a new model

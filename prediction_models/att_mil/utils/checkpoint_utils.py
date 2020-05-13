@@ -94,15 +94,15 @@ class Checkpointer:
         return self.epoch, self.step
 
 
-def load_options(ckp_dir, opts):
-    ckp = load_ckp(opts.load_best, ckp_dir, opts.cuda)
+def load_options(ckp_dir, load_best, data_dir, cuda, num_workers):
+    ckp = load_ckp(load_best, ckp_dir, cuda)
     fold = ckp['cursor']['fold']
-
-    model_opts = pickle.load(open(f"{ckp_dir}/options.pkl", "rb"))
-    model_opts.cuda = opts.cuda
-    model_opts.num_workers = opts.num_workers
-    model_opts.data_dir = opts.data_dir
+    options_dir = ckp_dir.replace(f"{fold}/", "")
+    model_opts = pickle.load(open(f"{options_dir}/options.pkl", "rb"))
+    model_opts.cuda = cuda
+    model_opts.num_workers = num_workers
+    model_opts.data_dir = data_dir
     model_opts.start_fold = fold
-    model_opts.load_best = opts.load_best
+    model_opts.load_best = load_best
 
     return model_opts, ckp

@@ -103,8 +103,10 @@ class TileGeneratorGrid(TileGeneratorABC):
                 orig_tile.save("error_tile.png")
 
         if dw_rate > 1:
-            orig_tile = orig_tile.resize((tile_size // dw_rate, tile_size // dw_rate), Image.ANTIALIAS)
-            norm_tile = norm_tile.resize((tile_size // dw_rate, tile_size // dw_rate), Image.ANTIALIAS)
+            orig_tile = Image.fromarray(orig_tile.astype(np.uint8)).resize((tile_size // dw_rate, tile_size // dw_rate),
+                                                                           Image.ANTIALIAS)
+            norm_tile = Image.fromarray(norm_tile.astype(np.uint8)).resize((tile_size // dw_rate, tile_size // dw_rate),
+                                                                           Image.ANTIALIAS)
             tissue_mask = tissue_mask[::dw_rate, ::dw_rate]
         return np.asarray(orig_tile), np.asarray(norm_tile), tissue_mask
 

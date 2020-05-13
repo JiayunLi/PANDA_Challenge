@@ -36,7 +36,9 @@ def trainval(opts):
             f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
     # Use restarted model options and load model checkpoint
     if opts.ckp_dir:
-        opts, ckp = checkpoint_utils.load_options(ckp_dir=opts.ckp_dir, opts=opts)
+
+        opts, ckp = checkpoint_utils.load_options(opts.ckp_dir, opts.load_best, opts.data_dir, opts.cuda,
+                                                  opts.num_workers)
     else:
         ckp = None
 

@@ -115,7 +115,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     if split == "train":
         transform = T.Compose(augmentation)
     elif split == "val" or split == "test":
-        transform = T.Compose([T.Resize(dataset_params.input_size)] + normalize)
+        transform = T.Compose(normalize)
     else:
         raise NotImplementedError(f"Not implemented for split {split}")
 
