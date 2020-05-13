@@ -38,7 +38,7 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
             'slide_loss': slide_loss.item(),
             'tot_loss': loss.item(),
         }
-        if tile_labels[0] != -1:
+        if len(tile_labels) > 0 and tile_labels[0] != -1:
             cur_dict['tile_loss'] = tile_loss.item()
         fast_stats.update_dict(cur_dict, n=1)
         iteras += 1
