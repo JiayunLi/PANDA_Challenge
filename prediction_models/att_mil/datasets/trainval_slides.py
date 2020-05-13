@@ -10,6 +10,9 @@ from prediction_models.att_mil.utils import file_utils
 class BiopsySlides(data.Dataset):
     def __init__(self, dataset_params, transform, fold, split, phase='train'):
         self.slides_df = pd.read_csv(f"{dataset_params.info_dir}/{split}_{fold}.csv")
+        print(f"Original number of samples: {len(self.slides_df)}")
+        self.slides_df.drop(self.slides_df.index['3790f55cad63053e956fb73027179707'], inplace=True)
+        print(f"Number of samples after dropping: {len(self.slides_df)}")
         self.transform = transform
         self.params = dataset_params
         self.phase = phase
