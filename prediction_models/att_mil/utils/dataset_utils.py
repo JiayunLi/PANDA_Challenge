@@ -93,6 +93,7 @@ def save_downsample_tiles(orig_tiles_lmdb_dir, dw_lmdb_dir, tile_size=512, dw_ra
             tile = file_utils.decode_buffer(tile_buff, (tile_size, tile_size, 3), np.uint8)
             tile = Image.fromarray(tile)
             tile_dw = tile.resize((tile_size // dw_rate, tile_size // dw_rate), Image.ANTIALIAS)
+            tile_dw = np.asarray(tile_dw)
             tile_name = str(tile_name.decode('ascii'))
             txn_dw.put(str(tile_name).encode(), tile_dw.astype(np.uint8).tobytes())
             counter += 1
