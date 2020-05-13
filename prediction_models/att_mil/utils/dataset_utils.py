@@ -3,6 +3,7 @@ import os
 import shutil
 import lmdb
 import numpy as np
+from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from prediction_models.att_mil.utils import file_utils
 from prediction_models.att_mil.utils import convert_labels
@@ -79,3 +80,41 @@ def generate_cv_split(trainval_file, out_dir, n_fold, seed, delete_dir=False):
     return
 
 
+def save_downsample_tiles(orig_tiles_lmdb_dir, dw_lmdb_dir, tile_size=512, dw_rate=4):
+    orig_env = lmdb.open(f"{orig_tiles_lmdb_dir}/tiles", max_readers=3, readonly=True, lock=False,
+                         readahead=False, meminit=False)
+    dw_lmdb_env = lmdb.open(f"{dw_lmdb_dir}/tiles", map_size=6e+12)
+    with orig_env.begin(write=False) as txn:
+        tot = txn.stat()['entries']
+
+    counter = 0
+    with orig_env.begin(write=False) as txn_orig, dw_lmdb_env.begin(write=True) as txn_dw:
+        for tile_name, tile_buff in txn_orig.cursor():
+            tile = file_utils.decode_buffer(tile_buff, (tile_size, tile_size), np.uint8)
+            tile = Image.fromarray(tile)
+            tile_dw = tile.resize((tile_size // dw_rate, tile_size // dw_rate), Image.ANTIALIAS)
+            tile_name = str(tile_name.decode('ascii'))
+            txn_dw.put(str(tile_name).encode(), tile_dw.astype(np.uint8).tobytes())
+            counter += 1
+            print(f"Finish write down sampled tiles: {counter}/{tot}")
+
+
+if __name__ == "__main__":
+    import argparse
+    import os
+    parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
+
+    # File location
+    parser.add_argument('--orig_data_dir', type=str, default='/data/jiayun/PANDA_Challenge/processed',
+                        help='Root directory for processed data')
+
+    parser.add_argument('--dw_sample', action='store_true')
+    parser.add_argument('--dw_data_dir', type=str, default='/data/jiayun/PANDA_Challenge/dw_sampled_128',
+                        help='Root directory for processed data')
+    parser.add_argument('--dw_rate', type=int, default=4)
+
+    args = parser.parse_args()
+    if args.dw_sample:
+        if not os.path.isdir(args.dw_data_dir):
+            os.mkdir(args.dw_data_dir)
+        save_downsample_tiles(args.orig_data_dir, args.dw_data_dir, dw_rate=args.dw_rate)
