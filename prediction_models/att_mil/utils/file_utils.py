@@ -8,7 +8,6 @@ import gc
 def decode_buffer(buff, data_shape, data_type):
     buff = np.frombuffer(buff, dtype=data_type)
     buff = buff.reshape(data_shape)
-    gc.collect()
     return buff
 
 

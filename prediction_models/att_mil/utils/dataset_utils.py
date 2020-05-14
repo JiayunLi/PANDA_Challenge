@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import json
 import shutil
 import lmdb
 import numpy as np
@@ -100,6 +101,87 @@ def save_downsample_tiles(orig_tiles_lmdb_dir, dw_lmdb_dir, tile_size=512, dw_ra
             print(f"Finish write down sampled tiles: {counter}/{tot}")
 
 
+def read_tiles_helper(pqueue, orig_env, tile_size, tile_labels_df, slide_tiles_map, slide_to_process):
+    with orig_env.begin(write=False) as txn:
+        for counter, slide_name in enumerate(slide_to_process):
+            tile_names = slide_tiles_map[slide_name]
+            tiles = np.zeros((len(tile_names), tile_size, tile_size, 3), dtype=np.uint8)
+            labels = []
+            tile_name_mapping = dict()
+            for i, tile_name in enumerate(tile_names):
+                if tile_name in tile_labels_df.index:
+                    label = tile_labels_df.loc[tile_name].tile_label
+                else:
+                    label = -1
+                labels.append(label)
+                tile_name_mapping[i] = tile_name
+                buffer = txn.get(str(tile_name).encode())
+                buffer = np.frombuffer(buffer, dtype=np.uint8)
+                buffer = buffer.reshape((tile_size, tile_size, 3))
+                tiles[i, :, :, :] = buffer
+            data = {
+                "slide_name": slide_name,
+                "tile_name_mapping": tile_name_mapping,
+                "tiles": tiles,
+                "labels": labels
+            }
+            pqueue.put(data)
+            print(f"Finish decode tiles {counter + 1} / {len(slide_to_process)}")
+        pqueue.put('Done')
+
+
+def change_slide_encode(opts, tile_size=128):
+    slide_tiles_map = json.load(open(f"{opts.orig_data_dir}/slides_tiles_mapping.json", "r"))
+    orig_env = lmdb.open(f"{opts.orig_data_dir}/tiles", max_readers=3, readonly=True, lock=False,
+                         readahead=False, meminit=False)
+    env = lmdb.open(f"{opts.new_data_dir}/tiles", map_size=6e+12)
+    tile_labels_df = pd.read_csv(opts.tile_labels_file, index_col='tile_name')
+    slides_to_process = list(slide_tiles_map.keys())
+    num_ps = 5
+    batch_size = len(slides_to_process) // num_ps
+    reader_processes = []
+    pqueue = Queue()
+    start_idx = 0
+    for i in range(num_ps-1):
+        end_idx = start_idx + batch_size
+        reader_p = Process(target=read_tiles_helper, args=(pqueue, orig_env, tile_size, tile_labels_df, slide_tiles_map,
+                                                         slides_to_process[start_idx: end_idx]))
+        reader_p.start()
+        reader_processes.append(reader_p)
+        start_idx = end_idx
+    reader_p = Process(target=read_tiles_helper, args=(pqueue, orig_env, tile_size, tile_labels_df, slide_tiles_map,
+                                                       slides_to_process[start_idx: len(slides_to_process)]))
+    reader_p.start()
+    reader_processes.append(reader_p)
+
+    counter, num_done = 0, 0
+    tiles_id_name_map = dict()
+    tiles_labels = dict()
+    with env.begin(write=True) as txn:
+        while True:
+            # Block if necessary until an item is available.
+            data = pqueue.get()
+            # Done indicates job on one process is finished.
+            if data == "Done":
+                num_done += 1
+                print("One part is done!")
+                if num_done == num_ps:
+                    break
+            else:
+                slide_name = data['slide_name']
+                tiles = data['tiles']
+                tiles_labels[slide_name] = data['labels']
+                tiles_id_name_map[slide_name] = data['tile_name_mapping']
+                txn.put(str(slide_name).encode(), tiles.astype(np.uint8).tobytes())
+                counter += 1
+                print(f"Finish write {counter} / {len(slides_to_process)}")
+
+    for process in reader_processes:
+        process.join()
+    json.dump(tiles_id_name_map, open(f"{opts.new_data_dir}/tiles_id_name_map.json", "w"))
+    json.dump(tiles_labels, open(f"{opts.new_data_dir}/tiles_labels.json", "w"))
+
+
 if __name__ == "__main__":
     import argparse
     import os
@@ -114,8 +196,15 @@ if __name__ == "__main__":
                         help='Root directory for processed data')
     parser.add_argument('--dw_rate', type=int, default=4)
 
+    parser.add_argument('--compress_slide', action="store_true")
+    parser.add_argument('--tile_labels_file', default='./info/trainval_tiles.csv')
+    parser.add_argument('--new_data_dir', type=str, default='/data/jiayun/PANDA_Challenge/slides_encode_128',
+                        help='Root directory for processed data')
+
     args = parser.parse_args()
     if args.dw_sample:
         if not os.path.isdir(args.dw_data_dir):
             os.mkdir(args.dw_data_dir)
         save_downsample_tiles(args.orig_data_dir, args.dw_data_dir, dw_rate=args.dw_rate)
+    if args.compress_slide:
+        from multiprocessing import Process, Queue
