@@ -142,8 +142,8 @@ def change_slide_encode(opts, tile_size=128):
                          readahead=False, meminit=False)
     env = lmdb.open(f"{opts.new_data_dir}/tiles", map_size=6e+12)
     tile_labels_df = pd.read_csv(opts.tile_labels_file, index_col='tile_name')
-    slides_to_process = list(slide_tiles_map.keys())[:5]
-    num_ps = 5
+    slides_to_process = list(slide_tiles_map.keys())
+    num_ps = 6
     batch_size = len(slides_to_process) // num_ps
     reader_processes = []
     pqueue = Queue()
