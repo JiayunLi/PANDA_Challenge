@@ -78,5 +78,5 @@ class StatTracker:
 
 
 def compute_kappa(all_preds, all_labels):
-    score = metrics.cohen_kappa_score(all_preds, all_labels)
+    score = metrics.cohen_kappa_score(all_preds, all_labels, weights='quadratic')
     return score
