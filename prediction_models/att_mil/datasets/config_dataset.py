@@ -119,13 +119,8 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     else:
         raise NotImplementedError(f"Not implemented for split {split}")
 
-    if split == "train" or split == "val":
-        dataset = trainval_slides.BiopsySlides(dataset_params, transform, fold, split, phase=phase)
-    else:
-        tile_normalizer = reinhard_bg.ReinhardNormalizer()
-        # use the pre-computed LAB mean and std values
-        tile_normalizer.fit(None)
-        dataset = test_slides.BiopsySlides(dataset_params, transform, tile_normalizer)
+    dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
+
     shuffle = True if phase == "train" else False
 
     loader = \

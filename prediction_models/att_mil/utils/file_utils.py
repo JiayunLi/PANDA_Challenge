@@ -49,3 +49,17 @@ def read_lmdb_tiles_tensor(lmdb_dir, data_shape, keys, transform, out_im_size,
             gc.collect()
     gc.collect()
     return results, labels
+
+
+def read_lmdb_slide_tensor(env, data_shape, key, transform, out_im_size, data_type=np.uint8):
+
+    with env.begin(write=False) as txn:
+        buffer = txn.get(str(key).encode())
+        buffer = decode_buffer(buffer, data_shape, data_type)
+    results = torch.FloatTensor(len(buffer), *out_im_size)
+    for i in range(len(buffer)):
+        tile = Image.fromarray(buffer[i, :, :, :])
+        if transform:
+            tile = transform(tile)
+        results[i, :, :, :] = tile
+    return results
