@@ -18,6 +18,12 @@ def parse_gleason(raw_gleason):
     return pg, sg
 
 
+def default(o):
+    if isinstance(o, np.int64): return int(o)
+    if isinstance(o, tuple): return o
+    raise TypeError
+
+
 # Generate tile label given a tile label mask
 def generate_tile_label(lmdb_dir, tile_info_dir, mask_size, trainval_file, binary_label=False):
     tile_label_data = []
@@ -178,8 +184,8 @@ def change_slide_encode(opts, tile_size=128):
 
     for process in reader_processes:
         process.join()
-    json.dump(tiles_id_name_map, open(f"{opts.new_data_dir}/tiles_id_name_map.json", "w"))
-    json.dump(tiles_labels, open(f"{opts.new_data_dir}/tiles_labels.json", "w"))
+    json.dump(tiles_id_name_map, open(f"{opts.new_data_dir}/tiles_id_name_map.json", "w"), default=default)
+    json.dump(tiles_labels, open(f"{opts.new_data_dir}/tiles_labels.json", "w"), default=default)
 
 
 if __name__ == "__main__":
