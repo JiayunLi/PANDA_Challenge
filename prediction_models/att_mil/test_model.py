@@ -39,7 +39,6 @@ def test(model, meanstd, test_slides_df, test_params, num_workers, cuda):
             image_id = str(image_id[0])
             tiles = tiles.to(device)
             slide_probs, _, _ = model(tiles)
-            print(slide_probs.data)
             _, predicted = torch.max(slide_probs.data, 1)
             predicted = int(predicted.item())
             pred_data.append({"image_id": image_id, "isup_grade": predicted})

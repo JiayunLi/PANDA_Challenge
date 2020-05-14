@@ -1,6 +1,6 @@
 import lmdb
 import torch.utils.data as data
-from PIL import Image
+import time
 import pandas as pd
 import json
 import numpy as np
@@ -31,6 +31,7 @@ class BiopsySlides(data.Dataset):
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
         tile_names = self.slide_tiles_map[slide_name]
+        start_time = time.time()
         # If tile-level is not usable, labels will be -1 (e.g., Karo slides with different PG and SG)
         tiles, labels = file_utils.read_lmdb_tiles_tensor(f"{self.params.data_dir}",
                                                            (self.params.im_size, self.params.im_size,
@@ -40,4 +41,5 @@ class BiopsySlides(data.Dataset):
                                                                         self.params.input_size),
                                                            tiles_df=self.tiles_df, env=self.tiles_env,
                                                            data_type=np.uint8)
+        print(f"Total time to load one slide {time.time() - start_time}")
         return tiles, labels, slide_label, tile_names
