@@ -23,11 +23,12 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
         slide_label = slide_label.to(device)
         tiles = tiles.to(device)
         slide_probs, tiles_probs, _ = model(tiles)
-        slide_loss = slide_criterion(slide_probs, slide_label)
+        if loss_type == "mse":
+            slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
+        else:
+            slide_loss = slide_criterion(slide_probs, slide_label)
         if len(tile_labels) > 0 and tile_labels[0][0] != -1:
             tile_labels = torch.squeeze(torch.stack(tile_labels), dim=1)
-            if loss_type == "mse":
-                tile_labels = tile_labels.float()
             tile_labels = tile_labels.to(device)
             tile_loss = tile_criterion(tiles_probs, tile_labels)
             loss = alpha * tile_loss + (1 - alpha) * slide_loss
@@ -61,10 +62,10 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
 def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
              checkpointer, train_loader, train_data, val_loader, device):
     logger = trainval_stats.StatTracker(log_dir=f"{exp_dir}/")
-
+    tile_criterion = torch.nn.CrossEntropyLoss()
     if trainval_params.loss_type == 'mse':
         slide_criterion = torch.nn.MSELoss()
-        tile_criterion = torch.nn.MSELoss()
+
     elif trainval_params.loss_type == 'ce':
         if trainval_params.cls_weighted:
             tile_label_weights, slide_label_weights = \
@@ -111,8 +112,13 @@ def val(epoch, model, val_loader, slide_criterion, loss_type, logger, device):
             tiles = torch.squeeze(tiles, dim=0)
             tiles = tiles.to(device)
             slide_probs, tiles_probs, _ = model(tiles)
+            if loss_type == "mse":
+                slide_label = slide_label.float()
             slide_label = slide_label.to(device)
-            slide_loss = slide_criterion(slide_probs, slide_label)
+            if loss_type == "mse":
+                slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
+            else:
+                slide_loss = slide_criterion(slide_probs, slide_label)
             cur_dict = {
                 'slide_loss': slide_loss.item(),
             }
