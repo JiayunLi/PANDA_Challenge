@@ -89,7 +89,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                                               trainval_params.lr, trainval_params.wd, trainval_params.train_blocks)
 
         iters = train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
-                            trainval_params.alpha, trainval_params.log_every, logger, device)
+                            trainval_params.alpha, trainval_params.loss_type, trainval_params.log_every, logger, device)
         kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type, logger, device)
         checkpointer.update(epoch, iters, kappa)
         scheduler.step(loss)
