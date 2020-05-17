@@ -65,6 +65,10 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
         if trainval_params.cls_weighted:
             tile_label_weights, slide_label_weights = \
                 model_utils.compute_class_frequency(train_data.slides_df, train_data.tile_labels, binary_only=False)
+            print(tile_label_weights)
+            print(slide_label_weights)
+            tile_label_weights = torch.FloatTensor(tile_label_weights)
+            slide_label_weights = torch.FloatTensor(slide_label_weights)
             slide_criterion = torch.nn.CrossEntropyLoss(slide_label_weights)
             tile_criterion = torch.nn.CrossEntropyLoss(tile_label_weights)
         else:
