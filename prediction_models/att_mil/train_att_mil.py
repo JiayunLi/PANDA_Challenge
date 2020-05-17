@@ -7,7 +7,7 @@ import gc
 
 
 def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer,
-                train_loader, alpha, log_every, logger, device):
+                train_loader, alpha, loss_type, log_every, logger, device):
     model.train()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -18,12 +18,16 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
         tiles, tile_labels, slide_label, tile_names = train_iter.next()
         tiles = torch.squeeze(tiles, dim=0)
 
+        if loss_type == "mse":
+            slide_label = slide_label.float()
         slide_label = slide_label.to(device)
         tiles = tiles.to(device)
         slide_probs, tiles_probs, _ = model(tiles)
         slide_loss = slide_criterion(slide_probs, slide_label)
         if len(tile_labels) > 0 and tile_labels[0][0] != -1:
             tile_labels = torch.squeeze(torch.stack(tile_labels), dim=1)
+            if loss_type == "mse":
+                tile_labels = tile_labels.float()
             tile_labels = tile_labels.to(device)
             tile_loss = tile_criterion(tiles_probs, tile_labels)
             loss = alpha * tile_loss + (1 - alpha) * slide_loss
