@@ -43,7 +43,11 @@ class TrainvalParams:
         self.cls_weighted = cls_weighted
 
 
-def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidden_dim, slide_n_classes, tile_classes):
+def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidden_dim, slide_n_classes,
+                   tile_classes, loss_type):
+    if loss_type == "mse":
+        slide_n_classes = 1
+        tile_classes = 1
     params = {
         "mil_in_feat_size": mil_in_feat_size,
         "instance_embed_dim": instance_embed_dim,

@@ -64,7 +64,7 @@ def trainval(opts):
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                  opts.data_dir, opts.cache_dir, opts.exp_dir, opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
-                                              opts.bag_hidden, opts.slide_classes, opts.tile_classes)
+                                              opts.bag_hidden, opts.slide_classes, opts.tile_classes, opts.loss_type)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted)
