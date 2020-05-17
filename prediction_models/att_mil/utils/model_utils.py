@@ -217,10 +217,10 @@ def compute_class_frequency(trainval_df, tile_labels_map, binary_only):
     tile_label_freq = []
     slide_label_freq = []
 
-    for i in range(max(tile_label_counter.keys())):
+    for i in range(max(tile_label_counter.keys())+1):
         tile_label_freq.append(tot_tiles / tile_label_counter[i])
 
-    for i in range(max(slide_label_counter.keys())):
+    for i in range(max(slide_label_counter.keys())+1):
         slide_label_freq.append(tot_slides / slide_label_counter[i])
 
     return tile_label_freq, slide_label_freq
