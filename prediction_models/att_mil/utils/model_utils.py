@@ -1,5 +1,7 @@
 import torch.nn as nn
 from prediction_models.att_mil.utils import init_helper
+import json
+from collections import defaultdict
 
 
 def _initialize_helper(all_modules):
@@ -190,3 +192,35 @@ def set_train_parameters_mil(model, lr, optim, wd):
     else:
         params_group.append({'params': params, 'lr': lr, 'weight_decay': wd, 'betas': (0.9, 0.999)})
     return params_group
+
+
+def compute_class_frequency(trainval_df, tile_labels_map, binary_only):
+    tile_label_counter = defaultdict(int)
+    slide_label_counter = defaultdict(int)
+
+    for i in range(len(trainval_df)):
+        slide_info = trainval_df.iloc[i]
+        slide_name = slide_info['image_id']
+        slide_label = int(slide_info['isup_grade'])
+        if binary_only:
+            slide_label = int(slide_label > 0)
+        slide_label_counter[slide_label] += 1
+        tile_labels = tile_labels_map[slide_name]
+        for tile_label in tile_labels:
+            if binary_only:
+                tile_label = int(tile_label > 0)
+            tile_label_counter[tile_label] += 1
+
+    tot_tiles = sum(tile_label_counter.values())
+    tot_slides = sum(slide_label_counter.values())
+
+    tile_label_freq = []
+    slide_label_freq = []
+
+    for i in range(max(tile_label_counter.keys())):
+        tile_label_freq.append(tot_tiles / tile_label_counter[i])
+
+    for i in range(max(slide_label_counter.keys())):
+        slide_label_freq.append(tot_slides / slide_label_counter[i])
+
+    return tile_label_freq, slide_label_freq

@@ -126,7 +126,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     loader = \
         torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=False,
                                     num_workers=num_workers, pin_memory=True)
-    return loader
+    return loader, dataset
 
 
 

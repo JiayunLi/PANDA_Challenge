@@ -21,6 +21,21 @@ def seed_torch(seed=1029):
     torch.backends.cudnn.deterministic = True
 
 
+def parse_binary_options(cur):
+    if cur.isnumeric():
+        cur = int(cur)
+        if cur == 0 or cur < 0:
+            return False
+        else:
+            return True
+    else:
+        cur = cur.lower()
+        if cur == "t" or cur == "true":
+            return True
+        else:
+            return False
+
+
 def trainval(opts):
     # Generate tile-level labels
     if not os.path.isfile(f"{opts.info_dir}/trainval_tiles.csv"):
@@ -51,7 +66,8 @@ def trainval(opts):
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
-                                                   opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha)
+                                                   opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
+                                                   opts.loss_type, opts.cls_weighted)
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
     device = "cpu" if not opts.cuda else "cuda"
@@ -59,17 +75,17 @@ def trainval(opts):
     for fold in range(opts.start_fold, end_fold):
         print(f"Start train and validation for fold {fold}!")
         # Only support batch size 1 for MIL with variable input size.
-        train_loader = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
-                                                           split="train", phase="train", fold=fold)
-        val_loader = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
-                                                         split="val", phase="val", fold=fold)
+        train_loader, train_data = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
+                                                                      split="train", phase="train", fold=fold)
+        val_loader, val_data = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
+                                                                   split="val", phase="val", fold=fold)
         model, optimizer, scheduler, start_epoch, iters, checkpointer = \
             config_model.config_model_optimizer(opts, ckp, fold, mil_params)
         exp_dir = f"{opts.exp_dir}/{fold}/"
         # Disable model loading for next fold.
         ckp = None
         train_att_mil.trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
-                               checkpointer, train_loader, val_loader, device)
+                               checkpointer, train_loader, train_data, val_loader, device)
     return
 
 
@@ -123,11 +139,16 @@ if __name__ == "__main__":
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
     parser.add_argument('--alpha', default=0.5, type=int, help='weighted factor for tile loss')
+    parser.add_argument('--loss_type', default='ce', type=str,
+                        help="Different types of loss functions; cross entropy, MSE")
+    parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
 
     # Exp
     parser.add_argument('--exp', default='debug', help="Name of current experiment")
 
     args = parser.parse_args()
+    args.cls_weighted = parse_binary_options(args.cls_weighted)
+
     args.exp_dir = f"{args.cache_dir}/{args.exp}/"
     seed_torch(args.manual_seed)
     if not os.path.isdir(args.exp_dir):

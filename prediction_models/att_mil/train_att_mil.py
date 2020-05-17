@@ -1,5 +1,5 @@
 import torch
-from prediction_models.att_mil.utils import trainval_stats
+from prediction_models.att_mil.utils import trainval_stats, model_utils
 from prediction_models.att_mil.mil_models import config_model
 import time
 import sys
@@ -55,10 +55,23 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
 
 
 def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
-             checkpointer, train_loader, val_loader, device):
+             checkpointer, train_loader, train_data, val_loader, device):
     logger = trainval_stats.StatTracker(log_dir=f"{exp_dir}/")
-    slide_criterion = torch.nn.CrossEntropyLoss()
-    tile_criterion = torch.nn.CrossEntropyLoss()
+
+    if trainval_params.loss_type == 'mse':
+        slide_criterion = torch.nn.MSELoss()
+        tile_criterion = torch.nn.MSELoss()
+    elif trainval_params.loss_type == 'ce':
+        if trainval_params.cls_weighted:
+            tile_label_weights, slide_label_weights = \
+                model_utils.compute_class_frequency(train_data.slides_df, train_data.tile_labels, binary_only=False)
+            slide_criterion = torch.nn.CrossEntropyLoss(slide_label_weights)
+            tile_criterion = torch.nn.CrossEntropyLoss(tile_label_weights)
+        else:
+            slide_criterion = torch.nn.CrossEntropyLoss()
+            tile_criterion = torch.nn.CrossEntropyLoss()
+    else:
+        raise NotImplementedError(f"Criterion not implemented {trainval_params.loss_type}")
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:
@@ -69,13 +82,13 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
 
         iters = train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
                             trainval_params.alpha, trainval_params.log_every, logger, device)
-        kappa, loss = val(epoch, model, val_loader, slide_criterion, logger, device)
+        kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type, logger, device)
         checkpointer.update(epoch, iters, kappa)
         scheduler.step(loss)
     return
 
 
-def val(epoch, model, val_loader, slide_criterion, logger, device):
+def val(epoch, model, val_loader, slide_criterion, loss_type, logger, device):
     model.eval()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -83,6 +96,7 @@ def val(epoch, model, val_loader, slide_criterion, logger, device):
     time_start = time.time()
     val_iter = iter(val_loader)
     all_labels, all_preds = [], []
+    optimized_rounder = config_model.OptimizedRounder()
     with torch.no_grad():
         for step in range(len(val_loader)):
             tiles, tile_labels, slide_label, tile_names = val_iter.next()
@@ -99,7 +113,13 @@ def val(epoch, model, val_loader, slide_criterion, logger, device):
             all_labels.append(int(slide_label[0]))
             all_preds.append(int(predicted.item()))
         print(f"Validation step {step}/{len(val_loader)}")
-    quadratic_kappa = trainval_stats.compute_kappa(all_preds, all_labels)
+    if loss_type == "mse":
+        optimized_rounder.fit(all_preds, all_labels)
+        coefficients = optimized_rounder.coefficients()
+        all_preds = optimized_rounder.predict(all_preds, coefficients)
+        quadratic_kappa = trainval_stats.compute_kappa(all_preds, all_labels)
+    else:
+        quadratic_kappa = trainval_stats.compute_kappa(all_preds, all_labels)
     val_stats.update_dict({"kappa": quadratic_kappa}, 1)
 
     cur_stats = val_stats.pretty_string()
