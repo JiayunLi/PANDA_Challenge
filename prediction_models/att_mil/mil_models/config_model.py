@@ -2,7 +2,7 @@ from prediction_models.att_mil.mil_models import mil
 from prediction_models.att_mil.utils import model_utils, checkpoint_utils
 import torch
 import torch.optim as optim
-from numpy import np
+import numpy as np
 import scipy as sp
 from functools import partial
 from sklearn.metrics import cohen_kappa_score
