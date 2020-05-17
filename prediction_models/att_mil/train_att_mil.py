@@ -20,6 +20,7 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
 
         if loss_type == "mse":
             slide_label = slide_label.float()
+            tile_labels = tile_labels.float()
         slide_label = slide_label.to(device)
         tiles = tiles.to(device)
         slide_probs, tiles_probs, _ = model(tiles)
@@ -30,7 +31,10 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
         if len(tile_labels) > 0 and tile_labels[0][0] != -1:
             tile_labels = torch.squeeze(torch.stack(tile_labels), dim=1)
             tile_labels = tile_labels.to(device)
-            tile_loss = tile_criterion(tiles_probs, tile_labels)
+            if loss_type == "mse":
+                tile_loss = tile_criterion(tiles_probs.view(-1), tile_labels)
+            else:
+                tile_loss = tile_criterion(tiles_probs, tile_labels)
             loss = alpha * tile_loss + (1 - alpha) * slide_loss
         else:
             loss = slide_loss
