@@ -20,7 +20,7 @@ class BiopsySlides(data.Dataset):
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
 
-        self.slide_tiles_map = json.load(open(f"{dataset_params.info_dir}/slides_tiles_mapping.json", "r"))
+        self.slide_tiles_map = json.load(open(f"{dataset_params.data_dir}/slides_tiles_mapping.json", "r"))
         self.tiles_df = pd.read_csv(f"{dataset_params.info_dir}/trainval_tiles.csv", index_col='tile_name')
 
     def __len__(self):
