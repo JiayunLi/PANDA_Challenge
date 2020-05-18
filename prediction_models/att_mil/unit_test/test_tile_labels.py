@@ -33,7 +33,7 @@ def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
             errors.append({'slide_name': slide_name})
         counter += 1
 
-    print(f"{counter} slides in slides_mapping file")
+    print(f"{counter} slides in slides_mapping file, {len(trainval)} slides in train file")
 
     log_df = pd.DataFrame(columns=["slide_name"], data=errors)
     log_df.to_csv(f"{log_dir}/slides_not_in_mapping.csv")
