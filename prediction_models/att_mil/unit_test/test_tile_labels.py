@@ -41,6 +41,28 @@ def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
     log_df.to_csv(f"{log_dir}/slides_not_in_mapping.csv")
 
 
+def check_cv_file(info_dir, n_folds, slide_tiles_mapping_file):
+    slide_tiles_mapping = json.load(open(slide_tiles_mapping_file, "r"))
+    print(f"Total number of slides {len(set(slide_tiles_mapping.keys()))}")
+    splits = ['train', 'val']
+    for fold in range(n_folds):
+        for split in splits:
+            df = pd.read_csv(f"{info_dir}/{split}_{fold}.csv")
+            print(f"{len(df)} slides in {split}")
+            has = 0
+            for i in range(len(df)):
+                data = df.iloc[i]
+                slide_name = str(data.image_id)
+                if slide_name == "3790f55cad63053e956fb73027179707":
+                    has += 1
+                    continue
+                if slide_name not in slide_tiles_mapping:
+                    print(slide_name)
+                else:
+                    has += 1
+            assert has == len(df), f"Some slides not in slide tile mapping file for fold {fold}, split {split}"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
 
@@ -49,6 +71,8 @@ if __name__ == "__main__":
     parser.add_argument('--info_dir', type=str, default='./info/')
     parser.add_argument('--log_dir', type=str, default='./cache/logs/')
 
+    parser.add_argument('--n_folds', type=int, default=5)
     args = parser.parse_args()
     check_slide_mapping_file(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.data_dir}/train.csv",
                              args.log_dir)
+    check_cv_file(f"{args.info_dir}", args.n_folds, f"{args.data_dir}/slides_tiles_mapping.json")

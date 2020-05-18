@@ -29,7 +29,7 @@ class BiopsySlides(data.Dataset):
     def __getitem__(self, ix):
         slide_info = self.slides_df.iloc[ix]
         slide_label = int(slide_info.isup_grade)
-        slide_name = slide_info.image_id
+        slide_name = str(slide_info.image_id)
         tile_names = self.slide_tiles_map[slide_name]
         start_time = time.time()
         # If tile-level is not usable, labels will be -1 (e.g., Karo slides with different PG and SG)
