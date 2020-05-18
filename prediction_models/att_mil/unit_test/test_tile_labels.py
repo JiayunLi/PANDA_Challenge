@@ -14,10 +14,6 @@ def check_tile_name_exist(slide_tiles_mapping_file, trainval_tiles_file):
                 print(f"{tile_name} not Found!!!")
 
 
-def check_tile_label(trainval_tiles_file, trainval_file):
-    trainval_tiles = pd.read_excel(trainval_tiles_file, index_col='tile_name')
-
-
 def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
     trainval = pd.read_csv(trainval_file)
     slide_tiles_mapping = json.load(open(slide_tiles_mapping_file, "r"))
@@ -36,9 +32,9 @@ def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
             slides.add(slide_name)
 
     print(f"{len(slides)} slides in slides_mapping file, {len(trainval)} slides in train file")
-
-    log_df = pd.DataFrame(columns=["slide_name"], data=errors)
-    log_df.to_csv(f"{log_dir}/slides_not_in_mapping.csv")
+    if len(errors) > 0:
+        log_df = pd.DataFrame(columns=["slide_name"], data=errors)
+        log_df.to_csv(f"{log_dir}/slides_not_in_mapping.csv")
 
 
 def check_cv_file(info_dir, n_folds, slide_tiles_mapping_file):
@@ -63,6 +59,34 @@ def check_cv_file(info_dir, n_folds, slide_tiles_mapping_file):
             assert has == len(df), f"Some slides not in slide tile mapping file for fold {fold}, split {split}"
 
 
+def check_tile_labels(slide_tiles_mapping_file, tile_labels_mapping_file, log_dir):
+    slide_tiles_mapping = json.load(open(slide_tiles_mapping_file, "r"))
+    tile_labels_mapping = json.load(open(tile_labels_mapping_file, "r"))
+    errors = []
+    for slide_name, _ in slide_tiles_mapping.items():
+        if slide_name not in tile_labels_mapping:
+            print(slide_name)
+            errors.append({"slide_name": slide_name})
+    if len(errors) > 0:
+        log_df = pd.DataFrame(columns=["slide_name"], data=errors)
+        log_df.to_csv(f"{log_dir}/slides_not_in_tiles_labels.csv")
+
+
+def check_lmdb_data(data_dir, slide_tiles_mapping_file, log_dir):
+    tiles_env = lmdb.open(f"{data_dir}/tiles/", max_readers=3, readonly=True,
+                          lock=False, readahead=False, meminit=False)
+    slide_tiles_mapping = json.load(open(slide_tiles_mapping_file, "r"))
+    errors = []
+    with tiles_env.begin(write=False) as txn:
+        for slide_name, _ in slide_tiles_mapping.items():
+            if txn.get(slide_name.encode()) is None:
+                print(slide_name)
+                errors.append({"slide_name": slide_name})
+    if len(errors) > 0:
+        log_df = pd.DataFrame(columns=["slide_name"], data=errors)
+        log_df.to_csv(f"{log_dir}/slides_not_in_tiles_lmdb.csv")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
 
@@ -73,6 +97,15 @@ if __name__ == "__main__":
 
     parser.add_argument('--n_folds', type=int, default=5)
     args = parser.parse_args()
+    print("Check slide mapping file")
     check_slide_mapping_file(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.data_dir}/train.csv",
                              args.log_dir)
+    print("Check cross validation file")
     check_cv_file(f"{args.info_dir}", args.n_folds, f"{args.data_dir}/slides_tiles_mapping.json")
+    print("Check tile labels file")
+    check_tile_labels(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.info_dir}/tiles_labels.json",
+                      args.log_dir)
+    print("Check lmdb tiles")
+    check_lmdb_data(args.data_dir, f"{args.data_dir}/slides_tiles_mapping.json", args.log_dir)
+
+    # tiles_labels.json
