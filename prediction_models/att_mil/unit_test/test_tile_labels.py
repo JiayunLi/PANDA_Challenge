@@ -45,5 +45,5 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', type=str, default='./cache/logs/')
 
     args = parser.parse_args()
-    check_slide_mapping_file(f"{args.info_dir}/slides_tiles_mapping.json", f"{args.info_dir}/trainval.csv",
+    check_slide_mapping_file(f"{args.info_dir}/slides_tiles_mapping.json", f"{args.data_dir}/train.csv",
                              args.log_dir)
