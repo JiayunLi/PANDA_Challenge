@@ -41,8 +41,9 @@ if __name__ == "__main__":
 
     # File location
     parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
+    parser.add_argument('--info_dir', type=str, default='./info/')
     parser.add_argument('--log_dir', type=str, default='./cache/logs/')
 
     args = parser.parse_args()
-    check_slide_mapping_file(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.data_dir}/trainval.csv",
+    check_slide_mapping_file(f"{args.info_dir}/slides_tiles_mapping.json", f"{args.info_dir}/trainval.csv",
                              args.log_dir)
