@@ -22,7 +22,7 @@ def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
     trainval = pd.read_csv(trainval_file)
     slide_tiles_mapping_file = json.load(open(slide_tiles_mapping_file, "r"))
     errors = []
-
+    counter = 0
     for i in range(len(trainval)):
         data = trainval.iloc[i]
         slide_name = str(data['image_id'])
@@ -31,6 +31,9 @@ def check_slide_mapping_file(slide_tiles_mapping_file, trainval_file, log_dir):
         if slide_name not in slide_tiles_mapping_file:
             print(slide_name)
             errors.append({'slide_name': slide_name})
+        counter += 1
+
+    print(f"{counter} slides in slides_mapping file")
 
     log_df = pd.DataFrame(columns=["slide_name"], data=errors)
     log_df.to_csv(f"{log_dir}/slides_not_in_mapping.csv")
