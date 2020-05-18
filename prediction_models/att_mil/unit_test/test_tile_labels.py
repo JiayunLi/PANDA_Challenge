@@ -103,7 +103,7 @@ if __name__ == "__main__":
     print("Check cross validation file")
     check_cv_file(f"{args.info_dir}", args.n_folds, f"{args.data_dir}/slides_tiles_mapping.json")
     print("Check tile labels file")
-    check_tile_labels(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.info_dir}/tiles_labels.json",
+    check_tile_labels(f"{args.data_dir}/slides_tiles_mapping.json", f"{args.data_dir}/tiles_labels.json",
                       args.log_dir)
     print("Check lmdb tiles")
     check_lmdb_data(args.data_dir, f"{args.data_dir}/slides_tiles_mapping.json", args.log_dir)
