@@ -1,8 +1,9 @@
 import torchvision.transforms as T
 from PIL import Image
 from prediction_models.att_mil.datasets import test_slides
-from preprocessing.normalization import reinhard_bg
+from prediction_models.att_mil.utils import reinhard_fast as reinhard_bg
 import torch
+import tqdm
 import pandas as pd
 
 
@@ -30,10 +31,11 @@ def test(model, meanstd, test_slides_df, test_params, num_workers, cuda):
     loader = \
         torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False, drop_last=False,
                                     num_workers=num_workers, pin_memory=True)
+    print("Start apply model")
     pred_data = []
     test_iter = iter(loader)
     with torch.no_grad():
-        for step in range(len(loader)):
+        for step in tqdm.tqdm(range(len(loader))):
             tiles, image_id = test_iter.next()
             tiles = torch.squeeze(tiles, dim=0)
             image_id = str(image_id[0])
@@ -44,5 +46,5 @@ def test(model, meanstd, test_slides_df, test_params, num_workers, cuda):
             pred_data.append({"image_id": image_id, "isup_grade": predicted})
 
     pred_df = pd.DataFrame(columns=["image_id", "isup_grade"], data=pred_data)
-    pred_df.to_csv("submission.csv", index=False)
+    return pred_df
 

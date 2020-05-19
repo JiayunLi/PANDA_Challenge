@@ -101,3 +101,5 @@ venv.bak/
 /site
 /.idea
 info/
+cache/
+.DS_Store
