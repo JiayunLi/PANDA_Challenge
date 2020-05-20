@@ -54,7 +54,9 @@ def write_batch_data(env_tiles, env_label_masks, env_locations, batch_data, tot_
             slide_name = data['slide_name']
             txn_tiles.put(str(slide_name).encode(), (data['norm_tiles'].astype(np.uint8)).tobytes())
             txn_locs.put(str(slide_name).encode(), data['locations'].astype(np.int64).tobytes())
-            if data['label_masks']:
+            if data['label_masks'] is None:
+                tempt = None
+            else:
                 txn_labels.put(str(slide_name).encode(), data['label_masks'].astype(np.uint8).tobytes())
     print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
     return end_counter
