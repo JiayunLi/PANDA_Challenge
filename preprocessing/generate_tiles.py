@@ -189,7 +189,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
 
 def main(opts):
     train_df = pd.read_csv(opts.train_slide_file, index_col="image_id")
-    slides_list = list(train_df.index)
+    slides_list = list(train_df.index) ## image_id
     save_tiled_lmdb(slides_list, opts.num_ps, opts.write_batch_size, opts.out_dir, opts.slides_dir, opts.masks_dir,
                     opts.tile_size, opts.overlap, opts.ts_thres, opts.dw_rate, opts.verbose)
 
