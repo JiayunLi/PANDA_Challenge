@@ -9,7 +9,7 @@ from sklearn.metrics import cohen_kappa_score
 
 MAX_LR_RATE = 5
 
-def config_model_optimizer(opts, ckp, fold, mil_params):
+def config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch):
 
     checkpointer = checkpoint_utils.Checkpointer(fold, opts.exp_dir)
     if ckp:
@@ -41,7 +41,10 @@ def config_model_optimizer(opts, ckp, fold, mil_params):
     if mil_params['schedule_type'] == "plateau":
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     elif mil_params['schedule_type'] == "cycle":
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.01, steps_per_epoch=len(data_loader), epochs=10)
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, steps_per_epoch=steps_per_epoch,
+                                                        epochs=opts.epochs)
+    else:
+        raise NotImplementedError(f"{mil_params['schedule_type']} Not implemented!!")
 
     if ckp:
         optimizer.load_state_dict(ckp['optimizer'])

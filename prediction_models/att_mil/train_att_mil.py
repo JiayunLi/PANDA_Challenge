@@ -97,7 +97,12 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                             trainval_params.alpha, trainval_params.loss_type, trainval_params.log_every, logger, device)
         kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type, logger, device)
         checkpointer.update(epoch, iters, kappa)
-        scheduler.step(loss)
+        if trainval_params.schedule_type == "plateau":
+            scheduler.step(loss)
+        elif trainval_params.schedule_type == "cycle":
+            scheduler.step()
+        else:
+            raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
     return
 
 

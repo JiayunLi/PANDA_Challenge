@@ -69,7 +69,7 @@ def trainval(opts):
                                               opts.loss_type, opts.schedule_type)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
-                                                   opts.loss_type, opts.cls_weighted)
+                                                   opts.loss_type, opts.cls_weighted, opts.schedule_type)
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
     device = "cpu" if not opts.cuda else "cuda"
@@ -82,7 +82,7 @@ def trainval(opts):
         val_loader, val_data = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
                                                                    split="val", phase="val", fold=fold)
         model, optimizer, scheduler, start_epoch, iters, checkpointer = \
-            config_model.config_model_optimizer(opts, ckp, fold, mil_params)
+            config_model.config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
         exp_dir = f"{opts.exp_dir}/{fold}/"
         # Disable model loading for next fold.
         ckp = None
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='adam', help="Optimizer used for model training")
     parser.add_argument('--schedule_type', default='plateau', help="options: plateau | cycle")
-    parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
     parser.add_argument('--alpha', default=0.5, type=int, help='weighted factor for tile loss')
