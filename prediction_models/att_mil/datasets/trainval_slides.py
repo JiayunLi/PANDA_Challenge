@@ -83,6 +83,7 @@ class BiopsySlidesChunk(data.Dataset):
         if len(tiles) > MAX_N_TILES:
             sample_ids = random.sample(range(0, len(tiles)), MAX_N_TILES)
             tiles = tiles[sample_ids, :, :, :]
-            labels = labels[sample_ids]
+            print(sample_ids)
+            labels = [labels[idx] for idx in sample_ids]
         print(len(tiles))
         return tiles, labels, slide_label, list(range(len(tiles)))
