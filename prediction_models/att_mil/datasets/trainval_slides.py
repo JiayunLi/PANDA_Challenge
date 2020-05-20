@@ -3,7 +3,7 @@ import torch.utils.data as data
 import time
 import pandas as pd
 import json
-import torch
+import random
 import numpy as np
 from prediction_models.att_mil.utils import file_utils
 
@@ -81,7 +81,7 @@ class BiopsySlidesChunk(data.Dataset):
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
         if len(tiles) > MAX_N_TILES:
-            sample_ids = torch.randperm(len(tiles))[:MAX_N_TILES]
+            sample_ids = random.sample(range(0, len(tiles)), MAX_N_TILES)
             tiles = tiles[sample_ids, :, :, :]
             labels = labels[sample_ids]
         print(len(tiles))
