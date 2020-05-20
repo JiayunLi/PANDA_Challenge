@@ -9,6 +9,9 @@ from prediction_models.att_mil.mil_models import config_model
 from prediction_models.att_mil import train_att_mil
 from prediction_models.att_mil.utils import config_params, checkpoint_utils
 
+"""
+python -m prediction_models.att_mil.main_trainval --data_dir /data/slides_encode_128/ --info_dir ./info/ --cuda --num_workers 4 --im_size 128 --cache_dir ./cache/  --feat_ft 5 --loss_type se --arch resnext50_32x4d  --alpha 0 --exp resNeXt_50_slideonly
+"""
 
 def seed_torch(seed=1029):
     random.seed(seed)

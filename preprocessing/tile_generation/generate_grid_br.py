@@ -12,7 +12,7 @@ class TileGeneratorGridBr(TileGeneratorGrid):
     def __init__(self, slides_dir, slide_name, masks_dir=None, check_ihc=False, verbose=False):
         super().__init__(slides_dir, slide_name, masks_dir, check_ihc, verbose)
 
-    def get_tile_locations(self, tile_size, overlap, thres, dw_rate, top_n):
+    def get_tile_locations(self, tile_size, overlap, thres, dw_rate, top_n=None):
         """
         Generate tile locations from the grid
 
@@ -80,11 +80,13 @@ class TileGeneratorGridBr(TileGeneratorGrid):
         norm_tiles = []
         locations = np.zeros((len(top_tile_brs), 2), dtype=np.int64)
         idx = 0
+        level = self.get_read_level(dw_rate)
         for tile_id, _ in top_tile_brs:
             cur_loc = location_tracker[tile_id]
             # generate normalized tiles
             _, norm_tile, _ = \
-                self.extract_tile([int(cur_loc[0]), int(cur_loc[1])], tile_size, dw_rate, normalizer=normalizer,
+                self.extract_tile([int(cur_loc[0]), int(cur_loc[1])],
+                                  tile_size, level, normalizer=normalizer,
                                   return_image=True)
 
             norm_tiles.append(norm_tile)

@@ -93,8 +93,8 @@ class TileGeneratorGrid(TileGeneratorABC):
         return len(self.slide.level_downsamples) - 1
 
     # Generate tiles based on location at highest magnification
-    def extract_tile(self, location, tile_size, dw_rate, normalizer=None, return_image=False):
-        level = self.get_read_level(dw_rate)
+    def extract_tile(self, location, tile_size, level, normalizer=None, return_image=False):
+        # (x, y) tuple giving the top left pixel in the level 0 reference frame
         orig_tile = self.slide.read_region((location[0], location[1]), level, (tile_size, tile_size))
         orig_tile = np.asarray(orig_tile.convert('RGB'))
         _, tissue_mask = prep_utils.generate_binary_mask(orig_tile)
@@ -125,11 +125,12 @@ class TileGeneratorGrid(TileGeneratorABC):
         else:
             return np.asarray(orig_tile), np.asarray(norm_tile), tissue_mask
 
-    def extract_label_mask(self, location, tile_size, dw_rate=1):
-        tile_mask = self.label_mask.read_region((location[0], location[1]), 0, (tile_size, tile_size))
+    def extract_label_mask(self, location, tile_size, level):
+        tile_mask = self.label_mask.read_region((location[0], location[1]), level, (tile_size, tile_size))
         tile_mask = np.asarray(tile_mask.split()[0])
-        if dw_rate > 1:
-            tile_mask = tile_mask[::dw_rate, ::dw_rate]
+        if tile_mask.shape[0] > tile_size:
+            rate = tile_mask.shape[0] // tile_size
+            tile_mask = tile_mask[::rate, ::rate]
         return tile_mask
 
     def extract_all_tiles(self, tile_size, overlap, thres, dw_rate, normalizer=None, w_label_mask=True):
@@ -154,12 +155,14 @@ class TileGeneratorGrid(TileGeneratorABC):
             label_masks = np.zeros((counter, tile_size, tile_size), dtype=np.uint8)
         else:
             label_masks = None
+        level = self.get_read_level(dw_rate)
 
         for tile_id in range(counter):
             cur_loc = location_tracker[tile_id]
             # generate normalized tiles
             orig_tile, norm_tile, tissue_mask = \
-                self.extract_tile([int(cur_loc[0]), int(cur_loc[1])], tile_size, dw_rate, normalizer=normalizer)
+                self.extract_tile([int(cur_loc[0]), int(cur_loc[1])],
+                                  tile_size, level, normalizer=normalizer)
 
             orig_tiles[tile_id, :, :, :] = orig_tile
             norm_tiles[tile_id, :, :, :] = norm_tile
@@ -168,11 +171,12 @@ class TileGeneratorGrid(TileGeneratorABC):
             locations[tile_id, 1] = int(cur_loc[1])
 
             if get_label_mask:
-                label_mask = self.extract_label_mask([int(cur_loc[0]), int(cur_loc[1])], tile_size, dw_rate)
+                label_mask = self.extract_label_mask(
+                    [int(cur_loc[0]), int(cur_loc[1])], tile_size, level)
                 label_masks[tile_id, :, :] = label_mask.astype(np.uint8)
         if self.verbose:
-            print("Time to generate %d tiles from %s slide: %.2f" % (
-            counter, str(self.slide_id), time.time() - start_time))
+            print("Time to generate %d tiles from %s slide: %.2f"
+                  % (counter, str(self.slide_id), time.time() - start_time))
         return orig_tiles, norm_tiles, locations, tissue_masks, label_masks
 
     def extract_top_tiles(self, param, param1, param2, param3, param4, normalizer):
