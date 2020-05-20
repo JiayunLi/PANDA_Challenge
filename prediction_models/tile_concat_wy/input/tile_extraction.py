@@ -91,8 +91,8 @@ if __name__ == "__main__":
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     OUT_TRAIN = '../input/panda-32x256x256-tiles-data/train.zip'  ## output image folder
     OUT_MASKS = '../input/panda-32x256x256-tiles-data/masks.zip'  ## ouput label folder
-    utils.check_folder_exists(OUT_TRAIN)
-    utils.check_folder_exists(OUT_MASKS)
+    utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
+    utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
     N = 64 ## how many patches selected from each slide
     names = [name[:-10] for name in os.listdir(MASKS)]
