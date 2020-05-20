@@ -1,6 +1,6 @@
 from __future__ import division
-from build_dataset.normalization.normalizer_abc import FancyNormalizer
-from build_dataset.normalization.utils import misc_utils as mu
+from preprocessing.normalization.normalizer_abc import FancyNormalizer
+from preprocessing.normalization.utils import misc_utils as mu
 import spams
 
 

@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+from skimage import color
 
 
 class ReinhardNormalizer:
@@ -17,19 +17,22 @@ class ReinhardNormalizer:
             self.target_concentrations = values
         return
 
-    def transform(self, I, mask):
+    def transform(self, tile, whitemask):
         """
         Transform an image
-        :param I:
-        :param mask
+        :param tile:
+        :param whitemask
         :return:
         """
 
-        whitemask = ~mask
-        imagelab = cv2.cvtColor(I, cv2.COLOR_RGB2LAB)
+        whitemask = ~whitemask
+        imagelab = color.rgb2lab(tile)
 
-        imageL, imageA, imageB = cv2.split(imagelab)
-        # mask is valid when true
+        imageL, imageA, imageB = np.split(np.asarray(imagelab), 3, axis=2)
+        imageL = np.squeeze((imageL * 255.0) / 100.0, axis=2)
+        imageA = np.squeeze(imageA + 128.0, axis=2)
+        imageB = np.squeeze(imageB + 128.0, axis=2)
+
         imageLM = np.ma.MaskedArray(imageL, whitemask)
         imageAM = np.ma.MaskedArray(imageA, whitemask)
         imageBM = np.ma.MaskedArray(imageB, whitemask)
@@ -49,43 +52,17 @@ class ReinhardNormalizer:
         imageA = (imageA - imageAMean) / imageASTD * self.target_concentrations[1][1] + self.target_concentrations[1][0]
         imageB = (imageB - imageBMean) / imageBSTD * self.target_concentrations[2][1] + self.target_concentrations[2][0]
 
-        imagelab = cv2.merge((imageL, imageA, imageB))
-        imagelab = np.clip(imagelab, 0, 255)
-        imagelab = imagelab.astype(np.uint8)
+        # imagelab = cv.merge((imageL, imageA, imageB))
+        imageL = np.clip((imageL * 100.0) / (255.0), 0, 100)
+        imageA = np.clip(imageA - 128.0, -127, 127)
+        imageB = np.clip(imageB - 128.0, -127, 127)
+        imagelab = np.stack([imageL, imageA, imageB], axis=2)
 
         # Back to RGB space
-        returnimage = cv2.cvtColor(imagelab, cv2.COLOR_LAB2RGB)
+        returnimage = np.clip(color.lab2rgb(imagelab) * 255.0, 0, 255)
         # Replace white pixels
-        returnimage[whitemask] = I[whitemask]
-
+        returnimage[whitemask] = tile[whitemask]
         return returnimage
-
-    def get_mean_std(self, I, mask):
-        """
-        Get mean and standard deviation of each channel
-        :param I: uint8
-        :param mask: mask
-        :return:
-        """
-
-        whitemask = ~mask
-        imagelab = cv2.cvtColor(I, cv2.COLOR_RGB2LAB)
-        imageL, imageA, imageB = cv2.split(imagelab)
-        # mask is valid when true
-        imageLM = np.ma.MaskedArray(imageL, whitemask)
-        imageAM = np.ma.MaskedArray(imageA, whitemask)
-        imageBM = np.ma.MaskedArray(imageB, whitemask)
-
-        epsilon = 1e-11
-        imageLMean = imageLM.mean()
-        imageLSTD = imageLM.std() + epsilon
-        imageAMean = imageAM.mean()
-        imageASTD = imageAM.std() + epsilon
-
-        imageBMean = imageBM.mean()
-        imageBSTD = imageBM.std() + epsilon
-
-        return [imageLMean, imageAMean, imageBMean], [imageLSTD, imageASTD, imageBSTD]
 
     def get_norm_method(self):
         return "reinhard"

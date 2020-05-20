@@ -40,7 +40,7 @@ class TileGeneratorGrid(TileGeneratorABC):
         return self.ihc
 
     # Generate tiles from grid, with optional overlap
-    def get_tile_locations(self, tile_size, overlap, thres):
+    def get_tile_locations(self, tile_size, overlap, thres, dw_rate, top_n=None):
         """
         Generate tile locations from the grid
 
@@ -51,6 +51,8 @@ class TileGeneratorGrid(TileGeneratorABC):
                  location_tracker: tile locations
         """
         # how much overlap on the required magnification
+        # Relative rate change: image of size 128 downsample 4 times -> of size 512 at original scanning magnification.
+        tile_size = dw_rate * tile_size
         overlap = int(overlap * tile_size)
         # Get the lowest rate for ROI
         lowest_rate = int(self.slide.level_downsamples[self.slide.level_count - 1])
@@ -82,9 +84,18 @@ class TileGeneratorGrid(TileGeneratorABC):
             print("Generate %d tiles in the grid" % counter)
         return counter, location_tracker
 
+    def get_read_level(self, dw_rate):
+        for level, rate in enumerate(self.slide.level_downsamples):
+            if int(rate) == dw_rate:
+                return level
+            if int(rate) > dw_rate:
+                return level - 1
+        return len(self.slide.level_downsamples) - 1
+
     # Generate tiles based on location at highest magnification
-    def extract_tile(self, location, tile_size, dw_rate=1, normalizer=None):
-        orig_tile = self.slide.read_region((location[0], location[1]), 0, (tile_size, tile_size))
+    def extract_tile(self, location, tile_size, dw_rate, normalizer=None, return_image=False):
+        level = self.get_read_level(dw_rate)
+        orig_tile = self.slide.read_region((location[0], location[1]), level, (tile_size, tile_size))
         orig_tile = np.asarray(orig_tile.convert('RGB'))
         _, tissue_mask = prep_utils.generate_binary_mask(orig_tile)
 
@@ -93,22 +104,26 @@ class TileGeneratorGrid(TileGeneratorABC):
             norm_method = normalizer.get_norm_method()
             try:
                 if norm_method == 'reinhard':
-                    norm_tile = normalizer.transform(orig_tile.astype(np.uint8), tissue_mask)
+                    norm_tile = \
+                        Image.fromarray(normalizer.transform(orig_tile.astype(np.uint8), tissue_mask).astype(np.uint8))
                 else:
-                    norm_tile = normalizer.transform(orig_tile)
+                    norm_tile = Image.fromarray(normalizer.transform(orig_tile).astype(np.uint8))
             except:
                 print(self.slide_id)
                 orig_tile = Image.fromarray(orig_tile)
                 norm_tile = orig_tile
                 orig_tile.save("error_tile.png")
 
-        if dw_rate > 1:
-            orig_tile = Image.fromarray(orig_tile.astype(np.uint8)).resize((tile_size // dw_rate, tile_size // dw_rate),
+        if norm_tile.size[0] > tile_size:
+            orig_tile = Image.fromarray(orig_tile.astype(np.uint8)).resize((tile_size, tile_size),
                                                                            Image.ANTIALIAS)
-            norm_tile = Image.fromarray(norm_tile.astype(np.uint8)).resize((tile_size // dw_rate, tile_size // dw_rate),
-                                                                           Image.ANTIALIAS)
-            tissue_mask = tissue_mask[::dw_rate, ::dw_rate]
-        return np.asarray(orig_tile), np.asarray(norm_tile), tissue_mask
+            norm_tile = norm_tile.resize((tile_size, tile_size),Image.ANTIALIAS)
+            rate = norm_tile.size[0] // tile_size
+            tissue_mask = tissue_mask[::rate, ::rate]
+        if return_image:
+            return orig_tile, norm_tile, tissue_mask
+        else:
+            return np.asarray(orig_tile), np.asarray(norm_tile), tissue_mask
 
     def extract_label_mask(self, location, tile_size, dw_rate=1):
         tile_mask = self.label_mask.read_region((location[0], location[1]), 0, (tile_size, tile_size))
@@ -128,15 +143,15 @@ class TileGeneratorGrid(TileGeneratorABC):
         :return:
         """
         start_time = time.time()
-        extracted_tile_size = int(float(tile_size) / float(dw_rate))
-        counter, location_tracker = self.get_tile_locations(tile_size, overlap, thres)
-        norm_tiles = np.zeros((counter, extracted_tile_size, extracted_tile_size, 3), dtype=np.uint8)
-        orig_tiles = np.zeros((counter, extracted_tile_size, extracted_tile_size, 3), dtype=np.uint8)
-        tissue_masks = np.zeros((counter, extracted_tile_size, extracted_tile_size), dtype=np.uint8)
+
+        counter, location_tracker = self.get_tile_locations(tile_size, overlap, thres, dw_rate)
+        norm_tiles = np.zeros((counter, tile_size, tile_size, 3), dtype=np.uint8)
+        orig_tiles = np.zeros((counter, tile_size, tile_size, 3), dtype=np.uint8)
+        tissue_masks = np.zeros((counter, tile_size, tile_size), dtype=np.uint8)
         locations = np.zeros((counter, 2), dtype=np.int64)
         get_label_mask = self.label_mask and w_label_mask
         if get_label_mask:
-            label_masks = np.zeros((counter, extracted_tile_size, extracted_tile_size), dtype=np.uint8)
+            label_masks = np.zeros((counter, tile_size, tile_size), dtype=np.uint8)
         else:
             label_masks = None
 
@@ -159,6 +174,9 @@ class TileGeneratorGrid(TileGeneratorABC):
             print("Time to generate %d tiles from %s slide: %.2f" % (
             counter, str(self.slide_id), time.time() - start_time))
         return orig_tiles, norm_tiles, locations, tissue_masks, label_masks
+
+    def extract_top_tiles(self, param, param1, param2, param3, param4, normalizer):
+        pass
 
 
 

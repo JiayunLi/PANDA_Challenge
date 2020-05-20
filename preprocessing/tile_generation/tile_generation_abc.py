@@ -9,17 +9,17 @@ class TileGeneratorABC(ABC):
         """
 
     @abstractmethod
-    def get_tile_locations(self, tile_size, overlap, thres):
+    def get_tile_locations(self, tile_size, overlap, thres, dw_rate):
         """Return locations for tiles that can be extracted from the slide
         """
 
     @abstractmethod
-    def extract_tile(self, location, tile_size, dw_rate=1, normalizer=None):
+    def extract_tile(self, location, tile_size, dw_rate, normalizer=None):
         """Given the location and normalizer,
         return the original and normalized tile at desired magnification"""
 
     @abstractmethod
-    def extract_label_mask(self, location, tile_size, dw_rate=1):
+    def extract_label_mask(self, location, tile_size, dw_rate):
         """
         :param location:
         :param tile_size:

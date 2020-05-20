@@ -103,3 +103,4 @@ venv.bak/
 info/
 cache/
 .DS_Store
+*.zip
