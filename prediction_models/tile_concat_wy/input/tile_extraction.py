@@ -1,5 +1,5 @@
 import os, sys
-sys.path.append(../)
+sys.path.append('../')
 import cv2
 import skimage.io
 from tqdm import tqdm
