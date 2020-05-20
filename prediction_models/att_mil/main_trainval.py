@@ -56,7 +56,8 @@ def trainval(opts):
                                                   opts.num_workers)
     else:
         ckp = None
-
+    if not hasattr(opts, "schedule_type"):
+        opts.schedule_type = "plateau"
     # Write options
     print(opts)
     pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
@@ -64,7 +65,8 @@ def trainval(opts):
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                  opts.data_dir, opts.cache_dir, opts.exp_dir, opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
-                                              opts.bag_hidden, opts.slide_classes, opts.tile_classes, opts.loss_type)
+                                              opts.bag_hidden, opts.slide_classes, opts.tile_classes,
+                                              opts.loss_type, opts.schedule_type)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted)
@@ -135,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='adam', help="Optimizer used for model training")
+    parser.add_argument('--schedule_type', default='plateau', help="options: plateau | cycle")
     parser.add_argument('--epochs', default=100, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')

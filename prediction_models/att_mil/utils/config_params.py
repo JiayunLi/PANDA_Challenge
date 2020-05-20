@@ -44,7 +44,7 @@ class TrainvalParams:
 
 
 def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidden_dim, slide_n_classes,
-                   tile_classes, loss_type):
+                   tile_classes, loss_type, schedule_type):
     if loss_type == "mse":
         slide_n_classes = 1
         tile_classes = 1
@@ -55,5 +55,6 @@ def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidd
         "bag_hidden_dim": bag_hidden_dim,
         "n_slide_classes": slide_n_classes,
         "n_tile_classes": tile_classes,
+        "schedule_type": schedule_type
     }
     return params

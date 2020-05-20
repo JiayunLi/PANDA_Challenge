@@ -3,8 +3,11 @@ import torch.utils.data as data
 import time
 import pandas as pd
 import json
+import torch
 import numpy as np
 from prediction_models.att_mil.utils import file_utils
+
+MAX_N_TILES = 20
 
 
 class BiopsySlides(data.Dataset):
@@ -42,6 +45,11 @@ class BiopsySlides(data.Dataset):
                                                           tiles_df=self.tiles_df, env=self.tiles_env,
                                                           data_type=np.uint8)
         print(f"Total time to load one slide {time.time() - start_time}")
+        if len(tiles) > MAX_N_TILES:
+            sample_ids = torch.randperm(len(tiles))[:MAX_N_TILES]
+            tiles = tiles[sample_ids, :, :, :]
+            labels = labels[sample_ids]
+        print(len(tiles))
         return tiles, labels, slide_label, tile_names
 
 
