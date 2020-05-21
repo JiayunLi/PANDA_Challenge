@@ -64,7 +64,8 @@ def trainval(opts):
     if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json"):
         from prediction_models.att_mil.utils import dataset_utils
         masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
-        dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=512,
+
+        dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=opts.im_size,
                                                trainval_file=f"{opts.data_dir}/train.csv", binary_label=False)
 
     # Generate cross validation file
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument('--manual_seed', type=int, default=6)
 
     # Input data options
-    parser.add_argument('--im_size', default=512, type=int, help="original extracted tile size")
+    parser.add_argument('--im_size', default=128, type=int, help="original extracted tile size")
     parser.add_argument('--input_size', default=128, type=int, help="input size to the network")
     parser.add_argument('--num_channels', default=3, type=int, help="# of input image channels")
 
