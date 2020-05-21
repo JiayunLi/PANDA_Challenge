@@ -81,13 +81,14 @@ class BiopsySlidesChunk(data.Dataset):
         slide_info = self.slides_df.iloc[ix]
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
-        labels = self.tile_labels[slide_name]
+
         tiles = \
             file_utils.read_lmdb_slide_tensor(self.tiles_env,
                                               (-1, self.params.im_size, self.params.im_size, self.params.num_channels),
                                               slide_name, self.transform,
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
+        labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
         if len(tiles) > MAX_N_TILES:
             sample_ids = random.sample(range(0, len(tiles)), MAX_N_TILES)
             tiles = tiles[sample_ids, :, :, :]
