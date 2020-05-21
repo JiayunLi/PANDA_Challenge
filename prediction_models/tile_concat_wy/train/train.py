@@ -77,7 +77,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Resnext50_reg_medreso"
     nfolds = 4
-    bs = 12
+    bs = 16
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
