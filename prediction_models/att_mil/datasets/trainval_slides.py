@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import json
 import random
+import torch
 import numpy as np
 from prediction_models.att_mil.utils import file_utils
 
@@ -93,4 +94,34 @@ class BiopsySlidesChunk(data.Dataset):
             sample_ids = random.sample(range(0, len(tiles)), MAX_N_TILES)
             tiles = tiles[sample_ids, :, :, :]
             labels = [labels[idx] for idx in sample_ids]
+        return tiles, labels, slide_label, list(range(len(tiles)))
+
+
+FIX_N_TILES=20
+
+
+class BiopsySlidesBatch(BiopsySlidesChunk):
+    def __init__(self, dataset_params, transform, fold, split, phase='train'):
+        super().__init__(dataset_params, transform, fold, split, phase)
+
+    def __getitem__(self, ix):
+        slide_info = self.slides_df.iloc[ix]
+        slide_label = int(slide_info.isup_grade)
+        slide_name = slide_info.image_id
+
+        tiles = \
+            file_utils.read_lmdb_slide_tensor(self.tiles_env,
+                                              (-1, self.params.im_size, self.params.im_size, self.params.num_channels),
+                                              slide_name, self.transform,
+                                              out_im_size=(self.params.num_channels, self.params.input_size,
+                                                           self.params.input_size), data_type=np.uint8)
+        labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * FIX_N_TILES
+        if len(tiles) < FIX_N_TILES:
+            pad_len = FIX_N_TILES - len(tiles)
+            tiles = torch.cat([tiles, torch.FloatTensor(pad_len, 3, self.params.input_size, self.params.input_size),
+                               ], dim=0)
+            labels += [0] * pad_len
+        elif len(tiles) > FIX_N_TILES:
+            tiles = tiles[:FIX_N_TILES, :, :, :]
+            labels = labels[:FIX_N_TILES]
         return tiles, labels, slide_label, list(range(len(tiles)))

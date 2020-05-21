@@ -52,6 +52,7 @@ def trainval(opts):
     opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
     opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
+    opts.aug_mil = parse_binary_options(opts.aug_mil)
     if opts.tile_binary:
         opts.tile_classes = 1
     if opts.slide_binary:
@@ -81,7 +82,7 @@ def trainval(opts):
                                                  opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
-                                              opts.loss_type, opts.schedule_type)
+                                              opts.loss_type, opts.schedule_type, opts.aug_mil)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted, opts.schedule_type,
@@ -93,12 +94,18 @@ def trainval(opts):
     for fold in range(opts.start_fold, end_fold):
         print(f"Start train and validation for fold {fold}!")
         # Only support batch size 1 for MIL with variable input size.
-        train_loader, train_data = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
-                                                                      split="train", phase="train", fold=fold)
-        val_loader, val_data = config_dataset.build_dataset_loader(1, opts.num_workers, dataset_params,
-                                                                   split="val", phase="val", fold=fold)
-        model, optimizer, scheduler, start_epoch, iters, checkpointer = \
-            config_model.config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
+        train_loader, train_data = \
+            config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
+                                                split="train", phase="train", fold=fold, aug_mil=opts.aug_mil)
+        val_loader, val_data = \
+            config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
+                                                split="val", phase="val", fold=fold, aug_mil=opts.aug_mil)
+        if opts.aug_mil:
+            model, optimizer, scheduler, start_epoch, iters, checkpointer = \
+                config_model.config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
+        else:
+            model, optimizer, scheduler, start_epoch, iters, checkpointer = \
+                config_model.config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
         exp_dir = f"{opts.exp_dir}/{fold}/"
         # Disable model loading for next fold.
         ckp = None
@@ -138,7 +145,7 @@ if __name__ == "__main__":
 
     # Model options
     # Encoder
-    parser.add_argument('--arch', default='vgg11_bn', help="Network architecture for the tile encoder")
+    parser.add_argument('--arch', default='resnext50_32x4d_ssl', help="Network architecture for the tile encoder")
     parser.add_argument('--tile_classes', default=4, type=int, help="Number of prediction classes for tiles")
     parser.add_argument('--pretrained', default=True)
     # MIL
@@ -147,14 +154,15 @@ if __name__ == "__main__":
     parser.add_argument('--bag_embed', default=512, type=int, help="Bag embedding size")
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
+    parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate for classifier')
     parser.add_argument('--feat_lr', default=0.0005, type=float, help='learning rate for features')
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
-    parser.add_argument('--optim', default='adam', help="Optimizer used for model training")
-    parser.add_argument('--schedule_type', default='plateau', help="options: plateau | cycle")
+    parser.add_argument('--optim', default='aug_adam', help="Optimizer used for model training")
+    parser.add_argument('--schedule_type', default='cycle', help="options: plateau | cycle")
     parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
@@ -166,6 +174,7 @@ if __name__ == "__main__":
                                                                       'classification')
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
+    parser.add_argument('--batch_size', default=32, type=int, help='Use batch training')
 
     # Exp
     parser.add_argument('--exp', default='debug', help="Name of current experiment")

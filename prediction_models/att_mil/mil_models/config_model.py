@@ -5,9 +5,51 @@ import torch.optim as optim
 import numpy as np
 import scipy as sp
 from functools import partial
+from prediction_models.tile_concat_wy.utiles import radam
 from sklearn.metrics import cohen_kappa_score
 
 MAX_LR_RATE = 5
+
+
+def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
+    checkpointer = checkpoint_utils.Checkpointer(fold, opts.exp_dir)
+    if ckp:
+        model = checkpointer.restore_model_from_checkpoint(ckp)
+        epoch, step = checkpointer.get_current_position()
+    else:
+        # Start a new model
+        epoch, step = 0, 0
+        base_encoder, feature_dim = mil.config_encoder(opts.input_size, mil_params["n_tile_classes"],
+                                                       opts.arch, opts.pretrained)
+        if mil_params['aug_mil']:
+            model = mil.AttMILBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+        else:
+            model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+
+    if opts.optim == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=opts.lr, momentum=0.9)
+    elif opts.optim == "aug_adam":
+        optimizer = radam.Over9000(model.parameters(), lr=opts.lr)
+    else:
+        optimizer = optim.Adam(model.parameters(), lr=opts.lr, weight_decay=opts.wd, betas=(0.9, 0.999))
+    if mil_params['schedule_type'] == "plateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+    elif mil_params['schedule_type'] == "cycle":
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, steps_per_epoch=steps_per_epoch,
+                                                        epochs=opts.epochs, pct_start=0.3, div_factor=100)
+    else:
+        raise NotImplementedError(f"{mil_params['schedule_type']} Not implemented!!")
+
+    if ckp:
+        optimizer.load_state_dict(ckp['optimizer'])
+        scheduler.load_state_dict(ckp['scheduler'])
+    else:
+        checkpointer.track_new_model(model, optimizer, scheduler)
+    device = "cpu" if not opts.cuda else "cuda"
+    model.to(device)
+
+    return model, optimizer, scheduler, epoch, step, checkpointer
+
 
 def config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch):
 
@@ -58,6 +100,7 @@ def config_model_optimizer(opts, ckp, fold, mil_params, steps_per_epoch):
 
 
 def config_optimizer(model, epoch, arch, optim_type, feat_lr, feat_ft, lr, wd, train_blocks):
+
     train_params = \
         model_utils.set_train_parameters_tile_encoder(model, arch, optim_type, feat_lr,
                                                       lr, wd, train_layer=train_blocks,

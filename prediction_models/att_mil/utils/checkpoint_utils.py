@@ -53,9 +53,12 @@ class Checkpointer:
         base_encoder, feature_dim = \
             mil.config_encoder(hp['input_size'], hp['mil_params']['n_tile_classes'],
                                hp['encoder_arch'], False)
-
-        self.model = mil.AttMIL(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
-                                feature_dim, hp['mil_params'])
+        if hp['mil_params'].aug_mil:
+            self.model = mil.AttMILBatch(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
+                                        feature_dim, hp['mil_params'])
+        else:
+            self.model = mil.AttMIL(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
+                                    feature_dim, hp['mil_params'])
         self.model.load_state_dict(params)
 
         print(f"***** CHECKPOINTING *****\n Model restored from checkpoint.\n MIL training epoch {self.epoch}\n")

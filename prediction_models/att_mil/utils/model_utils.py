@@ -1,6 +1,7 @@
 import torch.nn as nn
 from prediction_models.att_mil.utils import init_helper
-import json
+from prediction_models.tile_concat_wy.utiles import mishactivation
+from fastai.vision import *
 from collections import defaultdict
 
 
@@ -69,15 +70,18 @@ def config_vgg_layers(model, arch, input_size, num_classes):
 
 
 def config_resnet_layers(model, arch, num_classes):
+    feature_dim = list(model.children())[-1].in_features
     model.features = nn.Sequential(model.conv1, model.bn1, model.relu, model.maxpool,
                                    model.layer1, model.layer2, model.layer3, model.layer4)
-    model.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+    if "ssl" in arch:
+        model.classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
+                                         mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
+                                         nn.Linear(512, num_classes))
+    else:
+        model.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
                                      nn.Linear(in_features=model.fc.in_features, out_features=num_classes, bias=True))
     _initialize_helper(model.classifier)
-    if arch == "resnet18" or arch == "resnet34":
-        return 512
-    else:
-        return 2048
+    return feature_dim
 
 
 def set_train_layers_vgg(model, train_layers):

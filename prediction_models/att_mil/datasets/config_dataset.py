@@ -61,7 +61,7 @@ def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=200):
     return meanstd
 
 
-def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None):
+def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, aug_mil=False):
     """
 
     :param batch_size:
@@ -118,8 +118,10 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
         transform = T.Compose(normalize)
     else:
         raise NotImplementedError(f"Not implemented for split {split}")
-
-    dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
+    if aug_mil:
+        dataset = trainval_slides.BiopsySlidesBatch(dataset_params, transform, fold, split, phase=phase)
+    else:
+        dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
 
     shuffle = True if phase == "train" else False
 

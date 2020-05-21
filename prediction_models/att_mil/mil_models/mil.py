@@ -2,12 +2,17 @@ import torchvision.models as models
 from prediction_models.att_mil.utils import model_utils, init_helper
 import torch.nn as nn
 import torch
+from fastai.vision import *
+from prediction_models.tile_concat_wy.utiles import mishactivation
 import torch.nn.functional as F
 
 
 def config_encoder(input_size, num_classes, arch, pretrained):
-    encoder_name = models.__dict__[arch]
-    encoder = encoder_name(pretrained=pretrained)
+    if "ssl" in arch:
+        encoder = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
+    else:
+        encoder_name = models.__dict__[arch]
+        encoder = encoder_name(pretrained=pretrained)
     # Convert encoders to have a features and a classifier
     # The classifier should be reinitialized to accommodate different number of classes
     if arch.startswith("vgg"):
@@ -99,6 +104,62 @@ class AttMIL(nn.Module):
         probs = (self.slide_classifier(weighted_feats.view(-1).contiguous())).unsqueeze(dim=0)
 
         return probs, tiles_probs, atts
+
+
+class AttMILBatch(AttMIL):
+    def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
+        super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
+        self.softmax = nn.Softmax(dim=1)
+
+    def _config_instance_embed(self):
+        instance_embed = nn.Sequential(
+            AdaptiveConcatPool2d(), Flatten())
+        return instance_embed
+
+    def _config_attention(self):
+        embed_bag_feat = nn.Sequential(
+            nn.Linear(2 * self.feature_dim,
+                      self.mil_params['bag_embed_dim']),
+            mishactivation.Mish(), nn.Dropout(0.5)
+        )
+
+        attention = nn.Sequential(
+            nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_hidden_dim']),
+            nn.Tanh(),
+            nn.Dropout(),
+            nn.Linear(self.mil_params["bag_hidden_dim"], 1)
+        )
+        return embed_bag_feat, attention
+
+    def _config_classifier(self):
+        classifier = nn.Sequential(
+            nn.Linear(self.mil_params["bag_embed_dim"],
+                      self.mil_params["n_slide_classes"]),
+        )
+        return classifier
+
+    def forward(self, tiles, phase="regular"):
+        batch_size, n_tiles, channel, h, w = tiles.shape
+        feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+        if phase == "regular":
+            tiles_probs = self.tile_encoder.classifier(feats)
+        else:
+            tiles_probs = None
+
+        feats = self.instance_embed(feats)
+        feats = self.embed_bag_feat(feats)
+
+        if phase == 'extract_feats':
+            return feats.view(batch_size, n_tiles, -1)
+
+        raw_atts = self.attention(feats)
+        atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
+        weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
+        weighted_feats = torch.squeeze(weighted_feats, dim=1)
+        probs = (self.slide_classifier(weighted_feats))
+
+        return probs, tiles_probs, atts
+
 
 
 
