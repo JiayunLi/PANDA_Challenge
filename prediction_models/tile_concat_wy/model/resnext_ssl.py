@@ -61,6 +61,8 @@ class Model_Infer(nn.Module):
         x_out: [bs, N]
         """
         bs, n, c, h, w = x.shape
+        print(x.shape)
+        exit()
         x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         x = self.enc(x)  # x: bs*N x C x 4 x 4
         _, c, h, w = x.shape
