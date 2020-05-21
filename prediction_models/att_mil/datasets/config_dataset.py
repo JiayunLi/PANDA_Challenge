@@ -31,7 +31,7 @@ def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=200):
         T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),
         T.ToTensor()
     ])
-    dataset = trainval_slides.BiopsySlides(dataset_params, cur_transform, fold, split="train", phase="meanstd")
+    dataset = trainval_slides.BiopsySlidesChunk(dataset_params, cur_transform, fold, split="train", phase="meanstd")
     train_mean = torch.zeros(3)
     train_std = torch.zeros(3)
     loader = \
