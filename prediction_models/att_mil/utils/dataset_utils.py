@@ -89,7 +89,7 @@ def generate_tile_label_json(lmdb_dir, tile_info_dir, mask_size, trainval_file, 
             slide_pg, slide_sg = parse_gleason(slide_info.gleason_score)
             slide_tiles_labels[slide_name] = []
             for i in range(len(all_masks)):
-                tile_mask = np.squeeze(all_masks[i, :, :], axis=0)
+                tile_mask = all_masks[i, :, :]
                 if slide_info.data_provider == "radboud":
                     tile_label = rad_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
                 else:
