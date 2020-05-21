@@ -66,7 +66,7 @@ class BiopsySlidesChunk(data.Dataset):
 
     def _config_data(self):
         slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
-        empty_df = pd.read_csv(f"{self.params.data_dir}/empty.csv")
+        empty_df = pd.read_csv(f"{self.params.data_dir}/empty_slides.csv")
         print(f"Original number of samples: {len(slides_df)}")
         for i in range(len(empty_df)):
             slide_id = empty_df.iloc['slide_name']
