@@ -75,9 +75,9 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_reg_medreso_20patch"
+    fname = "Resnext50_reg_medreso_12patch"
     nfolds = 4
-    bs = 8
+    bs =32
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm, N = 20)
+    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm, N = 12)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
 
