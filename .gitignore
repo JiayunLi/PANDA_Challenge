@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+cache/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -100,7 +101,20 @@ venv.bak/
 # mkdocs documentation
 /site
 /.idea
+
+# input data
+*.tiff
+*.zip
+*.csv
+*.png
+*.pth
+
+# weights and tensorboard
+runs/
+weights/
+# Others
+
 info/
 cache/
 .DS_Store
-*.zip
+
