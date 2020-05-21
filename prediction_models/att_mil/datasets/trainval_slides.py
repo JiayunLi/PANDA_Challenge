@@ -46,25 +46,33 @@ class BiopsySlides(data.Dataset):
                                                           data_type=np.uint8)
         print(f"Total time to load one slide {time.time() - start_time}")
         if len(tiles) > MAX_N_TILES:
-            sample_ids = torch.randperm(len(tiles))[:MAX_N_TILES]
+            sample_ids = random.sample(range(0, len(tiles)), MAX_N_TILES)
             tiles = tiles[sample_ids, :, :, :]
-            labels = labels[sample_ids]
+            labels = [labels[idx] for idx in sample_ids]
         print(len(tiles))
         return tiles, labels, slide_label, tile_names
 
 
 class BiopsySlidesChunk(data.Dataset):
     def __init__(self, dataset_params, transform, fold, split, phase='train'):
-        self.slides_df = pd.read_csv(f"{dataset_params.info_dir}/{split}_{fold}.csv")
-        print(f"Original number of samples: {len(self.slides_df)}")
-        self.slides_df.drop(self.slides_df[self.slides_df['image_id'] == '3790f55cad63053e956fb73027179707'].index,
-                            inplace=True)
         self.transform = transform
+        self.split, self.fold = split, fold
         self.params = dataset_params
         self.phase = phase
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
         self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
+        self.slides_df = self._config_data()
+
+    def _config_data(self):
+        slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+        empty_df = pd.read_csv(f"{self.params.data_dir}/empty.csv")
+        print(f"Original number of samples: {len(slides_df)}")
+        for i in range(len(empty_df)):
+            slide_id = empty_df.iloc['slide_name']
+            slides_df.drop(slides_df[slides_df['image_id'] == slide_id].index, inplace=True)
+        print(f"Number of samples after dropping out: {len(slides_df)}")
+        return slides_df
 
     def __len__(self):
         return len(self.slides_df)
