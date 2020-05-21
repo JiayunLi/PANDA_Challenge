@@ -16,12 +16,12 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
     time_start = time.time()
     train_iter = iter(train_loader)
     for step in range(len(train_loader)):
-        tiles, tile_labels, slide_label, tile_names = train_iter.next()
+        tiles, _, slide_label, _ = train_iter.next()
         if loss_type == "mse":
             slide_label = slide_label.float()
         slide_label = slide_label.to(device)
         tiles = tiles.to(device)
-        slide_probs, tiles_probs, _ = model(tiles)
+        slide_probs, _, _ = model(tiles)
         if loss_type == "mse":
             slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
         else:

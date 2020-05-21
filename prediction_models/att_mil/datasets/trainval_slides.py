@@ -118,7 +118,7 @@ class BiopsySlidesBatch(BiopsySlidesChunk):
         labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * FIX_N_TILES
         if len(tiles) < FIX_N_TILES:
             pad_len = FIX_N_TILES - len(tiles)
-            tiles = torch.cat([tiles, torch.FloatTensor(pad_len, 3, self.params.input_size, self.params.input_size),
+            tiles = torch.cat([tiles, torch.zeros(pad_len, 3, self.params.input_size, self.params.input_size),
                                ], dim=0)
             labels += [0] * pad_len
         elif len(tiles) > FIX_N_TILES:
