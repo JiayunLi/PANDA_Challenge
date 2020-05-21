@@ -40,39 +40,51 @@ def parse_binary_options(cur):
 
 
 def trainval(opts):
-    # Generate tile-level labels
-    if not os.path.isfile(f"{opts.info_dir}/trainval_tiles.csv"):
-        from prediction_models.att_mil.utils import dataset_utils
-        masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
-        dataset_utils.generate_tile_label(masks_ldmb_dir, opts.info_dir, mask_size=512,
-                                          trainval_file=f"{opts.data_dir}/train.csv", binary_label=False)
-
-    # Generate cross validation file
-    if not os.path.isfile(f"{opts.info_dir}/train_{opts.start_fold}.csv"):
-        from prediction_models.att_mil.utils import dataset_utils
-        dataset_utils.generate_cv_split(
-            f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
     # Use restarted model options and load model checkpoint
     if opts.ckp_dir:
-
         opts, ckp = checkpoint_utils.load_options(opts.ckp_dir, opts.load_best, opts.data_dir, opts.cuda,
                                                   opts.num_workers)
     else:
         ckp = None
     if not hasattr(opts, "schedule_type"):
         opts.schedule_type = "plateau"
+
+    opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
+    opts.cls_weighted = parse_binary_options(opts.cls_weighted)
+    opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
+    if opts.tile_binary:
+        opts.tile_classes = 1
+    if opts.slide_binary:
+        opts.slide_classes = 1
+
     # Write options
     print(opts)
+
+    # Generate tile-level labels
+    if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json"):
+        from prediction_models.att_mil.utils import dataset_utils
+        masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
+        dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=512,
+                                               trainval_file=f"{opts.data_dir}/train.csv", binary_label=False)
+
+    # Generate cross validation file
+    if not os.path.isfile(f"{opts.info_dir}/train_{opts.start_fold}.csv"):
+        from prediction_models.att_mil.utils import dataset_utils
+        dataset_utils.generate_cv_split(
+            f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
+
     pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
 
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
-                                                 opts.data_dir, opts.cache_dir, opts.exp_dir, opts.num_channels)
+                                                 opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
+                                                 opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
                                               opts.loss_type, opts.schedule_type)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
-                                                   opts.loss_type, opts.cls_weighted, opts.schedule_type)
+                                                   opts.loss_type, opts.cls_weighted, opts.schedule_type,
+                                                   opts.slide_binary, opts.tile_binary)
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
     device = "cpu" if not opts.cuda else "cuda"
@@ -101,6 +113,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
     parser.add_argument('--info_dir', type=str, default='.../info/', help='Directory for cross validation information')
     parser.add_argument('--cache_dir', type=str, default='.../cache/', help='Directory to save trained models')
+    parser.add_argument('--dataset', type=str, default="dw_sample_16", help='Different types of processed tiles')
 
     # Cross validation
     parser.add_argument('--start_fold', type=int, default=0)
@@ -135,8 +148,8 @@ if __name__ == "__main__":
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
 
     # Training options
-    parser.add_argument('--lr', default=0.0001, type=float, help='learning rate for classifier')
-    parser.add_argument('--feat_lr', default=0.00005, type=float, help='learning rate for features')
+    parser.add_argument('--lr', default=0.001, type=float, help='learning rate for classifier')
+    parser.add_argument('--feat_lr', default=0.0005, type=float, help='learning rate for features')
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='adam', help="Optimizer used for model training")
@@ -148,15 +161,19 @@ if __name__ == "__main__":
     parser.add_argument('--loss_type', default='ce', type=str,
                         help="Different types of loss functions; cross entropy, MSE")
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
+    parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
+                                                                      'classification')
+    parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
+                                                                      'classification')
 
     # Exp
     parser.add_argument('--exp', default='debug', help="Name of current experiment")
 
     args = parser.parse_args()
-    args.cls_weighted = parse_binary_options(args.cls_weighted)
 
     args.exp_dir = f"{args.cache_dir}/{args.exp}/"
     seed_torch(args.manual_seed)
     if not os.path.isdir(args.exp_dir):
         os.mkdir(args.exp_dir)
+
     trainval(args)

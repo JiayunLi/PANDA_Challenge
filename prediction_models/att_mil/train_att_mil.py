@@ -63,28 +63,43 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
     return iteras
 
 
+def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
+    if use_binary:
+        if cls_weighted:
+            tile_criterion = torch.nn.BCEWithLogitsLoss(label_weights)
+        else:
+            tile_criterion = torch.nn.BCEWithLogitsLoss()
+        return tile_criterion
+
+    if loss_type == 'mse':
+        tile_criterion = torch.nn.MSELoss()
+    elif loss_type == 'ce':
+        if cls_weighted:
+            tile_criterion = torch.nn.CrossEntropyLoss(label_weights)
+        else:
+            tile_criterion = torch.nn.CrossEntropyLoss()
+    else:
+        raise NotImplementedError(f"Criterion not implemented {loss_type}")
+    return tile_criterion
+
+
 def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
              checkpointer, train_loader, train_data, val_loader, device):
     logger = trainval_stats.StatTracker(log_dir=f"{exp_dir}/")
-
-    if trainval_params.loss_type == 'mse':
-        slide_criterion = torch.nn.MSELoss()
-        tile_criterion = torch.nn.MSELoss()
-    elif trainval_params.loss_type == 'ce':
-        if trainval_params.cls_weighted:
-            tile_label_weights, slide_label_weights = \
-                model_utils.compute_class_frequency(train_data.slides_df, train_data.tile_labels, binary_only=False)
-            print(tile_label_weights)
-            print(slide_label_weights)
-            tile_label_weights = torch.FloatTensor(tile_label_weights).to(device)
-            slide_label_weights = torch.FloatTensor(slide_label_weights).to(device)
-            slide_criterion = torch.nn.CrossEntropyLoss(slide_label_weights)
-            tile_criterion = torch.nn.CrossEntropyLoss(tile_label_weights)
-        else:
-            slide_criterion = torch.nn.CrossEntropyLoss()
-            tile_criterion = torch.nn.CrossEntropyLoss()
+    if trainval_params.loss_type == "ce" and trainval_params.cls_weighted:
+        tile_label_weights, slide_label_weights = \
+            model_utils.compute_class_frequency(train_data.slides_df, train_data.tile_labels, binary_only=False)
+        print(tile_label_weights)
+        print(slide_label_weights)
+        tile_label_weights = torch.FloatTensor(tile_label_weights).to(device)
+        slide_label_weights = torch.FloatTensor(slide_label_weights).to(device)
     else:
-        raise NotImplementedError(f"Criterion not implemented {trainval_params.loss_type}")
+        tile_label_weights, slide_label_weights = None, None
+    slide_criterion = configure_criterion(trainval_params.loss_type, trainval_params.cls_weighted,
+                                          trainval_params.slide_binary, slide_label_weights)
+    tile_criterion = configure_criterion(trainval_params.loss_type, trainval_params.cls_weighted,
+                                         trainval_params.tile_binary, tile_label_weights)
+
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:
@@ -95,7 +110,8 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
 
         iters = train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
                             trainval_params.alpha, trainval_params.loss_type, trainval_params.log_every, logger, device)
-        kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type, logger, device)
+        kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type,
+                          logger, trainval_params.slide_binary, device)
         checkpointer.update(epoch, iters, kappa)
         if trainval_params.schedule_type == "plateau":
             scheduler.step(loss)
@@ -106,7 +122,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
     return
 
 
-def val(epoch, model, val_loader, slide_criterion, loss_type, logger, device):
+def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
     model.eval()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -132,12 +148,17 @@ def val(epoch, model, val_loader, slide_criterion, loss_type, logger, device):
                 'slide_loss': slide_loss.item(),
             }
             val_stats.update_dict(cur_dict, n=1)
-            if loss_type == "mse":
-                predicted = slide_probs.to(device)
+            if slide_binary:
+                normalized_prob = torch.nn.Sigmoid(slide_probs)
+                predicted = int(torch.ge(normalized_prob, 0.5).cpu().item())
+            elif loss_type == "mse":
+                predicted = int(slide_probs.cpu().item())
             else:
                 _, predicted = torch.max(slide_probs.data, 1)
+                predicted = int(predicted.cpu().item())
             all_labels.append(int(slide_label[0]))
-            all_preds.append(int(predicted.item()))
+            all_preds.append(predicted)
+
         print(f"Validation step {step}/{len(val_loader)}")
     if loss_type == "mse":
         optimized_rounder.fit(all_preds, all_labels)

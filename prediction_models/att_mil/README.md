@@ -1,2 +1,2 @@
 ### Start docker image
- nvidia-docker run -it --rm --ipc=host -e NVIDIA_VISIBLE_DEVICES=7 --shm-size 4G -v /raid/jiayunli/projects/PANDA_Challenge/:/PANDA_Challenge -v /raid/jiayunli/data/PANDA_challenge/dw_sampled_128/:/data nvcr.io/uclacid/cid/py36-pytorch12-jiayun:latest
+ nvidia-docker run -it --rm --ipc=host -e NVIDIA_VISIBLE_DEVICES=7 --shm-size 4G -v /raid/jiayunli/projects/PANDA_Challenge/:/PANDA_Challenge -v /raid/jiayunli/data/PANDA_challenge/dw_sampled_128/:/data panda-jiayun

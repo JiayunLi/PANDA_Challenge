@@ -4,13 +4,14 @@ import numpy as np
 
 
 class DatasetParams:
-    def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, num_channels=3):
+    def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, num_channels=3):
         self.im_size = im_size
         self.input_size = input_size
         self.num_channels = num_channels
         self.info_dir = info_dir
         self.data_dir = data_dir
         self.cache_dir = cache_dir
+        self.dataset = dataset
         self.exp_dir = exp_dir
 
 
@@ -29,7 +30,7 @@ class DatasetTest:
 
 class TrainvalParams:
     def __init__(self, lr, feat_lr, wd, train_blocks, optim, tot_epochs, feat_ft, log_every, alpha, loss_type,
-                 cls_weighted, schedule_type):
+                 cls_weighted, schedule_type, slide_binary, tile_binary):
         self.lr = lr
         self.feat_lr = feat_lr
         self.wd = wd
@@ -42,6 +43,8 @@ class TrainvalParams:
         self.loss_type = loss_type
         self.cls_weighted = cls_weighted
         self.schedule_type = schedule_type
+        self.slide_binary = slide_binary
+        self.tile_binary = tile_binary
 
 
 def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidden_dim, slide_n_classes,

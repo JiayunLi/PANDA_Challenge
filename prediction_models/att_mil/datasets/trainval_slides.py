@@ -64,7 +64,7 @@ class BiopsySlidesChunk(data.Dataset):
         self.phase = phase
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
-        self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tiles_labels.json", "r"))
+        self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
 
     def __len__(self):
         return len(self.slides_df)

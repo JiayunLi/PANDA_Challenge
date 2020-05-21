@@ -40,7 +40,6 @@ def test(model, meanstd, test_slides_df, test_params, num_workers, cuda):
             tiles, image_id = test_iter.next()
             tiles = torch.squeeze(tiles, dim=0)
             image_id = str(image_id[0])
-            print(tiles.size())
             tiles = tiles.to(device)
             slide_probs, _, _ = model(tiles)
             _, predicted = torch.max(slide_probs.data, 1)
