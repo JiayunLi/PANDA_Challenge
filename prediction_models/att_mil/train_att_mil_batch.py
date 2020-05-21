@@ -111,7 +111,7 @@ def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_bina
                 normalized_probs = torch.nn.Sigmoid(slide_probs)
                 predicted = torch.ge(normalized_probs, 0.5).cpu().numpy()
             elif loss_type == "mse":
-                predicted = slide_probs.cpu().item().round()
+                predicted = np.squeeze(slide_probs.cpu().round().numpy()[:], axis=1)
             else:
                 _, predicted = torch.max(slide_probs.data, 1)
                 predicted = predicted.cpu().numpy()
