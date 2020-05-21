@@ -69,7 +69,7 @@ class BiopsySlidesChunk(data.Dataset):
         empty_df = pd.read_csv(f"{self.params.data_dir}/empty_slides.csv")
         print(f"Original number of samples: {len(slides_df)}")
         for i in range(len(empty_df)):
-            slide_id = empty_df.iloc['slide_name']
+            slide_id = empty_df.iloc[i]['slide_name']
             slides_df.drop(slides_df[slides_df['image_id'] == slide_id].index, inplace=True)
         print(f"Number of samples after dropping out: {len(slides_df)}")
         return slides_df
