@@ -201,7 +201,7 @@ if __name__ == "__main__":
     nfolds = 5
     bs = 4
     csv_file = './panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
-    image_dir = './panda-16x128x128-tiles-data/train/'
+    image_dir = './panda-32x256x256-tiles-data/train/'
     ## image statistics
     mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
     std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
