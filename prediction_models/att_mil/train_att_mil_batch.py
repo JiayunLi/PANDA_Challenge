@@ -26,17 +26,17 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
             slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
         else:
             slide_loss = slide_criterion(slide_probs, slide_label)
-        if len(tile_labels) > 0 and tile_labels[0][0] != -1:
-            tile_labels = torch.stack(tile_labels).view(-1)
-            if loss_type == "mse":
-                tile_labels = tile_labels.float().to(device)
-                tile_loss = tile_criterion(tiles_probs.view(-1), tile_labels)
-            else:
-                tile_labels = tile_labels.to(device)
-                tile_loss = tile_criterion(tiles_probs, tile_labels)
-            loss = alpha * tile_loss + (1 - alpha) * slide_loss
-        else:
-            loss = slide_loss
+        # if len(tile_labels) > 0 and tile_labels[0][0] != -1:
+        #     tile_labels = torch.stack(tile_labels).view(-1)
+        #     if loss_type == "mse":
+        #         tile_labels = tile_labels.float().to(device)
+        #         # tile_loss = tile_criterion(tiles_probs.view(-1), tile_labels)
+        #     else:
+        #         tile_labels = tile_labels.to(device)
+        #         # tile_loss = tile_criterion(tiles_probs, tile_labels)
+        #     loss = alpha * tile_loss + (1 - alpha) * slide_loss
+        # else:
+        loss = slide_loss
         gc.collect()
         # backpropagate and take a step
         optimizer.zero_grad()
@@ -46,8 +46,8 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
             'slide_loss': slide_loss.item(),
             'tot_loss': loss.item(),
         }
-        if len(tile_labels) > 0 and tile_labels[0] != -1:
-            cur_dict['tile_loss'] = tile_loss.item()
+        # if len(tile_labels) > 0 and tile_labels[0] != -1:
+        #     cur_dict['tile_loss'] = tile_loss.item()
         fast_stats.update_dict(cur_dict, n=1)
         iteras += 1
         if step % log_every == 0 and step != 0:
