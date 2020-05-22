@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 ## general package
 import torch
 import torch.nn as nn
-from torchvision.models.segmentation.segmentation import deeplabv3_resnet50, deeplabv3_resnet101
+from utiles.torchvisonSegmentation import deeplabv3_resnet50, deeplabv3_resnet101
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.models.segmentation.fcn import FCNHead
 from fastai.vision import *
