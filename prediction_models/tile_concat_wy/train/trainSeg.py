@@ -71,7 +71,6 @@ class Train(object):
         val_label = torch.cat(val_label)
         # val_preds = torch.cat(val_preds, 0).round()
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
-        exit()
         self.scheduler.step()
         return np.mean(train_loss), np.mean(val_loss), kappa
 
@@ -84,7 +83,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    center = "karolinska" ## radboud or karolinska
+    center = "radboud" ## radboud or karolinska
     fname = "Deeplabv3_12patch_" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
