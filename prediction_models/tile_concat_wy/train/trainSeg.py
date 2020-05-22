@@ -84,7 +84,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    center = "radboud"
+    center = "karolinska" ## radboud or karolinska
     fname = "Deeplabv3_12patch_" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
