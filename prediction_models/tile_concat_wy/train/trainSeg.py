@@ -85,7 +85,7 @@ def save_checkpoint(state, is_best, fname):
 
 if __name__ == "__main__":
     center = "radboud"
-    fname = "Resnext50_Seg_12patch_" + center
+    fname = "Deeplabv3_12patch_" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
     bs = 8
