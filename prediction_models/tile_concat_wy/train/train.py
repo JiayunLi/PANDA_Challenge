@@ -77,7 +77,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Resnext50_reg_medreso_12patch"
     nfolds = 4
-    bs = 16
+    bs = 12
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
@@ -104,7 +104,8 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in trange(nfolds, desc='fold'):
+    # for fold in trange(nfolds - 1, nfolds, desc='fold'):
+    for fold in range(nfolds - 1, nfolds):
         trainloader, valloader = crossValData(fold)
         model = Model(n = 1).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
