@@ -8,13 +8,13 @@ warnings.filterwarnings("ignore")
 ## general package
 import torch
 import torch.nn as nn
-from utiles.torchvisonSegmentation import deeplabv3_resnet50, deeplabv3_resnet101
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.models.segmentation.fcn import FCNHead
 from fastai.vision import *
 ## custom package
 from utiles.mishactivation import *
 from utiles.hubconf import *
+from utiles.torchvisionSegmentation import deeplabv3_resnet50, deeplabv3_resnet101
 
 
 class Model(nn.Module):
