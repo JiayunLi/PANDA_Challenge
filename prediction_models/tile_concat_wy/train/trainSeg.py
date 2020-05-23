@@ -83,20 +83,20 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    center = "karolinska" ## radboud or karolinska
+    center = "radboud" ## radboud or karolinska
     fname = "Deeplabv3Res50_12patch_" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
-    bs = 4
-    epochs = 30
+    bs = 6
+    epochs = 15
     csv_file = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
     mask_dir = '../input/panda-32x256x256-tiles-data/masks/'
     ## image statistics
-    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    # mean = torch.tensor([0.5, 0.5, 0.5])
-    # std = torch.tensor([0.5, 0.5, 0.5])
+    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    mean = torch.tensor([0.5, 0.5, 0.5])
+    std = torch.tensor([0.5, 0.5, 0.5])
     ## dataset, can fetch data by dataset[idx]
     dataset = PandaPatchDatasetSeg(csv_file, image_dir, mask_dir, [mean, std], N = 12)
     ## dataloader
