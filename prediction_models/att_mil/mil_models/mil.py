@@ -138,7 +138,6 @@ class AttMILBatch(AttMIL):
         print(self.mil_params['mil_in_feat_size'])
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-        print(feats.size())
 
         if phase == "regular":
             tiles_probs = self.tile_encoder.classifier(feats)
@@ -146,11 +145,9 @@ class AttMILBatch(AttMIL):
             tiles_probs = None
 
         feats = self.instance_embed(feats).view(feats.size(0), -1)
-        print(feats.size())
 
         feats = self.embed_bag_feat(feats)
-        print(feats.size())
-
+     
         if phase == 'extract_feats':
             return feats.view(batch_size, n_tiles, -1)
 
