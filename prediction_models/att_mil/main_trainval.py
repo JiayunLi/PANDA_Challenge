@@ -95,10 +95,10 @@ def trainval(opts):
         # Only support batch size 1 for MIL with variable input size.
         train_loader, train_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
-                                                split="train", phase="train", fold=fold, aug_mil=opts.aug_mil)
+                                                split="train", phase="train", fold=fold, mil_arch=args.mil_arch)
         val_loader, val_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
-                                                split="val", phase="val", fold=fold, aug_mil=opts.aug_mil)
+                                                split="val", phase="val", fold=fold, mil_arch=args.mil_arch)
         if opts.mil_arch == "att_batch" or opts.mil_arch == "pool":
             model, optimizer, scheduler, start_epoch, iters, checkpointer = \
                 config_model.config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
