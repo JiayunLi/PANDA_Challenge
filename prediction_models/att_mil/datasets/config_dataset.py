@@ -84,29 +84,29 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     :return:
     """
 
-    if fold is not None:
-        if not os.path.isdir(f"{dataset_params.exp_dir}/{fold}/"):
-            os.mkdir(f"{dataset_params.exp_dir}/{fold}/")
-        meanstd_file = f"{dataset_params.exp_dir}/{fold}/meanstd.pkl"
-    else:
-        meanstd_file = f"{dataset_params.exp_dir}/meanstd.pkl"
-
-    if not os.path.isfile(meanstd_file):
-        other_exp_dirs = glob.glob(f"{dataset_params.cache_dir}/*/")
-        has_computed = False
-        for other_dir in other_exp_dirs:
-            exp_name = other_dir.split("/")[-2]
-            if exp_name == "debug":
-                continue
-            if os.path.isdir(f"{other_dir}/{fold}/") and os.path.isfile(f"{other_dir}/{fold}/meanstd.pkl"):
-                copyfile(f"{other_dir}/{fold}/meanstd.pkl", meanstd_file)
-                has_computed = True
-                break
-        if not has_computed:
-            meanstd = compute_meanstd(dataset_params, fold, num_workers)
-            pickle.dump(meanstd, open(meanstd_file, "wb"))
-    meanstd = pickle.load(open(meanstd_file, "rb"))
-
+    # if fold is not None:
+    #     if not os.path.isdir(f"{dataset_params.exp_dir}/{fold}/"):
+    #         os.mkdir(f"{dataset_params.exp_dir}/{fold}/")
+    #     meanstd_file = f"{dataset_params.exp_dir}/{fold}/meanstd.pkl"
+    # else:
+    #     meanstd_file = f"{dataset_params.exp_dir}/meanstd.pkl"
+    #
+    # if not os.path.isfile(meanstd_file):
+    #     other_exp_dirs = glob.glob(f"{dataset_params.cache_dir}/*/")
+    #     has_computed = False
+    #     for other_dir in other_exp_dirs:
+    #         exp_name = other_dir.split("/")[-2]
+    #         if exp_name == "debug":
+    #             continue
+    #         if os.path.isdir(f"{other_dir}/{fold}/") and os.path.isfile(f"{other_dir}/{fold}/meanstd.pkl"):
+    #             copyfile(f"{other_dir}/{fold}/meanstd.pkl", meanstd_file)
+    #             has_computed = True
+    #             break
+    #     if not has_computed:
+    #         meanstd = compute_meanstd(dataset_params, fold, num_workers)
+    #         pickle.dump(meanstd, open(meanstd_file, "wb"))
+    # meanstd = pickle.load(open(meanstd_file, "rb"))
+    meanstd = get_meanstd(dataset_params.dataset)
     # Define different transformations
     normalize = [
         T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),

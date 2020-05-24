@@ -52,7 +52,6 @@ def trainval(opts):
     opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
     opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
-    opts.aug_mil = parse_binary_options(opts.aug_mil)
     if opts.tile_binary:
         opts.tile_classes = 1
     if opts.slide_binary:
