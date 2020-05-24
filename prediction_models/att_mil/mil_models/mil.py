@@ -225,6 +225,7 @@ class PoolMilBatch(nn.Module):
         self.tile_encoder = base_encoder
         self.feature_dim = feature_dim
         self.pretrained = pretrained
+        self.mil_params = mil_params
         self.hp = {"input_size": input_size, "encoder_arch": arch,
                    "feature_dim": feature_dim, "pretrained": pretrained,
                    "mil_params": mil_params, "arch": arch}
