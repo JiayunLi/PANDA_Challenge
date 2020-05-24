@@ -113,7 +113,8 @@ class AttMILBatch(AttMIL):
 
     def _config_classifier(self):
         classifier = nn.Sequential(nn.Linear(self.mil_params["bag_embed_dim"], 512),
-                      Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, self.mil_params["n_slide_classes"]))
+                                   mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
+                                   nn.Linear(512, self.mil_params["n_slide_classes"]))
         return classifier
 
     def forward(self, tiles, phase="regular"):
@@ -203,8 +204,9 @@ class PoolMilBatch(nn.Module):
         self.hp = {"input_size": input_size, "encoder_arch": arch,
                    "feature_dim": feature_dim, "pretrained": pretrained,
                    "mil_params": mil_params, "arch": arch}
-        self.slide_classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
-                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+        self.slide_classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
+                                              mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
+                                              nn.Linear(512, self.mil_params['n_slide_classes']))
 
     def forward(self, tiles, phase="regular"):
         bs, n, c, h, w = tiles.shape
