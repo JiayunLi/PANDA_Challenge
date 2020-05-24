@@ -234,7 +234,7 @@ class PoolMilBatch(nn.Module):
         tiles = tiles.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         tiles = self.tile_encoder.features(tiles)  # x: bs*N x C x 4 x 4
         if phase == "regular":
-            tiles_probs = self.tile_encoder.classifier(feats)
+            tiles_probs = self.tile_encoder.classifier(tiles)
         else:
             tiles_probs = None
         _, c, h, w = tiles.shape
