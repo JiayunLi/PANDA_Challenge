@@ -114,7 +114,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(1, 2):
+    for fold in range(3, 4):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
