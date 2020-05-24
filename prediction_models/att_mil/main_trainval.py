@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--pretrained', default=True)
     # MIL
     parser.add_argument('--mil_f_size', default=4, type=int, help="Feature map size to the MIL part")
-    parser.add_argument('--ins_embed', default=256, type=int, help="Instance embedding size")
+    parser.add_argument('--ins_embed', default=512, type=int, help="Instance embedding size")
     parser.add_argument('--bag_embed', default=512, type=int, help="Bag embedding size")
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")

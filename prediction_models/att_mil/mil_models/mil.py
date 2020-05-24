@@ -106,10 +106,27 @@ class AttMIL(nn.Module):
         return probs, tiles_probs, atts
 
 
-class AttMILBatch(AttMIL):
+class AttMILBatch(mil.AttMIL):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
         self.softmax = nn.Softmax(dim=1)
+
+    def _config_attention(self):
+        embed_bag_feat = nn.Sequential(
+            nn.Linear(self.mil_params["instance_embed_dim"] *
+                      self.mil_params['mil_in_feat_size'] * self.mil_params['mil_in_feat_size'],
+                      self.mil_params['bag_embed_dim']),
+            nn.ReLU(),
+            nn.Dropout(),
+        )
+
+        attention = nn.Sequential(
+            nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_hidden_dim']),
+            nn.Tanh(),
+            nn.Dropout(),
+            nn.Linear(self.mil_params["bag_hidden_dim"], 1)
+        )
+        return embed_bag_feat, attention
 
     def _config_classifier(self):
         classifier = nn.Sequential(nn.Linear(self.mil_params["bag_embed_dim"], 512),
@@ -118,21 +135,28 @@ class AttMILBatch(AttMIL):
         return classifier
 
     def forward(self, tiles, phase="regular"):
+        print(self.mil_params['mil_in_feat_size'])
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+        print(feats.size())
+
         if phase == "regular":
             tiles_probs = self.tile_encoder.classifier(feats)
         else:
             tiles_probs = None
 
-        feats = self.instance_embed(feats)
+        feats = self.instance_embed(feats).view(feats.size(0), -1)
+        print(feats.size())
+
         feats = self.embed_bag_feat(feats)
+        print(feats.size())
 
         if phase == 'extract_feats':
             return feats.view(batch_size, n_tiles, -1)
 
         raw_atts = self.attention(feats)
         atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
+
         weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
         weighted_feats = torch.squeeze(weighted_feats, dim=1)
         probs = (self.slide_classifier(weighted_feats))
@@ -216,7 +240,7 @@ class PoolMilBatch(nn.Module):
 
         # concatenate the output for tiles into a single map
         tiles = tiles.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous().view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
-        out = self.head(tiles)  # x: bs x n
+        out = self.slide_classifier(tiles)  # x: bs x n
         return out
 
 
