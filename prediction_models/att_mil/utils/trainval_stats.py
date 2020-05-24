@@ -80,3 +80,6 @@ class StatTracker:
 def compute_kappa(all_preds, all_labels):
     score = metrics.cohen_kappa_score(all_preds, all_labels, weights='quadratic')
     return score
+
+def compute_auc_ap(all_probs, all_labels):
+    return

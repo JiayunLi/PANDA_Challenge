@@ -111,6 +111,39 @@ class AttMILBatch(AttMIL):
         super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
         self.softmax = nn.Softmax(dim=1)
 
+    def _config_classifier(self):
+        classifier = nn.Sequential(nn.Linear(self.mil_params["bag_embed_dim"], 512),
+                      Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, self.mil_params["n_slide_classes"]))
+        return classifier
+
+    def forward(self, tiles, phase="regular"):
+        batch_size, n_tiles, channel, h, w = tiles.shape
+        feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+        if phase == "regular":
+            tiles_probs = self.tile_encoder.classifier(feats)
+        else:
+            tiles_probs = None
+
+        feats = self.instance_embed(feats)
+        feats = self.embed_bag_feat(feats)
+
+        if phase == 'extract_feats':
+            return feats.view(batch_size, n_tiles, -1)
+
+        raw_atts = self.attention(feats)
+        atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
+        weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
+        weighted_feats = torch.squeeze(weighted_feats, dim=1)
+        probs = (self.slide_classifier(weighted_feats))
+
+        return probs, tiles_probs, atts
+
+
+class AttMILBatchV2(AttMIL):
+    def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
+        super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
+        self.softmax = nn.Softmax(dim=1)
+
     def _config_instance_embed(self):
         instance_embed = nn.Sequential(
             AdaptiveConcatPool2d(), Flatten())
@@ -159,6 +192,30 @@ class AttMILBatch(AttMIL):
         probs = (self.slide_classifier(weighted_feats))
 
         return probs, tiles_probs, atts
+
+
+class PoolMilBatch(nn.Module):
+    def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
+        super(PoolMilBatch, self).__init__()
+        self.tile_encoder = base_encoder
+        self.feature_dim = feature_dim
+        self.pretrained = pretrained
+        self.hp = {"input_size": input_size, "encoder_arch": arch,
+                   "feature_dim": feature_dim, "pretrained": pretrained,
+                   "mil_params": mil_params, "arch": arch}
+        self.slide_classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+
+    def forward(self, tiles, phase="regular"):
+        bs, n, c, h, w = tiles.shape
+        tiles = tiles.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
+        tiles = self.tile_encoder(tiles)  # x: bs*N x C x 4 x 4
+        _, c, h, w = tiles.shape
+
+        # concatenate the output for tiles into a single map
+        tiles = tiles.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous().view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        out = self.head(tiles)  # x: bs x n
+        return out
 
 
 

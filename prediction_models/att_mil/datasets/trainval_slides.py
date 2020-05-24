@@ -66,7 +66,11 @@ class BiopsySlidesChunk(data.Dataset):
         self.slides_df = self._config_data()
 
     def _config_data(self):
-        slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+        # Use all slides to compute mean std
+        if self.phase == "meanstd":
+            slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
+        else:
+            slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
         empty_df = pd.read_csv(f"{self.params.data_dir}/empty_slides.csv")
         print(f"Original number of samples: {len(slides_df)}")
         for i in range(len(empty_df)):

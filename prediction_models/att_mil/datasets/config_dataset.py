@@ -61,6 +61,17 @@ def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=200):
     return meanstd
 
 
+def get_meanstd(dataset_name):
+    if dataset_name == "dw_sample_16":
+        meandstd = {'mean': [0.8992915, 0.79110736, 0.8844037],
+                    'std': [0.13978645, 0.2604748, 0.14999403]}
+    else:
+
+        raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
+
+    return meandstd
+
+
 def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, aug_mil=False):
     """
 

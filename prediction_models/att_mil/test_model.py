@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class TestParams:
-    def __init__(self, test_slides_dir, im_size, input_size, dw_rate, ts_thres, overlap, top_n, num_channels=3):
+    def __init__(self, test_slides_dir, im_size, input_size, loss_type, dw_rate, ts_thres, overlap, top_n, num_channels=3):
         self.test_slides_dir = test_slides_dir
         self.im_size = im_size
         self.input_size = input_size
@@ -16,6 +16,7 @@ class TestParams:
         self.overlap = overlap
         self.ts_thres = ts_thres
         self.num_channels = num_channels
+        self.loss_type = loss_type
         self.top_n = top_n
 
 

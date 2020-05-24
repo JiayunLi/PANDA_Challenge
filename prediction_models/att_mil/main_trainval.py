@@ -82,7 +82,7 @@ def trainval(opts):
                                                  opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
-                                              opts.loss_type, opts.schedule_type, opts.aug_mil)
+                                              opts.loss_type, opts.schedule_type, opts.mil_arch)
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted, opts.schedule_type,
@@ -100,7 +100,7 @@ def trainval(opts):
         val_loader, val_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
                                                 split="val", phase="val", fold=fold, aug_mil=opts.aug_mil)
-        if opts.aug_mil:
+        if opts.mil_arch == "att_batch" or opts.mil_arch == "pool":
             model, optimizer, scheduler, start_epoch, iters, checkpointer = \
                 config_model.config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
         else:
@@ -154,7 +154,8 @@ if __name__ == "__main__":
     parser.add_argument('--bag_embed', default=512, type=int, help="Bag embedding size")
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
-    parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
+    parser.add_argument('--mil_arch', default='pool', type=str, )
+    # parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate for classifier')
@@ -182,6 +183,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.exp_dir = f"{args.cache_dir}/{args.exp}/"
+
     seed_torch(args.manual_seed)
     if not os.path.isdir(args.exp_dir):
         os.mkdir(args.exp_dir)

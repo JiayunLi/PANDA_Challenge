@@ -21,8 +21,10 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
         epoch, step = 0, 0
         base_encoder, feature_dim = mil.config_encoder(opts.input_size, mil_params["n_tile_classes"],
                                                        opts.arch, opts.pretrained)
-        if mil_params['aug_mil']:
+        if mil_params['mil_arch'] == "att_batch":
             model = mil.AttMILBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+        elif mil_params['mil_arch'] == "pool":
+            model = mil.PoolMilBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
         else:
             model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
 
