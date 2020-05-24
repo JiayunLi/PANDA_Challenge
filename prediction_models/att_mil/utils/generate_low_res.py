@@ -98,8 +98,8 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                     overlap, thres, dw_rate, top_n, verbose):
 
     slides_to_process = []
-    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+13)
-    env_orig_tiles = lmdb.open(f"{out_dir}/orig_tiles", map_size=6e+13)
+    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
+    env_orig_tiles = lmdb.open(f"{out_dir}/orig_tiles", map_size=6e+12)
     env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
     env_locations = lmdb.open(f"{out_dir}/locations", map_size=6e+11)
 
