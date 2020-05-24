@@ -135,7 +135,6 @@ class AttMILBatch(AttMIL):
         return classifier
 
     def forward(self, tiles, phase="regular"):
-        print(self.mil_params['mil_in_feat_size'])
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
 
@@ -234,12 +233,16 @@ class PoolMilBatch(nn.Module):
         bs, n, c, h, w = tiles.shape
         tiles = tiles.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         tiles = self.tile_encoder.features(tiles)  # x: bs*N x C x 4 x 4
+        if phase == "regular":
+            tiles_probs = self.tile_encoder.classifier(feats)
+        else:
+            tiles_probs = None
         _, c, h, w = tiles.shape
 
         # concatenate the output for tiles into a single map
         tiles = tiles.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous().view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
-        out = self.slide_classifier(tiles)  # x: bs x n
-        return out
+        probs = self.slide_classifier(tiles)  # x: bs x n
+        return probs, tiles_probs, None
 
 
 
