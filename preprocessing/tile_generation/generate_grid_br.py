@@ -77,14 +77,14 @@ class TileGeneratorGridBr(TileGeneratorGrid):
         start_time = time.time()
 
         counter, location_tracker, top_tile_brs = self.get_tile_locations(tile_size, overlap, thres, dw_rate, top_n)
-        norm_tiles = []
+        norm_tiles, orig_tiles = [], []
         locations = np.zeros((len(top_tile_brs), 2), dtype=np.int64)
         idx = 0
         level = self.get_read_level(dw_rate)
         for tile_id, _ in top_tile_brs:
             cur_loc = location_tracker[tile_id]
             # generate normalized tiles
-            _, norm_tile, _ = \
+            orig_tile, norm_tile, _ = \
                 self.extract_tile([int(cur_loc[0]), int(cur_loc[1])],
                                   tile_size, level, normalizer=normalizer,
                                   return_image=True)
@@ -96,4 +96,4 @@ class TileGeneratorGridBr(TileGeneratorGrid):
 
         if self.verbose:
             print("Time to generate %d tiles from %s slide: %.2f" % (idx, str(self.slide_id), time.time() - start_time))
-        return norm_tiles, locations
+        return norm_tiles, orig_tiles, locations

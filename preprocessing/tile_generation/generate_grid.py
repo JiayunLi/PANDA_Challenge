@@ -113,13 +113,15 @@ class TileGeneratorGrid(TileGeneratorABC):
                 orig_tile = Image.fromarray(orig_tile)
                 norm_tile = orig_tile
                 orig_tile.save("error_tile.png")
+        else:
+            norm_tile = orig_tile
 
-        if norm_tile.size[0] > tile_size:
-            orig_tile = Image.fromarray(orig_tile.astype(np.uint8)).resize((tile_size, tile_size),
-                                                                           Image.ANTIALIAS)
-            norm_tile = norm_tile.resize((tile_size, tile_size),Image.ANTIALIAS)
-            rate = norm_tile.size[0] // tile_size
-            tissue_mask = tissue_mask[::rate, ::rate]
+        # if norm_tile.size[0] > tile_size:
+        #     orig_tile = Image.fromarray(orig_tile.astype(np.uint8)).resize((tile_size, tile_size),
+        #                                                                    Image.ANTIALIAS)
+        #     norm_tile = norm_tile.resize((tile_size, tile_size),Image.ANTIALIAS)
+        #     rate = norm_tile.size[0] // tile_size
+        #     tissue_mask = tissue_mask[::rate, ::rate]
         if return_image:
             return orig_tile, norm_tile, tissue_mask
         else:

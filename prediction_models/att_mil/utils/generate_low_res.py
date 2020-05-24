@@ -7,11 +7,33 @@ import json
 import pandas as pd
 import time
 import lmdb
-from preprocessing.tile_generation import generate_grid
+from preprocessing.tile_generation import generate_grid_br
 from preprocessing.normalization import reinhard_bg
 
 
-def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw_rate, verbose, slides_to_process):
+def tile(img, mask, im_size, top_n):
+    result = []
+    shape = img.shape
+    pad0,pad1 = (im_size - shape[0] % im_size)% im_size, (im_size - shape[1]% im_size) % im_size
+    img = np.pad(img, [[pad0//2, pad0-pad0//2],[pad1//2,pad1-pad1//2],[0,0]], constant_values=255)
+    mask = np.pad(mask,[[pad0//2, pad0-pad0//2],[pad1//2,pad1-pad1//2],[0,0]],
+                constant_values=0)
+    img = img.reshape(img.shape[0]//im_size, im_size, img.shape[1]// im_size,im_size,3)
+    img = img.transpose(0,2,1,3,4).reshape(-1,im_size,im_size,3)
+    mask = mask.reshape(mask.shape[0]//im_size,im_size,mask.shape[1]//im_size,im_size,3)
+    mask = mask.transpose(0,2,1,3,4).reshape(-1,im_size,im_size,3)
+    if len(img) < top_n:
+        mask = np.pad(mask,[[0,top_n-len(img)],[0,0],[0,0],[0,0]],constant_values=0)
+        img = np.pad(img,[[0,top_n-len(img)],[0,0],[0,0],[0,0]],constant_values=255)
+    idxs = np.argsort(img.reshape(img.shape[0],-1).sum(-1))[:top_n]
+    img = img[idxs]
+    mask = mask[idxs]
+    for i in range(len(img)):
+        result.append({'img':img[i], 'mask':mask[i], 'idx':i})
+    return result
+
+
+def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw_rate, top_n, verbose, slides_to_process):
     if verbose:
         print("Queue len: %d" % pqueue.qsize())
     tile_normalizer = reinhard_bg.ReinhardNormalizer()
@@ -19,9 +41,10 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
     tile_normalizer.fit(None)
     counter = 0
     for slide_name in slides_to_process:
-        tile_generator = generate_grid.TileGeneratorGrid(slides_dir, f"{slide_name}.tiff", masks_dir, verbose=verbose)
-        _, norm_tiles, locations, _, label_masks \
-            = tile_generator.extract_all_tiles(tile_size, overlap, thres, dw_rate, tile_normalizer)
+        tile_generator = generate_grid_br.TileGeneratorGridBr(slides_dir, f"{slide_name}.tiff", masks_dir,
+                                                              verbose=verbose)
+        orig_tiles, norm_tiles, locations, _, label_masks \
+            = tile_generator.extract_top_tiles(tile_size, overlap, thres, dw_rate, top_n, normalizer=None)
         if len(norm_tiles) == 0:
             counter += 1
             data = {
@@ -34,6 +57,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
         data = {
             "slide_name": slide_name,
             "norm_tiles": norm_tiles,
+            "orig_tiles": orig_tiles,
             "label_masks": label_masks,
             "locations": locations,
             "status": "normal"
@@ -44,15 +68,16 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
     pqueue.put('Done')
 
 
-def write_batch_data(env_tiles, env_label_masks, env_locations, batch_data, tot_len, start_counter, verbose):
+def write_batch_data(env_tiles, env_orig_tiles, env_label_masks, env_locations, batch_data, tot_len, start_counter, verbose):
     end_counter = start_counter + len(batch_data)
-    with env_tiles.begin(write=True) as txn_tiles, env_label_masks.begin(write=True) as txn_labels, \
-            env_locations.begin(write=True) as txn_locs:
+    with env_tiles.begin(write=True) as txn_tiles, env_orig_tiles.begin(write=True) as txn_orig, \
+            env_label_masks.begin(write=True) as txn_labels, env_locations.begin(write=True) as txn_locs:
         while len(batch_data) > 0:
             data = batch_data.pop()
             write_start = time.time()
             slide_name = data['slide_name']
             txn_tiles.put(str(slide_name).encode(), (data['norm_tiles'].astype(np.uint8)).tobytes())
+            txn_orig.put(str(slide_name).encode(), (data['orig_tiles'].astype(np.uint8)).tobytes())
             txn_locs.put(str(slide_name).encode(), data['locations'].astype(np.int64).tobytes())
             if data['label_masks'] is None:
                 tempt = None
@@ -70,10 +95,11 @@ def handle_errors(processes, message):
 
 
 def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, masks_dir, tile_size,
-                    overlap, thres, dw_rate, verbose):
+                    overlap, thres, dw_rate, top_n, verbose):
 
     slides_to_process = []
     env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+13)
+    env_orig_tiles = lmdb.open(f"{out_dir}/orig_tiles", map_size=6e+13)
     env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
     env_locations = lmdb.open(f"{out_dir}/locations", map_size=6e+11)
 
@@ -93,14 +119,14 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     for i in range(num_ps-1):
         end_idx = start_idx + batch_size
         reader_p = Process(target=generate_helper, args=(pqueue, slides_dir, masks_dir, tile_size,
-                                                         overlap, thres, dw_rate, verbose,
+                                                         overlap, thres, dw_rate, top_n, verbose,
                                                          slides_to_process[start_idx: end_idx]))
         reader_p.start()
         reader_processes.append(reader_p)
         start_idx = end_idx
     # Ensure all slides are processed by processes.
     reader_p = Process(target=generate_helper, args=(pqueue, slides_dir, masks_dir, tile_size,
-                                                     overlap, thres, dw_rate, verbose,
+                                                     overlap, thres, dw_rate, top_n, verbose,
                                                      slides_to_process[start_idx: len(slides_to_process)]))
     reader_p.start()
     reader_processes.append(reader_p)
@@ -127,7 +153,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
         if len(batches) == write_batch_size:
             try:
                 counter = \
-                    write_batch_data(env_tiles, env_label_masks, env_locations, batches,
+                    write_batch_data(env_tiles, env_orig_tiles, env_label_masks, env_locations, batches,
                                      len(slides_to_process), counter, verbose)
             except lmdb.KeyExistsError:
                 handle_errors(reader_processes, "Key exist!")
@@ -142,7 +168,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     try:
         # Write the rest data.
         if len(batches) > 0:
-            counter = write_batch_data(env_tiles, env_label_masks, env_locations, batches,
+            counter = write_batch_data(env_tiles, env_orig_tiles, env_label_masks, env_locations, batches,
                                        len(slides_to_process), counter, verbose)
     except lmdb.KeyExistsError:
         handle_errors(reader_processes, "Key exist!")
@@ -169,7 +195,7 @@ def main(opts):
     train_df = pd.read_csv(opts.train_slide_file, index_col="image_id")
     slides_list = list(train_df.index)
     save_tiled_lmdb(slides_list, opts.num_ps, opts.write_batch_size, opts.out_dir, opts.slides_dir, opts.masks_dir,
-                    opts.tile_size, opts.overlap, opts.ts_thres, opts.dw_rate, opts.verbose)
+                    opts.tile_size, opts.overlap, opts.ts_thres, opts.dw_rate, opts.top_n, opts.verbose)
 
 
 if __name__ == "__main__":
@@ -183,12 +209,13 @@ if __name__ == "__main__":
 
     parser.add_argument("--tile_size", default=128, type=int)
     parser.add_argument("--overlap", default=0.125, type=float)
-    parser.add_argument("--ts_thres", default=0.5, type=float)
+    parser.add_argument("--ts_thres", default=0.01, type=float)
     parser.add_argument("--dw_rate", default=16, type=int, help="Generate tiles downsampled")
     parser.add_argument("--verbose", action='store_true', help="Whether to print debug information")
 
     parser.add_argument("--num_ps", default=5, type=int, help="How many processor to use")
     parser.add_argument("--write_batch_size", default=10, type=int, help="Write of batch of n slides")
+    parser.add_argument('--top_n', default=30)
 
     args = parser.parse_args()
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
