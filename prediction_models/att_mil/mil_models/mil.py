@@ -147,7 +147,7 @@ class AttMILBatch(AttMIL):
         feats = self.instance_embed(feats).view(feats.size(0), -1)
 
         feats = self.embed_bag_feat(feats)
-     
+
         if phase == 'extract_feats':
             return feats.view(batch_size, n_tiles, -1)
 
@@ -233,7 +233,7 @@ class PoolMilBatch(nn.Module):
     def forward(self, tiles, phase="regular"):
         bs, n, c, h, w = tiles.shape
         tiles = tiles.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
-        tiles = self.tile_encoder(tiles)  # x: bs*N x C x 4 x 4
+        tiles = self.tile_encoder.features(tiles)  # x: bs*N x C x 4 x 4
         _, c, h, w = tiles.shape
 
         # concatenate the output for tiles into a single map
