@@ -108,7 +108,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                 config_model.config_optimizer(model, epoch, model.hp["arch"], trainval_params.optim,
                                               trainval_params.feat_lr, trainval_params.feat_ft,
                                               trainval_params.lr, trainval_params.wd, trainval_params.train_blocks)
-        if model.mil_params['aug_mil']:
+        if model.mil_params['mil_arch'] == "pool" or model.mil_params['mil_arch'] == 'att_batch':
             iters = batch_train.train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer,
                                             train_loader, trainval_params.alpha, trainval_params.loss_type,
                                             trainval_params.log_every, logger, device)
