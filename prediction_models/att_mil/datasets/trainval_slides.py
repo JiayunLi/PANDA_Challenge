@@ -153,7 +153,7 @@ class BiopsySlidesImage(data.Dataset):
             slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
-        slides_df.drop(slides_df[self.slides_df['image_id'] == 'ec1a371b933875ff0a2b65e315838294'].index, inplace=True)
+        slides_df.drop(slides_df[slides_df['image_id'] == 'ec1a371b933875ff0a2b65e315838294'].index, inplace=True)
         print(f"Number of samples: {len(slides_df)}")
         slides_tile_mapping = defaultdict(list)
         slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
