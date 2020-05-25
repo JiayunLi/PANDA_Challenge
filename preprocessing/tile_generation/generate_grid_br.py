@@ -103,17 +103,17 @@ class TileGeneratorGridBr(TileGeneratorGrid):
         start_time = time.time()
 
         counter, location_tracker, top_tile_brs = self.get_tile_locations(tile_size, overlap, thres, dw_rate, top_n)
-        norm_tiles = np.zeros((counter, tile_size, tile_size, 3), dtype=np.uint8)
-        orig_tiles = np.zeros((counter, tile_size, tile_size, 3), dtype=np.uint8)
-        tissue_masks = np.zeros((counter, tile_size, tile_size), dtype=np.uint8)
-        locations = np.zeros((counter, 2), dtype=np.int64)
+        norm_tiles = np.zeros((top_n, tile_size, tile_size, 3), dtype=np.uint8)
+        orig_tiles = np.zeros((top_n, tile_size, tile_size, 3), dtype=np.uint8)
+        tissue_masks = np.zeros((top_n, tile_size, tile_size), dtype=np.uint8)
+        locations = np.zeros((top_n, 2), dtype=np.int64)
         get_label_mask = self.label_mask
         if get_label_mask:
-            label_masks = np.zeros((counter, tile_size, tile_size), dtype=np.uint8)
+            label_masks = np.zeros((top_n, tile_size, tile_size), dtype=np.uint8)
         else:
             label_masks = None
         level = self.get_read_level(dw_rate)
-
+        idx = 0
         for tile_id, _ in top_tile_brs:
             cur_loc = location_tracker[tile_id]
             # generate normalized tiles
@@ -121,11 +121,12 @@ class TileGeneratorGridBr(TileGeneratorGrid):
                 self.extract_tile([int(cur_loc[0]), int(cur_loc[1])],
                                   tile_size, level, normalizer=normalizer)
 
-            orig_tiles[tile_id, :, :, :] = orig_tile
-            norm_tiles[tile_id, :, :, :] = norm_tile
-            tissue_masks[tile_id, :, :] = tissue_mask.astype(np.uint8)
-            locations[tile_id, 0] = int(cur_loc[0])
-            locations[tile_id, 1] = int(cur_loc[1])
+            orig_tiles[idx, :, :, :] = orig_tile
+            norm_tiles[idx, :, :, :] = norm_tile
+            tissue_masks[idx, :, :] = tissue_mask.astype(np.uint8)
+            locations[idx, 0] = int(cur_loc[0])
+            locations[idx, 1] = int(cur_loc[1])
+            idx += 1
 
             if get_label_mask:
                 label_mask = self.extract_label_mask(
@@ -133,5 +134,5 @@ class TileGeneratorGridBr(TileGeneratorGrid):
                 label_masks[tile_id, :, :] = label_mask.astype(np.uint8)
         if self.verbose:
             print("Time to generate %d tiles from %s slide: %.2f"
-                  % (counter, str(self.slide_id), time.time() - start_time))
+                  % (top_n, str(self.slide_id), time.time() - start_time))
         return orig_tiles, norm_tiles, locations, tissue_masks, label_masks
