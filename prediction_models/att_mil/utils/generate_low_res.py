@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--num_ps", default=5, type=int, help="How many processor to use")
     parser.add_argument("--write_batch_size", default=10, type=int, help="Write of batch of n slides")
-    parser.add_argument('--top_n', default=30)
+    parser.add_argument('--top_n', type=int, default=30)
 
     args = parser.parse_args()
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
