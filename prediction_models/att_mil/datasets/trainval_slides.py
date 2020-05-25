@@ -153,7 +153,8 @@ class BiopsySlidesImage(data.Dataset):
             slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
-        print(f"Original number of samples: {len(slides_df)}")
+        slides_df.drop(slides_df[self.slides_df['image_id'] == 'ec1a371b933875ff0a2b65e315838294'].index, inplace=True)
+        print(f"Number of samples: {len(slides_df)}")
         slides_tile_mapping = defaultdict(list)
         slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
         for slide_loc in slides_loc:
@@ -170,8 +171,6 @@ class BiopsySlidesImage(data.Dataset):
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
         cur_tiles_loc = self.slides_tile_mapping[str(slide_name)]
-        if len(cur_tiles_loc) == 0:
-            print(slide_name)
         tiles = torch.FloatTensor(len(cur_tiles_loc), self.params.num_channels, self.params.input_size,
                                   self.params.input_size)
         for i, tile_loc in enumerate(cur_tiles_loc):
