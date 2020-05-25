@@ -159,9 +159,7 @@ class BiopsySlidesImage(data.Dataset):
         print(len(slides_loc))
         print(self.params.data_dir)
         for slide_loc in slides_loc:
-            slide_id = slide_loc.split("_")[0].split("/")[-1]
-            print(slide_loc)
-            exit()
+            slide_id = slide_loc.split("/")[-1].split("_")[0]
             slides_tile_mapping[slide_id].append(slide_loc)
         print(len(slides_tile_mapping))
         return slides_df, slides_tile_mapping
