@@ -109,7 +109,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     meanstd = get_meanstd(dataset_params.dataset)
     # Define different transformations
     normalize = [
-        T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),
+        # T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),
         T.ToTensor(),
         T.Normalize(mean=meanstd['mean'], std=meanstd['std'])]
     augmentation = [

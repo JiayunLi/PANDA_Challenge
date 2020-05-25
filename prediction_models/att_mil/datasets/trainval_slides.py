@@ -123,13 +123,13 @@ class BiopsySlidesBatch(BiopsySlidesChunk):
                                               slide_name, self.transform,
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
-        labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * FIX_N_TILES
+        # labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * FIX_N_TILES
         if len(tiles) < FIX_N_TILES:
             pad_len = FIX_N_TILES - len(tiles)
             tiles = torch.cat([tiles, torch.zeros(pad_len, 3, self.params.input_size, self.params.input_size),
                                ], dim=0)
-            labels += [0] * pad_len
+            # labels += [0] * pad_len
         elif len(tiles) > FIX_N_TILES:
             tiles = tiles[:FIX_N_TILES, :, :, :]
-            labels = labels[:FIX_N_TILES]
-        return tiles, labels, slide_label, list(range(len(tiles)))
+            # labels = labels[:FIX_N_TILES]
+        return tiles, slide_label, slide_label, list(range(len(tiles)))

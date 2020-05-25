@@ -114,7 +114,7 @@ class TileGeneratorGridBr(TileGeneratorGrid):
             label_masks = None
         level = self.get_read_level(dw_rate)
 
-        for tile_id in range(counter):
+        for tile_id, _ in top_tile_brs:
             cur_loc = location_tracker[tile_id]
             # generate normalized tiles
             orig_tile, norm_tile, tissue_mask = \
