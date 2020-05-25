@@ -156,10 +156,12 @@ class BiopsySlidesImage(data.Dataset):
         print(f"Original number of samples: {len(slides_df)}")
         slides_tile_mapping = defaultdict(list)
         slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
-
+        print(len(slides_loc))
+        print(self.params.data_dir)
         for slide_loc in slides_loc:
             slide_id = slide_loc.split("_")[0].split("/")[-1]
             slides_tile_mapping[slide_id].append(slide_loc)
+        print(len(slides_tile_mapping))
         return slides_df, slides_tile_mapping
 
     def __len__(self):
