@@ -105,7 +105,7 @@ class BiopsySlidesChunk(data.Dataset):
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 
-FIX_N_TILES=30
+FIX_N_TILES=16
 
 
 class BiopsySlidesBatch(BiopsySlidesChunk):
