@@ -78,7 +78,7 @@ def trainval(opts):
 
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                  opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
-                                                 opts.num_channels)
+                                                 opts.normalized, opts.num_channels)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
                                               opts.loss_type, opts.schedule_type, opts.mil_arch)
@@ -137,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--im_size', default=128, type=int, help="original extracted tile size")
     parser.add_argument('--input_size', default=128, type=int, help="input size to the network")
     parser.add_argument('--num_channels', default=3, type=int, help="# of input image channels")
+    parser.add_argument('--normalized', action='store_true', help='Use normalized tiles')
 
     # Restart
     parser.add_argument('--ckp_dir', default=None)

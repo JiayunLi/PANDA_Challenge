@@ -119,7 +119,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
             T.ColorJitter(0.2, 0.2, 0.2, 0.1)  # not strengthened
         ], p=0.8),
         T.RandomGrayscale(p=0.2),
-        T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+        # T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
         T.RandomHorizontalFlip(),
         ] + normalize
 

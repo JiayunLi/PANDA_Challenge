@@ -60,7 +60,11 @@ class BiopsySlidesChunk(data.Dataset):
         self.split, self.fold = split, fold
         self.params = dataset_params
         self.phase = phase
-        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
+        if dataset_params.normalized:
+            folder = "tiles"
+        else:
+            folder = "orig_tiles"
+        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/{folder}/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
         self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
         self.slides_df = self._config_data()
@@ -101,7 +105,7 @@ class BiopsySlidesChunk(data.Dataset):
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 
-FIX_N_TILES=20
+FIX_N_TILES=30
 
 
 class BiopsySlidesBatch(BiopsySlidesChunk):

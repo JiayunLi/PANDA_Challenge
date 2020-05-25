@@ -24,6 +24,7 @@ class TileGeneratorGridBr(TileGeneratorGrid):
         """
         # how much overlap on the required magnification
         # Relative rate change: image of size 128 downsample 4 times -> of size 512 at original scanning magnification.
+        print(f"Select top {top_n}")
         tile_size *= dw_rate
         overlap = int(overlap * tile_size)
         lowest_rate = int(self.slide.level_downsamples[self.slide.level_count - 1])
