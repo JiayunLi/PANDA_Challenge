@@ -6,6 +6,9 @@ import json
 import random
 import torch
 import numpy as np
+from collections import defaultdict
+import glob
+from PIL import Image
 from prediction_models.att_mil.utils import file_utils
 
 MAX_N_TILES = 500
@@ -134,3 +137,46 @@ class BiopsySlidesBatch(BiopsySlidesChunk):
             tiles = tiles[:FIX_N_TILES, :, :, :]
             # labels = labels[:FIX_N_TILES]
         return tiles, slide_label, slide_label, list(range(len(tiles)))
+
+
+class BiopsySlidesImage(data.Dataset):
+    def __init__(self, dataset_params, transform, fold, split, phase='train'):
+        self.transform = transform
+        self.split, self.fold = split, fold
+        self.params = dataset_params
+        self.phase = phase
+        self.slides_df, self.slides_tile_mapping = self._config_data()
+
+    def _config_data(self):
+        # Use all slides to compute mean std
+        if self.phase == "meanstd":
+            slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
+        else:
+            slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+        print(f"Original number of samples: {len(slides_df)}")
+        slides_tile_mapping = defaultdict(list)
+        slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
+
+        for slide_loc in slides_loc:
+            slide_id = slide_loc.split("_")[0].split("/")[-1]
+            slides_tile_mapping[slide_id].append(slide_loc)
+        return slides_df, slides_tile_mapping
+
+    def __len__(self):
+        return len(self.slides_df)
+
+    def __getitem__(self, ix):
+        slide_info = self.slides_df.iloc[ix]
+        slide_label = int(slide_info.isup_grade)
+        slide_name = slide_info.image_id
+        cur_tiles_loc = self.slides_tile_mapping[str(slide_name)]
+
+        tiles = torch.FloatTensor(len(cur_tiles_loc), self.params.num_channels, self.params.input_size,
+                                  self.params.input_size)
+        for i, tile_loc in enumerate(cur_tiles_loc):
+            tile = Image.open(tile_loc)
+            if self.transform:
+                tile = self.transform(tile)
+            tiles[i, :, :, :] = tile
+
+        return tiles, [-1] * len(tiles), slide_label, list(range(len(tiles)))
