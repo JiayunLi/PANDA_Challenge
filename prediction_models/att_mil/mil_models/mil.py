@@ -106,7 +106,7 @@ class AttMIL(nn.Module):
         return probs, tiles_probs, atts
 
 
-class AttMILBatch(AttMIL):
+class AttMILBatchV2(AttMIL):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
         self.softmax = nn.Softmax(dim=1)
@@ -160,7 +160,7 @@ class AttMILBatch(AttMIL):
         return probs, tiles_probs, atts
 
 
-class AttMILBatchV2(AttMIL):
+class AttMILBatch(AttMIL):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
         self.softmax = nn.Softmax(dim=1)
