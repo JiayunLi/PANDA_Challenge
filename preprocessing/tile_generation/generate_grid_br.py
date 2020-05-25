@@ -126,12 +126,13 @@ class TileGeneratorGridBr(TileGeneratorGrid):
             tissue_masks[idx, :, :] = tissue_mask.astype(np.uint8)
             locations[idx, 0] = int(cur_loc[0])
             locations[idx, 1] = int(cur_loc[1])
-            idx += 1
+
 
             if get_label_mask:
                 label_mask = self.extract_label_mask(
                     [int(cur_loc[0]), int(cur_loc[1])], tile_size, level)
-                label_masks[tile_id, :, :] = label_mask.astype(np.uint8)
+                label_masks[idx, :, :] = label_mask.astype(np.uint8)
+            idx += 1
         if self.verbose:
             print("Time to generate %d tiles from %s slide: %.2f"
                   % (top_n, str(self.slide_id), time.time() - start_time))
