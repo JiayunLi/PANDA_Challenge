@@ -170,8 +170,8 @@ class BiopsySlidesImage(data.Dataset):
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
         cur_tiles_loc = self.slides_tile_mapping[str(slide_name)]
-        print(slide_name)
-        print(cur_tiles_loc)
+        if len(cur_tiles_loc) == 0:
+            print(slide_name)
         tiles = torch.FloatTensor(len(cur_tiles_loc), self.params.num_channels, self.params.input_size,
                                   self.params.input_size)
         for i, tile_loc in enumerate(cur_tiles_loc):
