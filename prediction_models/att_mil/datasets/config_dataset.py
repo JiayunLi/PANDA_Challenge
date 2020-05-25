@@ -65,8 +65,10 @@ def get_meanstd(dataset_name):
     if dataset_name == "dw_sample_16":
         meandstd = {'mean': [0.8992915, 0.79110736, 0.8844037],
                     'std': [0.13978645, 0.2604748, 0.14999403]}
+    elif dataset_name == 'dw_sample_16v2':
+        meandstd = {'mean': [0.878095, 0.807221, 0.8544836],
+                    'std': [0.09033537, 0.17091176, 0.11264059]}
     else:
-
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
 
     return meandstd

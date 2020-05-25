@@ -64,6 +64,7 @@ class BiopsySlidesChunk(data.Dataset):
             folder = "tiles"
         else:
             folder = "orig_tiles"
+        print(folder)
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/{folder}/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
         self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))

@@ -44,7 +44,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
         tile_generator = generate_grid_br.TileGeneratorGridBr(slides_dir, f"{slide_name}.tiff", masks_dir,
                                                               verbose=verbose)
         orig_tiles, norm_tiles, locations, _, label_masks \
-            = tile_generator.extract_top_tiles_save(tile_size, overlap, thres, dw_rate, top_n, normalizer=None)
+            = tile_generator.extract_top_tiles_save(tile_size, overlap, thres, dw_rate, top_n, normalizer=tile_normalizer)
         if len(norm_tiles) == 0:
             counter += 1
             data = {
