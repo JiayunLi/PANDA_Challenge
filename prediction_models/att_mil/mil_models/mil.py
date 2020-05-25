@@ -231,7 +231,7 @@ class PoolMilBatch(nn.Module):
 
     def forward(self, tiles, phase="regular"):
         bs, n, c, h, w = tiles.shape
-        print(tiles.size())
+        # print(tiles.size())
         tiles = tiles.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         tiles = self.tile_encoder.features(tiles)  # x: bs*N x C x 4 x 4
         if phase == "regular":
