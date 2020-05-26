@@ -123,7 +123,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
                        T.RandomHorizontalFlip(),
                        T.RandomVerticalFlip(),
                        T.RandomAffine(degrees=180, fillcolor=(255, 255, 255)),
-                       
+
         # T.RandomResizedCrop(dataset_params.input_size, scale=(0.3, 1.0), ratio=(0.7, 1.4),
         #                     interpolation=INTERP),
         # T.RandomApply([

@@ -268,15 +268,19 @@ class PoolSimple(nn.Module):
         x: [bs, N, 3, h, w]
         x_out: [bs, N]
         """
-        bs, n, c, h, w = x.shape
-        x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
-        x = self.enc(x)  # x: bs*N x C x 4 x 4
-        _, c, h, w = x.shape
-
-        ## concatenate the output for tiles into a single map
-        x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
-            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
-        x = self.head(x)  # x: bs x n
+        shape = x[0].shape
+        n = len(x)
+        x = torch.stack(x, 1).view(-1, shape[1], shape[2], shape[3])
+        # x: bs*N x 3 x 128 x 128
+        x = self.enc(x)
+        # x: bs*N x C x 4 x 4
+        shape = x.shape
+        # concatenate the output for tiles into a single map
+        x = x.view(-1, n, shape[1], shape[2], shape[3]).permute(0, 2, 1, 3, 4).contiguous() \
+            .view(-1, shape[1], shape[2] * n, shape[3])
+        # x: bs x C x N*4 x 4
+        x = self.head(x)
+        # x: bs x n
         return x, None, None
 
 
