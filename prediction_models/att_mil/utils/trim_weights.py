@@ -15,7 +15,7 @@ def trim_weights(model_dir, weight_dir, n_folds):
 
     if not os.path.isdir(f"{weight_dir}/{model_name}/"):
         os.mkdir(f"{weight_dir}/{model_name}/")
-    out_dir = f"{weight_dir}/{model_name}/trimmed_weights/"
+    out_dir = f"{weight_dir}/trimmed_weights/{model_name}/"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
     for fold in range(n_folds):
