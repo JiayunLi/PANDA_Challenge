@@ -70,7 +70,7 @@ def get_meanstd(dataset_name):
                     'std': [0.09033537, 0.17091176, 0.11264059]}
     elif dataset_name == "16_128_128":
         # {"mean": [1.0 - 0.90949707, 1.0 - 0.8188697, 1.0 - 0.87795304],
-        meanstd = {"mean": [1.0 - 0.90949707, 1.0 - 0.8188697, 1.0 - 0.87795304],
+        meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
                    "std": [0.36357649, 0.49984502, 0.40477625]}
     else:
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
