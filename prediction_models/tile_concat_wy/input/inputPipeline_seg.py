@@ -123,12 +123,74 @@ class PandaPatchDatasetSeg(Dataset):
         return {'horizontal_flip': horizontal_flip, 'vertical_flip': vertical_flip, 'rotation': rotation,
                 'mean': self.mean, 'std': self.std}
 
+class PandaPatchDatasetSegInfer(Dataset):
+    """Panda Tile dataset. With fixed tiles for each slide."""
+
+    def __init__(self, csv_file, image_dir, stats, N=12):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            image_dir (string): Directory with all the images.
+            N (interger): Number of tiles selected for each slide.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.train_csv = pd.read_csv(csv_file)
+        self.image_dir = image_dir
+        self.N = N
+        self.mean, self.std = stats
+
+    def __len__(self):
+        return len(self.train_csv)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        name = self.train_csv.image_id[idx]
+        imgfnames = [os.path.join(self.image_dir, self.train_csv.loc[idx, 'image_id'] + '_' + str(i) + '.png')
+                     for i in range(self.N)]
+        imgs = [self.open_image(fname, convert_mode='RGB') for fname in imgfnames]
+        # isup_grade = self.train_csv.loc[idx, 'isup_grade']
+        tsfmParams = self.get_params()
+        imgtsfm = get_transform(tsfmParams, True)
+
+        imgs = [imgtsfm(img) for img in imgs]
+        ## convert the output to tensor
+        imgs = [torch.tensor(img) for img in imgs]
+        imgs = torch.stack(imgs)
+        # isup_grade = torch.tensor(isup_grade)
+        sample = {'image': imgs, 'name':name}
+        return sample
+
+    def open_image(self, fn, convert_mode=None, after_open=None):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # EXIF warning from TiffPlugin
+            x = Image.open(fn)
+            if convert_mode:
+                x = x.convert(convert_mode)
+        if after_open:
+            x = after_open(x)
+        return x
+
+    def get_params(self):
+        horizontal_flip = False
+        vertical_flip = False
+        rotation = 0
+        return {'horizontal_flip': horizontal_flip, 'vertical_flip': vertical_flip, 'rotation': rotation,
+                'mean': self.mean, 'std': self.std}
+
 def dataloader_collte_fn(batch):
     imgs = [item['image'] for item in batch]
     imgs = torch.stack(imgs)
     target = [item['seg_mask'] for item in batch]
     target = torch.stack(target)
     return [imgs, target]
+
+def dataloader_collte_fn_infer(batch):
+    imgs = [item['image'] for item in batch]
+    imgs = torch.stack(imgs)
+    names = [item['name'] for item in batch]
+    return [imgs, names]
 
 if __name__ == "__main__":
     ## input files and folders
