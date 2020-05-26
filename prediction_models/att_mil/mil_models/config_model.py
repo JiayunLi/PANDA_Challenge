@@ -12,6 +12,7 @@ MAX_LR_RATE = 5
 
 
 def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
+    print("Configure the entire model for training")
     checkpointer = checkpoint_utils.Checkpointer(fold, opts.exp_dir)
     if ckp:
         model = checkpointer.restore_model_from_checkpoint(ckp)
@@ -19,16 +20,17 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
     else:
         # Start a new model
         epoch, step = 0, 0
-        base_encoder, feature_dim = mil.config_encoder(opts.input_size, mil_params["n_tile_classes"],
-                                                       opts.arch, opts.pretrained)
-        if mil_params['mil_arch'] == "att_batch":
-            model = mil.AttMILBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
-        elif mil_params['mil_arch'] == "pool":
-            model = mil.PoolMilBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
-        elif mil_params['mil_arch'] == "pool_simple":
+        if mil_params['mil_arch'] == "pool_simple":
             model = mil.PoolSimple()
         else:
-            model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+            base_encoder, feature_dim = mil.config_encoder(opts.input_size, mil_params["n_tile_classes"],
+                                                           opts.arch, opts.pretrained)
+            if mil_params['mil_arch'] == "att_batch":
+                model = mil.AttMILBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+            elif mil_params['mil_arch'] == "pool":
+                model = mil.PoolMilBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+            else:
+                model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
 
     if opts.optim == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=opts.lr, momentum=0.9)

@@ -254,11 +254,12 @@ class PoolMilBatch(nn.Module):
 class PoolSimple(nn.Module):
     def __init__(self, arch='resnext50_32x4d_ssl', n=6, pre=True):
         super().__init__()
+        print("Use pool simple model")
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
-                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+                                  mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
 
     def forward(self, x):
         """
@@ -274,6 +275,6 @@ class PoolSimple(nn.Module):
         x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
-        return x
+        return x, None, None
 
 
