@@ -3,16 +3,20 @@ import torch
 import argparse
 
 
-def trim_weights(model_dir, n_folds):
-    if not os.path.isdir(f"{model_dir}/trimed_weights/"):
-        os.mkdir(f"{model_dir}/trimed_weights/")
+def trim_weights(model_dir, weight_dir, n_folds):
+    model_name = model_dir.split("/")[-1]
+    if not os.path.isdir(f"{weight_dir}/{model_name}/"):
+        os.mkdir(f"{weight_dir}/{model_name}/")
+    out_dir = f"{weight_dir}/{model_name}/trimmed_weights/"
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
     for fold in range(n_folds):
         ckp_path = f"{model_dir}/{fold}/checkpoint_best.pth"
         ckp = torch.load(ckp_path, map_location=lambda storage, loc: storage)
         hp = ckp['hyperparams']
         params = ckp['model']
         new_ckp = {"hyperparams": hp, "model": params}
-        torch.save(new_ckp, f"{model_dir}/trimed_weights/checkpoint_best_{fold}.pth")
+        torch.save(new_ckp, f"{out_dir}/checkpoint_best_{fold}.pth")
 
 
 if __name__ == "__main__":
@@ -20,8 +24,10 @@ if __name__ == "__main__":
 
     # File location
     parser.add_argument('--model_dir', type=str, default='./cache/', help='Root directory for processed data')
-
+    parser.add_argument('--weights_dir', default='/raid/jiayunli/data/storage_slides/panda-weights/')
     parser.add_argument('--n_folds', type=int, default=5)
 
     args = parser.parse_args()
-    trim_weights(args.model_dir, args.n_folds)
+    if not os.path.isdir(args.weights_dir):
+        os.mkdir(args.weight_dir)
+    trim_weights(args.model_dir, args.weight_dir, args.n_folds)
