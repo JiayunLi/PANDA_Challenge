@@ -12,7 +12,7 @@ def trim_weights(model_dir, n_folds):
         hp = ckp['hyperparams']
         params = ckp['model']
         new_ckp = {"hyperparams": hp, "model": params}
-        torch.save(new_ckp, f"{model_dir}/trimed_weights/checkpoint_best_{fold}.pth/")
+        torch.save(new_ckp, f"{model_dir}/trimed_weights/checkpoint_best_{fold}.pth")
 
 
 if __name__ == "__main__":
