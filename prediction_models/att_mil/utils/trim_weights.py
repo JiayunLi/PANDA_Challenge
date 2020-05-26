@@ -4,7 +4,15 @@ import argparse
 
 
 def trim_weights(model_dir, weight_dir, n_folds):
-    model_name = model_dir.split("/")[-1]
+    tempt = model_dir.split("/")
+    i = len(tempt) - 1
+    while i > 0:
+        cur = tempt[i]
+        if len(cur) > 0 and cur != "/":
+            model_name = cur
+            break
+        i -= 1
+
     if not os.path.isdir(f"{weight_dir}/{model_name}/"):
         os.mkdir(f"{weight_dir}/{model_name}/")
     out_dir = f"{weight_dir}/{model_name}/trimmed_weights/"
