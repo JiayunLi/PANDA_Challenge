@@ -160,8 +160,8 @@ if __name__ == "__main__":
     # parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
-    parser.add_argument('--lr', default=0.001, type=float, help='learning rate for classifier')
-    parser.add_argument('--feat_lr', default=0.0005, type=float, help='learning rate for features')
+    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate for classifier')
+    parser.add_argument('--feat_lr', default=1e-3, type=float, help='learning rate for features')
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='aug_adam', help="Optimizer used for model training")
