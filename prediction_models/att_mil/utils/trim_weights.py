@@ -1,6 +1,7 @@
 import os
 import torch
 import argparse
+import shutil
 
 
 def trim_weights(model_dir, weight_dir, n_folds):
@@ -18,6 +19,7 @@ def trim_weights(model_dir, weight_dir, n_folds):
     out_dir = f"{weight_dir}/trimmed_weights/{model_name}/"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
+    shutil.copyfile(f"{model_dir}/options.pkl", f"{out_dir}/options.pkl")
     for fold in range(n_folds):
         ckp_path = f"{model_dir}/{fold}/checkpoint_best.pth"
         ckp = torch.load(ckp_path, map_location=lambda storage, loc: storage)

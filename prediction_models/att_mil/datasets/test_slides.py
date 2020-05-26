@@ -22,7 +22,7 @@ class BiopsySlides(data.Dataset):
         slide_info = self.test_df.iloc[ix]
         tile_generator = generate_grid.TileGeneratorGridBr(self.test_slides_dir, f"{slide_info.image_id}.tiff",
                                                            None, verbose=False)
-        norm_tiles, _ = tile_generator.extract_top_tiles(self.params.im_size, self.params.overlap,
+        norm_tiles, _, _ = tile_generator.extract_top_tiles(self.params.im_size, self.params.overlap,
                                                          self.params.ts_thres, self.params.dw_rate,
                                                          self.params.top_n, normalizer=self.tile_normalizer)
         instances = torch.FloatTensor(len(norm_tiles),
@@ -46,7 +46,7 @@ class BiopsySlidesBatch(BiopsySlides):
         slide_info = self.test_df.iloc[ix]
         tile_generator = generate_grid.TileGeneratorGridBr(self.test_slides_dir, f"{slide_info.image_id}.tiff",
                                                            None, verbose=False)
-        norm_tiles, _ = tile_generator.extract_top_tiles(self.params.im_size, self.params.overlap,
+        norm_tiles, _, _ = tile_generator.extract_top_tiles(self.params.im_size, self.params.overlap,
                                                          self.params.ts_thres, self.params.dw_rate,
                                                          self.params.top_n, normalizer=self.tile_normalizer)
         instances = torch.FloatTensor(len(norm_tiles),
