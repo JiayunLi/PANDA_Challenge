@@ -256,6 +256,7 @@ class PoolSimple(nn.Module):
         super().__init__()
         print("Use pool simple model")
         self.mil_params = mil_params
+        self.hp = {"mil_params": mil_params, "arch": arch}
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
