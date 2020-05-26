@@ -111,7 +111,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
         if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch' }:
             iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
                                             train_loader, trainval_params.alpha, trainval_params.loss_type,
-                                            trainval_params.log_every, logger, device)
+                                            trainval_params.log_every, logger, device, scheduler)
             kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
                                           logger, trainval_params.slide_binary, device)
         else:
@@ -126,7 +126,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
             scheduler.step(loss)
         elif trainval_params.schedule_type == "cycle":
             print("Take one cycle step")
-            scheduler.step()
+            # scheduler.step()
         else:
             raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
     return

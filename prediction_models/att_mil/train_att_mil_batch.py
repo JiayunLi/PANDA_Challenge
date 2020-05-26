@@ -8,7 +8,7 @@ import numpy as np
 
 
 def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, optimizer,
-                train_loader, alpha, loss_type, log_every, logger, device):
+                train_loader, alpha, loss_type, log_every, logger, device, schedule):
     model.train()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -61,6 +61,7 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
             logger.record_stats(fast_stats.averages(iteras, prefix='train/'))
             time_start = time.time()
             fast_stats = trainval_stats.AverageMeterSet()
+        schedule.step()
     return iteras
 
 
