@@ -262,7 +262,7 @@ class PoolSimple(nn.Module):
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
                                   mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
 
-    def forward(self, x):
+    def forward(self, x, phase="regular"):
         """
         x: [bs, N, 3, h, w]
         x_out: [bs, N]
