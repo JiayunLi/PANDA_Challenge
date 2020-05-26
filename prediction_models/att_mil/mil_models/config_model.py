@@ -35,14 +35,16 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
     if opts.optim == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=opts.lr, momentum=0.9)
     elif opts.optim == "aug_adam":
-        optimizer = radam.Over9000(model.parameters())
+        optimizer = radam.Over9000(model.parameters(), lr=opts.lr)
     else:
         optimizer = optim.Adam(model.parameters(), lr=opts.lr, weight_decay=opts.wd, betas=(0.9, 0.999))
     if mil_params['schedule_type'] == "plateau":
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     elif mil_params['schedule_type'] == "cycle":
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-3, total_steps=opts.epochs,
+        print("Use cycle scheduler")
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, total_steps=opts.epochs,
                                                         pct_start=0.0, div_factor=100)
+        print(scheduler)
         # scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, steps_per_epoch=steps_per_epoch,
         #                                                 epochs=opts.epochs, pct_start=0.0, div_factor=100)
     else:
