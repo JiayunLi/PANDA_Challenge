@@ -6,7 +6,7 @@ import argparse
 def trim_weights(model_dir, n_folds):
     if not os.path.isdir(f"{model_dir}/trimed_weights/"):
         os.mkdir(f"{model_dir}/trimed_weights/")
-    for fold in n_folds:
+    for fold in range(n_folds):
         ckp_path = f"{model_dir}/{fold}/checkpoint_best.pth"
         ckp = torch.load(ckp_path, map_location=lambda storage, loc: storage)
         hp = ckp['hyperparams']
