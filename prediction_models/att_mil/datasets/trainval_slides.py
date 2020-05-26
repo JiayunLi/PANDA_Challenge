@@ -139,7 +139,7 @@ class BiopsySlidesBatch(BiopsySlidesChunk):
         return tiles, slide_label, slide_label, list(range(len(tiles)))
 
 
-N = 16
+N = 12
 
 
 class BiopsySlidesImage(data.Dataset):
