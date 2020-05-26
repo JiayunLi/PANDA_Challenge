@@ -252,9 +252,10 @@ class PoolMilBatch(nn.Module):
 
 
 class PoolSimple(nn.Module):
-    def __init__(self, arch='resnext50_32x4d_ssl', n=6, pre=True):
+    def __init__(self, mil_params, arch='resnext50_32x4d_ssl', n=6, pre=True):
         super().__init__()
         print("Use pool simple model")
+        self.mil_params = mil_params
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features

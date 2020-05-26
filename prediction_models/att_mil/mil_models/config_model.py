@@ -21,7 +21,7 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
         # Start a new model
         epoch, step = 0, 0
         if mil_params['mil_arch'] == "pool_simple":
-            model = mil.PoolSimple()
+            model = mil.PoolSimple(mil_params)
         else:
             base_encoder, feature_dim = mil.config_encoder(opts.input_size, mil_params["n_tile_classes"],
                                                            opts.arch, opts.pretrained)
