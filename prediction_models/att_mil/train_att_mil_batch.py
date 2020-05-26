@@ -7,7 +7,7 @@ import gc
 import numpy as np
 
 
-def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer,
+def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, optimizer,
                 train_loader, alpha, loss_type, log_every, logger, device):
     model.train()
     torch.cuda.empty_cache()
@@ -57,7 +57,7 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
             time_stop = time.time()
             spu = (time_stop - time_start) / 100.
             cur_stats = fast_stats.pretty_string()
-            print(f"Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, {spu:.4f}/update")
+            print(f"Fold {fold}, Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, {spu:.4f}/update")
             logger.record_stats(fast_stats.averages(iteras, prefix='train/'))
             time_start = time.time()
             fast_stats = trainval_stats.AverageMeterSet()
@@ -84,7 +84,7 @@ def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
     return tile_criterion
 
 
-def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
+def val(epoch, fold, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
     model.eval()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -133,7 +133,7 @@ def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_bina
     val_stats.update_dict({"kappa": quadratic_kappa}, 1)
 
     cur_stats = val_stats.pretty_string()
-    print(f"Epoch {epoch}, {cur_stats}, time: {time.time() - time_start}")
+    print(f"Fold {fold}, Epoch {epoch}, {cur_stats}, time: {time.time() - time_start}")
     sys.stdout.flush()
     logger.record_stats(val_stats.averages(epoch, prefix="val/"))
     torch.cuda.empty_cache()

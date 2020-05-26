@@ -7,7 +7,7 @@ import gc
 from prediction_models.att_mil import train_att_mil_batch as batch_train
 
 
-def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer,
+def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, optimizer,
                 train_loader, alpha, loss_type, log_every, logger, device):
     model.train()
     torch.cuda.empty_cache()
@@ -57,7 +57,7 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
             time_stop = time.time()
             spu = (time_stop - time_start) / 100.
             cur_stats = fast_stats.pretty_string()
-            print(f"Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, {spu:.4f}/update")
+            print(f"Fold {fold}, Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, {spu:.4f}/update")
             logger.record_stats(fast_stats.averages(iteras, prefix='train/'))
             time_start = time.time()
             fast_stats = trainval_stats.AverageMeterSet()
@@ -109,28 +109,30 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                                               trainval_params.feat_lr, trainval_params.feat_ft,
                                               trainval_params.lr, trainval_params.wd, trainval_params.train_blocks)
         if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch' }:
-            iters = batch_train.train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer,
+            iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
                                             train_loader, trainval_params.alpha, trainval_params.loss_type,
                                             trainval_params.log_every, logger, device)
-            kappa, loss = batch_train.val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type,
+            kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
                                           logger, trainval_params.slide_binary, device)
         else:
-            iters = train_epoch(epoch, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
+            iters = train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
                                 trainval_params.alpha, trainval_params.loss_type, trainval_params.log_every,
                                 logger, device)
-            kappa, loss = val(epoch, model, val_loader, slide_criterion, trainval_params.loss_type,
+            kappa, loss = val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
                               logger, trainval_params.slide_binary, device)
         checkpointer.update(epoch, iters, kappa)
         if trainval_params.schedule_type == "plateau":
+            print("Take one Plateau step")
             scheduler.step(loss)
         elif trainval_params.schedule_type == "cycle":
+            print("Take one cycle step")
             scheduler.step()
         else:
             raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
     return
 
 
-def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
+def val(epoch, fold, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
     model.eval()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -178,7 +180,7 @@ def val(epoch, model, val_loader, slide_criterion, loss_type, logger, slide_bina
     val_stats.update_dict({"kappa": quadratic_kappa}, 1)
 
     cur_stats = val_stats.pretty_string()
-    print(f"Epoch {epoch}, {cur_stats}, time: {time.time() - time_start}")
+    print(f"Fold {fold}, Epoch {epoch}, {cur_stats}, time: {time.time() - time_start}")
     sys.stdout.flush()
     logger.record_stats(val_stats.averages(epoch, prefix="val/"))
     torch.cuda.empty_cache()
