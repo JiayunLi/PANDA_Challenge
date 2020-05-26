@@ -153,17 +153,22 @@ class BiopsySlidesImage(data.Dataset):
             slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
-        slides_tile_mapping = dict()
-        # slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
-        tiles_dir = f"{self.params.data_dir}/train/"
+        slides_tile_mapping = defaultdict(list)
+        slides_loc = glob.glob(f"{self.params.data_dir}/train/*.png")
+        for tile_loc in slides_loc:
+            slide_id = tile_loc.split("/")[-1].split("_")[0]
+            slides_tile_mapping[slide_id].append(tile_loc)
+
+        # tiles_dir = f"{self.params.data_dir}/train/"
         to_drop = []
         for i in range(len(slides_df)):
             slide_id = str(slides_df.iloc[i].image_id)
-            tiles_loc = glob.glob(f"{tiles_dir}/{slide_id}*.png")
-            if len(tiles_loc) == 0:
+            # tiles_loc = glob.glob(f"{tiles_dir}/{slide_id}*.png")
+            # if len(tiles_loc) == 0:
+            if slide_id not in slides_tile_mapping:
                 to_drop.append(slide_id)
-            else:
-                slides_tile_mapping[slide_id] = tiles_loc
+            # else:
+            #     slides_tile_mapping[slide_id] = tiles_loc
         for slide_id in to_drop:
             slides_df.drop(slides_df[slides_df['image_id'] == slide_id].index, inplace=True)
         print(f"Number of samples: {len(slides_df)}")
