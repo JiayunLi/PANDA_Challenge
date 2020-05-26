@@ -139,6 +139,9 @@ class BiopsySlidesBatch(BiopsySlidesChunk):
         return tiles, slide_label, slide_label, list(range(len(tiles)))
 
 
+N = 12
+
+
 class BiopsySlidesImage(data.Dataset):
     def __init__(self, dataset_params, transform, fold, split, phase='train'):
         self.transform = transform
@@ -182,13 +185,19 @@ class BiopsySlidesImage(data.Dataset):
         slide_info = self.slides_df.iloc[ix]
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
-        cur_tiles_loc = self.slides_tile_mapping[str(slide_name)]
-        tiles = torch.FloatTensor(len(cur_tiles_loc), self.params.num_channels, self.params.input_size,
+        # cur_tiles_loc = self.slides_tile_mapping[str(slide_name)]
+        tiles = torch.FloatTensor(N, self.params.num_channels, self.params.input_size,
                                   self.params.input_size)
-        for i, tile_loc in enumerate(cur_tiles_loc):
+        # for i, tile_loc in enumerate(cur_tiles_loc):
+        #     tile = Image.open(tile_loc)
+        #     if self.transform:
+        #         tile = self.transform(tile)
+        #     tiles[i, :, :, :] = tile
+        for idx in range(N):
+            tile_loc = f"{self.params.data_dir}/train/{slide_name}_{idx}"
             tile = Image.open(tile_loc)
             if self.transform:
                 tile = self.transform(tile)
-            tiles[i, :, :, :] = tile
+            tiles[idx, :, :, :] = tile
 
         return tiles, [-1] * len(tiles), slide_label, list(range(len(tiles)))
