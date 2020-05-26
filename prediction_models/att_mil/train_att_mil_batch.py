@@ -42,7 +42,7 @@ def train_epoch(epoch, iteras, model, slide_criterion, tile_criterion, optimizer
         optimizer.zero_grad()
         loss.backward()
         # Clip gradients
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         cur_dict = {
             'slide_loss': slide_loss.item(),
