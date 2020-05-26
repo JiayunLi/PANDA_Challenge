@@ -194,7 +194,7 @@ class BiopsySlidesImage(data.Dataset):
         #         tile = self.transform(tile)
         #     tiles[i, :, :, :] = tile
         for idx in range(N):
-            tile_loc = f"{self.params.data_dir}/train/{slide_name}_{idx}"
+            tile_loc = f"{self.params.data_dir}/train/{slide_name}_{idx}.png"
             tile = Image.open(tile_loc)
             if self.transform:
                 tile = self.transform(tile)
