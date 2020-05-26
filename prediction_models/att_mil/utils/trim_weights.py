@@ -29,5 +29,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if not os.path.isdir(args.weights_dir):
-        os.mkdir(args.weight_dir)
+        os.mkdir(args.weights_dir)
     trim_weights(args.model_dir, args.weights_dir, args.n_folds)
