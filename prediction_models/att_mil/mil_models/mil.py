@@ -251,5 +251,29 @@ class PoolMilBatch(nn.Module):
         return probs, tiles_probs, None
 
 
+class PoolSimple(nn.Module):
+    def __init__(self, arch='resnext50_32x4d_ssl', n=6, pre=True):
+        super().__init__()
+        m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
+        self.enc = nn.Sequential(*list(m.children())[:-2])
+        nc = list(m.children())[-1].in_features
+        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+
+    def forward(self, x):
+        """
+        x: [bs, N, 3, h, w]
+        x_out: [bs, N]
+        """
+        bs, n, c, h, w = x.shape
+        x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
+        x = self.enc(x)  # x: bs*N x C x 4 x 4
+        _, c, h, w = x.shape
+
+        ## concatenate the output for tiles into a single map
+        x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
+            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        x = self.head(x)  # x: bs x n
+        return x
 
 
