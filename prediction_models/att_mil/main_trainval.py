@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # Hardward
     parser.add_argument('--cuda', action='store_true', help='Whether to use cuda')
     parser.add_argument('--num_workers', type=int, default=0, help='How many dataloader workers to use')
-    parser.add_argument('--manual_seed', type=int, default=6)
+    parser.add_argument('--manual_seed', type=int, default=2020)
 
     # Input data options
     parser.add_argument('--im_size', default=128, type=int, help="original extracted tile size")

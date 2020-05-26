@@ -75,9 +75,9 @@ class AttMIL(nn.Module):
         return classifier
 
     def _initialize(self):
-        if not self.pretrained:
-            for m in self.tile_encoder.modules():
-                init_helper.weight_init(m)
+        # if not self.pretrained:
+        #     for m in self.tile_encoder.modules():
+        #         init_helper.weight_init(m)
         for m in self.instance_embed.modules():
             init_helper.weight_init(m)
         for m in self.embed_bag_feat.modules():
