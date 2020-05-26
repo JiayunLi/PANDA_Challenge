@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # Cross validation
     parser.add_argument('--start_fold', type=int, default=0)
     parser.add_argument('--end_fold', type=int, default=-1)
-    parser.add_argument('--n_folds', type=int, default=5)
+    parser.add_argument('--n_folds', type=int, default=4)
     parser.add_argument('--re_split', action='store_true', help="Re-generate cross validation split")
 
     # Hardward
