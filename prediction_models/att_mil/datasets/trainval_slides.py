@@ -109,6 +109,44 @@ class BiopsySlidesChunk(data.Dataset):
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 
+class BiopsySlidesBatchV2(data.Dataset):
+    def __init__(self, dataset_params, transform, fold, split, phase='train'):
+        self.transform = transform
+        self.split, self.fold = split, fold
+        self.params = dataset_params
+        self.phase = phase
+        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
+                                   lock=False, readahead=False, meminit=False)
+        self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
+        self.slides_df = self._config_data()
+
+    def _config_data(self):
+        # Use all slides to compute mean std
+        if self.phase == "meanstd":
+            slides_df = pd.read_csv(f"{self.params.data_dir}/4_fold_train.csv")
+        else:
+            slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+        print(f"Number of {self.split} samples: {len(slides_df)}")
+        return slides_df
+
+    def __len__(self):
+        return len(self.slides_df)
+
+    def __getitem__(self, ix):
+        slide_info = self.slides_df.iloc[ix]
+        slide_label = int(slide_info.isup_grade)
+        slide_name = slide_info.image_id
+
+        tiles = \
+            file_utils.read_lmdb_slide_tensor(self.tiles_env,
+                                              (-1, self.params.im_size, self.params.im_size, self.params.num_channels),
+                                              slide_name, self.transform,
+                                              out_im_size=(self.params.num_channels, self.params.input_size,
+                                                           self.params.input_size), data_type=np.uint8)
+        labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
+        return tiles, labels, slide_label, list(range(len(tiles)))
+
+
 FIX_N_TILES=16
 
 

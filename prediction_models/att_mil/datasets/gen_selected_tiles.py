@@ -221,7 +221,7 @@ if __name__ == "__main__":
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
     args.masks_dir = f"{args.data_dir}/{args.masks_dir}/"
     args.train_slide_file = f"{args.data_dir}/{args.train_slide_file}"
-    args.out_dir = f"{args.data_dir}/{args.out_dir}/"
+    # args.out_dir = f"{args.data_dir}/{args.out_dir}/"
 
     if not os.path.isdir(args.out_dir):
         os.mkdir(args.out_dir)
@@ -231,3 +231,4 @@ if __name__ == "__main__":
                     args.lowest_im_size, args.level, args.top_n)
 
 
+# python -m prediction_models.att_mil.datasets.gen_selected_tiles --data_dir /data/
