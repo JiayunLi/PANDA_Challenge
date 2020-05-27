@@ -65,7 +65,7 @@ class Train(object):
                 loss1 = criterion[0](outputs['out'], labels)
                 loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim = 1),grade.float().cuda()) # for regression, grade.cuda())
-                loss = 1e-3 * (loss1 + 0.4 * loss2) + loss3
+                loss = 1e-5 * (loss1 + 0.4 * loss2) + loss3
                 val_loss.append(loss.item())
                 val_label.append(grade.cpu())
                 val_preds.append(outputs['isup_grade'].squeeze(dim=1).cpu())
