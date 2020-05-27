@@ -39,7 +39,6 @@ class Model(nn.Module):
         features = self.backbone(x)
         result = OrderedDict()
         x = features["out"] ## [bs * N, 2048, h/16, w/16]
-        print(x.shape)
         _, c, h, w = x.shape
         ### a simple head for isup regression
         y = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
