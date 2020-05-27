@@ -51,7 +51,7 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
             logger.record_stats(fast_stats.averages(iteras, prefix='train/'))
             time_start = time.time()
             fast_stats = trainval_stats.AverageMeterSet()
-        schedule.step()
+        # schedule.step()
     return iteras
 
 

@@ -126,7 +126,8 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
             scheduler.step(loss)
         elif trainval_params.schedule_type == "cycle":
             print("Take one cycle step")
-            # scheduler.step()
+            # print("Take step per batch")
+            scheduler.step()
         else:
             raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
     return
