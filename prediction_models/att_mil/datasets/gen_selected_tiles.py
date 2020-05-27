@@ -165,7 +165,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
 
     counter, num_done = 0, 0
     batches = []
-   
+
     while True:
         # Block if necessary until an item is available.
         data = pqueue.get()
@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
     if not os.path.isdir(args.out_dir):
         os.mkdir(args.out_dir)
-    pickle.dump(args, open(f"{args.data_dir}/{args.out_dir}/dataset_options.pkl", "wb"))
+    pickle.dump(args, open(f"{args.out_dir}/dataset_options.pkl", "wb"))
     process_list = pd.read_csv(args.train_slide_file)['image_id'].to_list()
     save_tiled_lmdb(process_list, args.num_ps, args.write_batch_size, args.out_dir, args.slides_dir, args.masks_dir,
                     args.lowest_im_size, args.level, args.top_n)
