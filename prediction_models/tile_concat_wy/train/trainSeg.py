@@ -73,8 +73,8 @@ class Train(object):
         val_preds = torch.cat(val_preds, 0).round() # for regression
         val_label = torch.cat(val_label)
         # val_preds = torch.cat(val_preds, 0).round()
-        print("0", val_preds.shape, val_preds)
-        print("1", val_label.shape, val_label)
+        print("0", val_preds.shape)
+        print("1", val_label.shape)
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
         exit()
         self.scheduler.step()
