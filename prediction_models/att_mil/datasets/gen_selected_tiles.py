@@ -91,11 +91,11 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
         tiles.append(high_tile)
 
     if len(tiles) < top_n:
-        tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255)
+        tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
     tiles = np.stack(tiles)
     results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs}
     if orig_mask:
-        masks = np.pad(masks, [[0, top_n - len(masks)], [0, 0], [0, 0]], constant_values=0)
+        masks = np.pad(masks, [[0, top_n - len(masks)], [0, 0], [0, 0]], constant_values=0, mode='constant')
         masks = np.stack(masks)
         results["label_masks"] = masks.astype(np.uint8)
     return results
