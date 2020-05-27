@@ -43,7 +43,7 @@ class Train(object):
                 loss1 = criterion[0](outputs['out'], labels)
                 loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim=1), grade.float().cuda())
-                loss = loss1 + 0.4 * loss2 + loss3
+                loss = 1e-3 * (loss1 + 0.4 * loss2) + loss3
                 train_loss.append(loss.item())
                 loss.backward()
                 self.optimizer.step()
@@ -65,7 +65,7 @@ class Train(object):
                 loss1 = criterion[0](outputs['out'], labels)
                 loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim = 1),grade.float().cuda()) # for regression, grade.cuda())
-                loss = loss1 + 0.4 * loss2 + loss3
+                loss = 1e-3 * (loss1 + 0.4 * loss2) + loss3
                 val_loss.append(loss.item())
                 val_label.append(grade.cpu())
                 val_preds.append(outputs['isup_grade'].squeeze(dim=1).cpu())
@@ -73,8 +73,6 @@ class Train(object):
         val_preds = torch.cat(val_preds, 0).round() # for regression
         val_label = torch.cat(val_label)
         # val_preds = torch.cat(val_preds, 0).round()
-        print("0", val_preds.shape)
-        print("1", val_label.shape)
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
         exit()
         self.scheduler.step()
