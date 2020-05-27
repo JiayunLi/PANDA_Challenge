@@ -68,7 +68,7 @@ class Train(object):
                 loss = loss1 + 0.4 * loss2 + loss3
                 val_loss.append(loss.item())
                 val_label.append(grade.cpu())
-                val_preds.append(outputs['isup_grade'].cpu())
+                val_preds.append(outputs['isup_grade'].squeeze(dim=1).cpu())
 
         val_preds = torch.cat(val_preds, 0).round() # for regression
         val_label = torch.cat(val_label)
