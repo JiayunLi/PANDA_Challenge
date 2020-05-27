@@ -89,7 +89,7 @@ if __name__ == "__main__":
     fname = "Deeplabv3Res50_12patch_multitask" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
-    bs = 8
+    bs = 4
     epochs = 15
     csv_file = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
