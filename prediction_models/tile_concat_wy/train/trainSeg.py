@@ -64,7 +64,7 @@ class Train(object):
                 labels = labels.view(-1, h, w).long().cuda()
                 loss1 = criterion(outputs['out'], labels)
                 loss2 = criterion(outputs['aux'], labels)
-                loss3 = criterion[1](outputs['isup_grade'], grade)
+                loss3 = criterion[1](outputs['isup_grade'], grade.cuda())
                 loss = loss1 + 0.4 * loss2 + loss3
                 val_loss.append(loss.item())
                 val_label.append(grade.cpu())
