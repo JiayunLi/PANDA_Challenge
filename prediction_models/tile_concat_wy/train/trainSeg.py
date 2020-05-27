@@ -43,7 +43,7 @@ class Train(object):
                 loss1 = criterion[0](outputs['out'], labels)
                 loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim=1), grade.float().cuda())
-                loss = 1e-3 * (loss1 + 0.4 * loss2) + loss3
+                loss = 1e-5 * (loss1 + 0.4 * loss2) + loss3
                 train_loss.append(loss.item())
                 loss.backward()
                 self.optimizer.step()
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(2,4):
+    for fold in range(0,1):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
