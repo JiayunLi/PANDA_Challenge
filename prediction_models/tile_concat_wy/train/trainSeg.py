@@ -29,8 +29,8 @@ class Train(object):
         train_loss = []
         with torch.set_grad_enabled(True):
             for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-                # if i >= 5:
-                #     break
+                if i >= 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -52,8 +52,8 @@ class Train(object):
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 5:
-                #     break
+                if i > 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -69,10 +69,14 @@ class Train(object):
                 val_loss.append(loss.item())
                 val_label.append(grade.cpu())
                 val_preds.append(outputs['isup_grade'].cpu())
+
         val_preds = torch.cat(val_preds, 0).round() # for regression
         val_label = torch.cat(val_label)
         # val_preds = torch.cat(val_preds, 0).round()
+        print("0", val_preds.shape, val_preds)
+        print("1", val_label.shape, val_label)
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
+        exit()
         self.scheduler.step()
         return np.mean(train_loss), np.mean(val_loss), kappa
 
