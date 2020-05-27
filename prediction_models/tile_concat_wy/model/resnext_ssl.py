@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 from fastai.vision import *
 ## custom package
-from utiles.mishactivation import *
+from utiles.mishactivation import Mish
 from utiles.hubconf import *
 
 

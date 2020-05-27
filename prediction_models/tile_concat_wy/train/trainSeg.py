@@ -90,7 +90,7 @@ if __name__ == "__main__":
     fname = "Deeplabv3Res50_12patch_multitask" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
-    bs = 4
+    bs = 6
     epochs = 15
     csv_file = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(1,2):
+    for fold in range(0,1):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
