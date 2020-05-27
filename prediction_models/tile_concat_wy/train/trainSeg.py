@@ -32,7 +32,7 @@ class Train(object):
                 # if i >= 5:
                 #     break
                 # get the inputs; data is a list of [inputs, labels]
-                inputs, labels = data
+                inputs, labels, grade = data
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
                 # forward + backward + optimize
@@ -40,9 +40,10 @@ class Train(object):
                 # outputs = outputs.squeeze(dim = 1) # for regression
                 h,w = labels.shape[-2:]
                 labels = labels.view(-1, h, w).long().cuda()
-                loss1 = criterion(outputs['out'], labels)
-                loss2 = criterion(outputs['aux'], labels)
-                loss = loss1 + 0.4 * loss2
+                loss1 = criterion[0](outputs['out'], labels)
+                loss2 = criterion[0](outputs['aux'], labels)
+                loss3 = criterion[1](outputs['isup_grade'], grade)
+                loss = loss1 + 0.4 * loss2 + loss3
                 train_loss.append(loss.item())
                 loss.backward()
                 self.optimizer.step()
@@ -54,7 +55,7 @@ class Train(object):
                 # if i > 5:
                 #     break
                 # get the inputs; data is a list of [inputs, labels]
-                inputs, labels = data
+                inputs, labels, grade = data
                 # zero the parameter gradients
                 optimizer.zero_grad()
                 # forward + backward + optimize
@@ -63,11 +64,12 @@ class Train(object):
                 labels = labels.view(-1, h, w).long().cuda()
                 loss1 = criterion(outputs['out'], labels)
                 loss2 = criterion(outputs['aux'], labels)
-                loss = loss1 + 0.4 * loss2
+                loss3 = criterion[1](outputs['isup_grade'], grade)
+                loss = loss1 + 0.4 * loss2 + loss3
                 val_loss.append(loss.item())
-                val_label.append(labels.cpu())
-                val_preds.append(outputs['aux'].cpu())
-        val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
+                val_label.append(grade.cpu())
+                val_preds.append(outputs['isup_grade'].cpu())
+        val_preds = torch.cat(val_preds, 0).round() # for regression
         val_label = torch.cat(val_label)
         # val_preds = torch.cat(val_preds, 0).round()
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
@@ -84,7 +86,7 @@ def save_checkpoint(state, is_best, fname):
 
 if __name__ == "__main__":
     center = "radboud" ## radboud or karolinska
-    fname = "Deeplabv3Res50_12patch_" + center
+    fname = "Deeplabv3Res50_12patch_multitask" + center
     num_classes = 6 if center == 'radboud' else 3
     nfolds = 4
     bs = 8
@@ -102,8 +104,8 @@ if __name__ == "__main__":
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
 
-    criterion = nn.CrossEntropyLoss()
-    # criterion = nn.MSELoss()
+    criterion1 = nn.CrossEntropyLoss()
+    criterion2 = nn.MSELoss()
 
     ## tensorboard writer
     writerDir = './runs'
@@ -114,7 +116,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(3, 4):
+    for fold in range(0,2):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
@@ -126,7 +128,8 @@ if __name__ == "__main__":
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in trange(epochs, desc='epoch'):
-            train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
+            train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,
+                                                               [criterion1, criterion2])
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train_loss,
                                                                                                val_loss,

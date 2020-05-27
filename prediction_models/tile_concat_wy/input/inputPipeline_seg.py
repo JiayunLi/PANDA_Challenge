@@ -90,7 +90,7 @@ class PandaPatchDatasetSeg(Dataset):
                       for i in range(self.N)]
         imgs = [self.open_image(fname, convert_mode='RGB') for fname in imgfnames]
         masks = [self.open_image(fname) for fname in maskfnames]
-        # isup_grade = self.train_csv.loc[idx, 'isup_grade']
+        isup_grade = self.train_csv.loc[idx, 'isup_grade']
         tsfmParams = self.get_params()
         imgtsfm = get_transform(tsfmParams, True)
         masktsfm = get_transform(tsfmParams, False)
@@ -102,8 +102,8 @@ class PandaPatchDatasetSeg(Dataset):
         imgs = torch.stack(imgs)
         masks = [torch.tensor(np.asarray(mask)) for mask in masks]
         masks = torch.stack(masks)
-        # isup_grade = torch.tensor(isup_grade)
-        sample = {'image': imgs, 'seg_mask': masks}
+        isup_grade = torch.tensor(isup_grade)
+        sample = {'image': imgs, 'seg_mask': masks, 'isup_grade': isup_grade}
         return sample
 
     def open_image(self, fn, convert_mode=None, after_open=None):
@@ -182,9 +182,11 @@ class PandaPatchDatasetSegInfer(Dataset):
 def dataloader_collte_fn(batch):
     imgs = [item['image'] for item in batch]
     imgs = torch.stack(imgs)
-    target = [item['seg_mask'] for item in batch]
+    mask = [item['seg_mask'] for item in batch]
+    mask = torch.stack(mask)
+    target = [item['isup_grade'] for item in batch]
     target = torch.stack(target)
-    return [imgs, target]
+    return [imgs, mask, target]
 
 def dataloader_collte_fn_infer(batch):
     imgs = [item['image'] for item in batch]
@@ -209,7 +211,7 @@ if __name__ == "__main__":
                             shuffle=True, num_workers=4, collate_fn=dataloader_collte_fn)
 
     ## fetch data from dataloader
-    img, target = iter(dataloader).next()
+    img, mask, target = iter(dataloader).next()
     print("image size:{}, target sise:{}.".format(img.size(), target.size()))
 
     ## cross val dataloader
