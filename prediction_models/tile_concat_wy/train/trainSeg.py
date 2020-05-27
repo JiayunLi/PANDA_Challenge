@@ -29,8 +29,8 @@ class Train(object):
         train_loss = []
         with torch.set_grad_enabled(True):
             for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-                # if i >= 5:
-                #     break
+                if i >= 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -52,8 +52,8 @@ class Train(object):
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 5:
-                #     break
+                if i > 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -62,8 +62,8 @@ class Train(object):
                 outputs = model(inputs.cuda())
                 # outputs = outputs.squeeze(dim=1)  # for regression
                 labels = labels.view(-1, h, w).long().cuda()
-                loss1 = criterion(outputs['out'], labels)
-                loss2 = criterion(outputs['aux'], labels)
+                loss1 = criterion[0](outputs['out'], labels)
+                loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'], grade.cuda())
                 loss = loss1 + 0.4 * loss2 + loss3
                 val_loss.append(loss.item())
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(2,4):
+    for fold in range(0,2):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
