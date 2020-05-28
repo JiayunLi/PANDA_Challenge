@@ -23,6 +23,7 @@ class Train(object):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.segcoef = 0.1
     def train_epoch(self,trainloader, valloader, criterion):
         ## train
         self.model.train()
@@ -43,7 +44,7 @@ class Train(object):
                 loss1 = criterion[0](outputs['out'], labels)
                 loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim=1), grade.float().cuda())
-                loss = 1e-9 * (loss1 + 0.4 * loss2) + loss3
+                loss = self.segcoe * (loss1 + 0.4 * loss2) + loss3
                 train_loss.append(loss.item())
                 loss.backward()
                 self.optimizer.step()
@@ -75,6 +76,7 @@ class Train(object):
         # val_preds = torch.cat(val_preds, 0).round()
         kappa = cohen_kappa_score(val_label.view(-1), val_preds.view(-1), weights='quadratic')
         self.scheduler.step()
+        self.segcoef *= 0.1
         return np.mean(train_loss), np.mean(val_loss), kappa
 
 
@@ -117,7 +119,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds, desc='fold'):
-    for fold in range(2,3):
+    for fold in range(1,2):
         trainloader, valloader = crossValData(fold)
         model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
