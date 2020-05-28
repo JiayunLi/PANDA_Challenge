@@ -76,6 +76,10 @@ def get_meanstd(dataset_name):
         # {"mean": [1.0 - 0.90949707, 1.0 - 0.8188697, 1.0 - 0.87795304],
         meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
                    "std": [0.36357649, 0.49984502, 0.40477625]}
+    elif dataset_name == "br_128_128":
+        # {"mean": [1.0 - 0.90949707, 1.0 - 0.8188697, 1.0 - 0.87795304],
+        meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
+                   "std": [0.36357649, 0.49984502, 0.40477625]}
     else:
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
 
@@ -150,7 +154,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
         dataset = trainval_slides.BiopsySlidesBatch(dataset_params, transform, fold, split, phase=phase)
     elif dataset_params.dataset in {"16_128_128"}:
         dataset = trainval_slides.BiopsySlidesImage(dataset_params, transform, fold, split, phase=phase)
-    elif dataset_params.dataset in {'br_256_256'}:
+    elif dataset_params.dataset in {'br_256_256', 'br_128_128'}:
         dataset = trainval_slides.BiopsySlidesBatchV2(dataset_params, transform, fold, split, phase=phase)
     else:
         dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
