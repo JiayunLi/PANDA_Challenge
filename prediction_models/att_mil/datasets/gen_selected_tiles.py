@@ -147,7 +147,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                 if txn.get(slide_name.encode()) is None:
                     slides_to_process.append(slide_name)
     else:
-        slides_to_process = slides_list[:10]
+        slides_to_process = slides_list
     # slides_to_process = slides_to_process[:5]
     print("Total %d slides to process" % len(slides_to_process))
     batch_size = len(slides_to_process) // num_ps
