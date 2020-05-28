@@ -30,9 +30,11 @@ class crossValDataloader(object):
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
         trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=True, num_workers=4,
-                                                  collate_fn=dataloader_collte_fn, pin_memory=True)
+                                                  collate_fn=dataloader_collte_fn, pin_memory=True,
+                                                  drop_last=True)
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=True, num_workers=4,
-                                                collate_fn=dataloader_collte_fn, pin_memory=True)
+                                                collate_fn=dataloader_collte_fn, pin_memory=True,
+                                                drop_last=True)
         return trainloader, valloader
 
 class PandaPatchDataset(Dataset):
