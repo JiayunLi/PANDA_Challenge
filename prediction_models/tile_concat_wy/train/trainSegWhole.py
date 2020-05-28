@@ -33,8 +33,8 @@ class Train(object):
         train_loss = []
         with torch.set_grad_enabled(True):
             for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-                if i >= 5:
-                    break
+                # if i >= 5:
+                #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
