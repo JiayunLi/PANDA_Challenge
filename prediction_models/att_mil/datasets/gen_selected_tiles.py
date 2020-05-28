@@ -189,7 +189,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                                      len(slides_to_process), counter)
         else:
             slide_name = data['slide_name']
-            tile_ids_map[slide_name] = data['ids']
+            tile_ids_map[slide_name] = data['ids'].tolist()
             counter += 1
             print(f"Put tile location {counter}/{len(slides_to_process)}")
     if not loc_only:
