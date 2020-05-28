@@ -115,6 +115,7 @@ class BiopsySlidesBatchV2(data.Dataset):
         self.split, self.fold = split, fold
         self.params = dataset_params
         self.phase = phase
+        print(f"Read tiles from folder {dataset_params.data_dir}/tiles/")
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
         self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
