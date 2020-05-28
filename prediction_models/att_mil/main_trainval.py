@@ -10,7 +10,7 @@ from prediction_models.att_mil import train_att_mil, config_params
 from prediction_models.att_mil.utils import checkpoint_utils
 
 """
-python -m prediction_models.att_mil.main_trainval --data_dir /data/slides_encode_128/ --info_dir ./info/ --cuda --num_workers 4 --im_size 128 --cache_dir ./cache/  --feat_ft 5 --loss_type se --arch resnext50_32x4d  --alpha 0 --exp resNeXt_50_slideonly
+python -m prediction_models.att_mil.main_trainval --data_dir /data/PANDA_challenge/  --dataset br_256_256  --info_dir ./info/16_128_128/ --num_workers 4 --im_size 256  --feat_ft 0  --arch resnext50_32x4d_ssl  --alpha 0 --input_size 256
 """
 
 def seed_torch(seed=1029):

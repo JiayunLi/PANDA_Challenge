@@ -17,6 +17,7 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
     train_iter = iter(train_loader)
     for step in range(len(train_loader)):
         tiles, _, slide_label, _ = train_iter.next()
+        print("start forward")
         if loss_type == "mse":
             slide_label = slide_label.float()
         slide_label = slide_label.to(device)
