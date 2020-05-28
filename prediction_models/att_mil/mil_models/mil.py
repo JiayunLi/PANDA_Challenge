@@ -3,8 +3,32 @@ from prediction_models.att_mil.utils import model_utils, init_helper
 import torch.nn as nn
 import torch
 from fastai.vision import *
+from torchvision.models.resnet import ResNet, Bottleneck
 from prediction_models.tile_concat_wy.utiles import mishactivation
 import torch.nn.functional as F
+
+
+def config_encoder_infer(input_size, num_classes, arch, pretrained=False):
+    if arch == "resnext50_32x4d_ssl":
+        encoder = ResNet(Bottleneck, [3, 4, 6, 3], groups=32,width_per_group=4)
+        feature_dim = list(encoder.children())[-1].in_features
+        encoder.features = nn.Sequential(*list(encoder.children())[:-2])
+        encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+                                     nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        return encoder, feature_dim
+    else:
+        encoder_name = models.__dict__[arch]
+        encoder = encoder_name(pretrained=pretrained)
+    # Convert encoders to have a features and a classifier
+    # The classifier should be reinitialized to accommodate different number of classes
+    if arch.startswith("vgg"):
+        feature_dim = model_utils.config_vgg_layers(encoder, arch, input_size, num_classes)
+
+    elif arch.startswith("res"):
+        feature_dim = model_utils.config_resnet_layers(encoder, arch, num_classes)
+    else:
+        raise NotImplementedError(f"{arch} Haven't implemented")
+    return encoder, feature_dim
 
 
 def config_encoder(input_size, num_classes, arch, pretrained):
@@ -280,3 +304,30 @@ class PoolSimple(nn.Module):
         return x, None, None
 
 
+class PoolSimpleInfer(nn.Module):
+    def __init__(self, mil_params, arch='resnext50_32x4d_ssl', n=6, pre=True):
+        super().__init__()
+        print("Use pool simple model")
+        self.mil_params = mil_params
+        self.hp = {"mil_params": mil_params, "arch": arch}
+        m =  ResNet(Bottleneck, [3, 4, 6, 3], groups=32,width_per_group=4)
+        self.enc = nn.Sequential(*list(m.children())[:-2])
+        nc = list(m.children())[-1].in_features
+        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                  mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+
+    def forward(self, x, phase="regular"):
+        """
+        x: [bs, N, 3, h, w]
+        x_out: [bs, N]
+        """
+        bs, n, c, h, w = x.shape
+        x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
+        x = self.enc(x)  # x: bs*N x C x 4 x 4
+        _, c, h, w = x.shape
+
+        ## concatenate the output for tiles into a single map
+        x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
+            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        x = self.head(x)  # x: bs x n
+        return x, None, None

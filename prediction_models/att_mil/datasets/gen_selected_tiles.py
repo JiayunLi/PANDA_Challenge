@@ -52,6 +52,18 @@ def get_padded(img, sz):
     return img, pad0 // 2, pad1 // 2
 
 
+def tile_padded(padded_img, sz, top_n):
+
+    padded_img = padded_img.reshape(padded_img.shape[0] // sz, sz, padded_img.shape[1] // sz, sz, 3)
+    padded_img = padded_img.transpose(0, 2, 1, 3, 4).reshape(-1, sz, sz, 3)
+
+    if len(padded_img) < top_n:
+        padded_img = np.pad(padded_img, [[0, top_n - len(padded_img)], [0, 0], [0, 0], [0, 0]], constant_values=255)
+    idxs = np.argsort(padded_img.reshape(padded_img.shape[0], -1).sum(-1))[:top_n]
+    padded_img = padded_img[idxs]
+    return padded_img, idxs[:top_n]
+
+
 def select_at_lowest(img, sz, n_tiles, mask_tissue):
     pad_img, pad_top, pad_left = get_padded(img, sz)
     br_img = compute_blue_ratio(pad_img)
