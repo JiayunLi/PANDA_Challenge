@@ -136,15 +136,18 @@ def write_batch_data(env_tiles, env_label_masks, tile_ids_map, batch_data, tot_l
 
 
 def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, masks_dir, lowest_im_size, level,
-                    top_n):
+                    top_n, loc_only):
     slides_to_process = []
     env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
     env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
     tile_ids_map = dict()
-    with env_label_masks.begin(write=False) as txn:
-        for slide_name in slides_list:
-            if txn.get(slide_name.encode()) is None:
-                slides_to_process.append(slide_name)
+    if not loc_only:
+        with env_label_masks.begin(write=False) as txn:
+            for slide_name in slides_list:
+                if txn.get(slide_name.encode()) is None:
+                    slides_to_process.append(slide_name)
+    else:
+        slides_to_process = slides_list
     # slides_to_process = slides_to_process[:5]
     print("Total %d slides to process" % len(slides_to_process))
     batch_size = len(slides_to_process) // num_ps
@@ -178,21 +181,27 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                 break
         else:
             batches.append(data)
-        # Write a batch of data.
-        if len(batches) == write_batch_size:
+        if not loc_only:
+            # Write a batch of data.
+            if len(batches) == write_batch_size:
+                counter = \
+                    write_batch_data(env_tiles, env_label_masks, tile_ids_map, batches,
+                                     len(slides_to_process), counter)
+        else:
+            slide_name = data['slide_name']
+            tile_ids_map[slide_name] = data['ids']
+    if not loc_only:
+        if len(batches) > 0:
             counter = \
                 write_batch_data(env_tiles, env_label_masks, tile_ids_map, batches,
                                  len(slides_to_process), counter)
-    if len(batches) > 0:
-        counter = \
-            write_batch_data(env_tiles, env_label_masks, tile_ids_map, batches,
-                             len(slides_to_process), counter)
 
     for process in reader_processes:
         process.join()
     assert counter == len(slides_to_process), "%d processed slides, %d slides to be processed" \
                                               % (counter, len(slides_to_process))
-    json.dump(tile_ids_map, open(f"{out_dir}/tile_lowest_ids.json", "w"), default=default)
+    assert len(tile_ids_map) == len(slides_to_process)
+    json.dump(tile_ids_map, open(f"{out_dir}/tile_lowest_ids.json", "w"))
 
 
 if __name__ == "__main__":
@@ -218,6 +227,8 @@ if __name__ == "__main__":
     parser.add_argument("--write_batch_size", default=10, type=int, help="Write of batch of n slides")
     parser.add_argument('--top_n', type=int, default=40)
 
+    parser.add_argument('--loc_only', action='store_true')
+
     args = parser.parse_args()
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
     args.masks_dir = f"{args.data_dir}/{args.masks_dir}/"
@@ -229,7 +240,7 @@ if __name__ == "__main__":
     pickle.dump(args, open(f"{args.out_dir}/dataset_options.pkl", "wb"))
     process_list = pd.read_csv(args.train_slide_file)['image_id'].to_list()
     save_tiled_lmdb(process_list, args.num_ps, args.write_batch_size, args.out_dir, args.slides_dir, args.masks_dir,
-                    args.lowest_im_size, args.level, args.top_n)
+                    args.lowest_im_size, args.level, args.top_n, args.loc_only)
 
 
 # python -m prediction_models.att_mil.datasets.gen_selected_tiles --data_dir /data/
