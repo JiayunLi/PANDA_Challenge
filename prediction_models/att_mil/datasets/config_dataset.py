@@ -77,6 +77,7 @@ def get_meanstd(dataset_name):
 
     return meanstd
 
+
 # BATCH_DATASET = set(["dw_sample_16", "dw_sample_16v2", "16_128_128"])
 
 def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, mil_arch=None):
@@ -145,6 +146,8 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
         dataset = trainval_slides.BiopsySlidesBatch(dataset_params, transform, fold, split, phase=phase)
     elif dataset_params.dataset in {"16_128_128"}:
         dataset = trainval_slides.BiopsySlidesImage(dataset_params, transform, fold, split, phase=phase)
+    elif dataset_params.dataset in {'br_256_256'}:
+        dataset = trainval_slides.BiopsySlidesBatchV2(dataset_params, transform, fold, split, phase=phase)
     else:
         dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
 

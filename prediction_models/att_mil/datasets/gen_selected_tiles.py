@@ -111,6 +111,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n,
         results = get_highres_tiles(orig, idxs, pad_top, pad_left, lowest_im_size,
                                                        (pad_img.shape[0], pad_img.shape[1]),
                                                        level=level, top_n=top_n, orig_mask=mask)
+        results['slide_name'] = slide_name
         pqueue.put(results)
         counter += 1
         print("Put tiled slide [%s] on to queue: [%d]/[%d]" % (slide_name, counter, len(slides_list)))
