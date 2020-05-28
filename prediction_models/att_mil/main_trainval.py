@@ -64,9 +64,8 @@ def trainval(opts):
     if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset not in {"16_128_128"}:
         from prediction_models.att_mil.utils import dataset_utils
         masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
-
         dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=opts.im_size,
-                                               trainval_file=f"{opts.data_dir}/train.csv", binary_label=False,
+                                               trainval_file=f"{opts.data_dir}/4_fold_train.csv", binary_label=False,
                                                dataset_name=opts.dataset)
         print(f"Generate file in {opts.data_dir}/tile_labels_{opts.dataset}.json")
 
