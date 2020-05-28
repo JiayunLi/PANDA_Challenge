@@ -33,8 +33,8 @@ class Train(object):
         train_loss = []
         with torch.set_grad_enabled(True):
             for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-                # if i >= 5:
-                #     break
+                if i >= 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -93,7 +93,8 @@ if __name__ == "__main__":
     epochs = 15
     csv_file_train = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     csv_file_val = '../input/panda-32x256x256-tiles-data/wo_mask_val.csv'
-    image_dir = '../input/panda-32x256x256-tiles-data/train/'
+    image_dir_train = '../input/panda-32x256x256-tiles-data/train/'
+    image_dir_val = '../input/panda-32x256x256-tiles-data/val/'
     mask_dir = '../input/panda-32x256x256-tiles-data/masks/'
     ## image statistics
     mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
@@ -101,9 +102,9 @@ if __name__ == "__main__":
     # mean = torch.tensor([0.5, 0.5, 0.5])
     # std = torch.tensor([0.5, 0.5, 0.5])
     ## dataset, can fetch data by dataset[idx]
-    dataset_train = PandaPatchDatasetSeg(csv_file_train, image_dir, mask_dir, [mean, std], N = 12)
+    dataset_train = PandaPatchDatasetSeg(csv_file_train, image_dir_train, mask_dir, [mean, std], N = 12)
     tsfm = data_transform(mean, std)
-    dataset_val = PandaPatchDataset(csv_file_val, image_dir, transform = tsfm, N = 12)
+    dataset_val = PandaPatchDataset(csv_file_val, image_dir_val, transform = tsfm, N = 12)
     ## dataloader
     # crossValData = crossValDataloader(csv_file, dataset, bs)
     trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=bs, shuffle=True, num_workers=4,
