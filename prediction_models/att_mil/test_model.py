@@ -152,8 +152,8 @@ def get_cv_attentions(args):
         _, cur_split_atts, cur_split_tile_ids = \
             test_w_atts([predictor], meanstd, cur_df, test_params, opts.num_workers, opts.batch_size, device)
         for slide_id, atts in cur_split_atts.items():
-            all_atts_info['atts'][slide_id] = atts + []
-            all_atts_info['tile_ids'][slide_id] = cur_split_tile_ids[slide_id] + []
+            all_atts_info['atts'][slide_id] = atts
+            all_atts_info['tile_ids'][slide_id] = cur_split_tile_ids[slide_id]
     np.save(f"{args.att_dir}/{model_name}_n_{args.top_n}_sz_{args.im_size}.npy", all_atts_info)
 
 
