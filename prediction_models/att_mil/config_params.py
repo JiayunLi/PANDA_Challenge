@@ -4,7 +4,8 @@ import numpy as np
 
 
 class DatasetParams:
-    def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized, num_channels=3):
+    def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
+                 num_channels=3, top_n=-1):
         self.im_size = im_size
         self.input_size = input_size
         self.num_channels = num_channels
@@ -14,6 +15,7 @@ class DatasetParams:
         self.dataset = dataset
         self.exp_dir = exp_dir
         self.normalized = normalized
+        self.top_n = top_n
 
 
 class DatasetTest:
@@ -27,6 +29,7 @@ class DatasetTest:
         self.test_file = self.test_file
         self.test_slides_dir = self.test_slides_dir
         self.num_channels = num_channels
+        self.top_n = top_n
 
 
 class TrainvalParams:

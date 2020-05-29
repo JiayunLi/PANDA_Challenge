@@ -79,7 +79,7 @@ def trainval(opts):
 
     dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                  opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
-                                                 opts.normalized, opts.num_channels)
+                                                 opts.normalized, opts.num_channels, top_n=opts.top_n)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
                                               opts.loss_type, opts.schedule_type, opts.mil_arch)
@@ -174,6 +174,7 @@ if __name__ == "__main__":
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
     parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
+    parser.add_argument('--top_n', type=int, default=-1, help="Set to > 0 to limit the number of tiles")
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
     parser.add_argument('--batch_size', default=32, type=int, help='Use batch training')

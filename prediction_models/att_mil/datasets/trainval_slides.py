@@ -145,6 +145,9 @@ class BiopsySlidesBatchV2(data.Dataset):
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
         labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
+        if self.params.top_n > 0 and len(tiles) > self.params.top_n:
+            tiles = tiles[self.params.top_n, :, :, :]
+            labels = labels[self.params.top_n, :]
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 
