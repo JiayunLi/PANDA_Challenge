@@ -86,21 +86,20 @@ def save_checkpoint(state, is_best, fname):
 
 if __name__ == "__main__":
     center = "radboud" ## radboud or karolinska
-    fname = "Deeplabv3Res50_12patch_multitask_whole_" + center
+    fname = "Deeplabv3Res50_12patch_multitask_whole_30_epoch_" + center
     num_classes = 6 if center == 'radboud' else 3
-    nfolds = 4
     bs = 6
-    epochs = 15
+    epochs = 30
     csv_file_train = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     csv_file_val = '../input/panda-32x256x256-tiles-data/wo_mask_val.csv'
     image_dir_train = '../input/panda-32x256x256-tiles-data/train/'
     image_dir_val = '../input/panda-32x256x256-tiles-data/val/'
     mask_dir = '../input/panda-32x256x256-tiles-data/masks/'
     ## image statistics
-    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    # mean = torch.tensor([0.5, 0.5, 0.5])
-    # std = torch.tensor([0.5, 0.5, 0.5])
+    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    mean = torch.tensor([0.5, 0.5, 0.5])
+    std = torch.tensor([0.5, 0.5, 0.5])
     ## dataset, can fetch data by dataset[idx]
     dataset_train = PandaPatchDatasetSeg(csv_file_train, image_dir_train, mask_dir, [mean, std], N = 12)
     tsfm = data_transform(mean, std)
