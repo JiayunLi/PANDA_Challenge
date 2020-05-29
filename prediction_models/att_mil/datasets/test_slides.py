@@ -78,17 +78,24 @@ class BiopsySlidesLowest(data.Dataset):
     def __getitem__(self, ix):
         slide_info = self.test_df.iloc[ix]
         img = skimage.io.MultiImage(f"{self.test_slides_dir}/{slide_info.image_id}.tiff")[-1]
-        img, _, _ = gen_selected_tiles.get_padded(img, self.params.input_size)
+        img, pad_top, pad_left = gen_selected_tiles.get_padded(img, self.params.input_size)
+        n_row, n_col = img.size(0) // self.params.input_size, img.size(1) // self.params.input_size
+
         tiles, tile_idxs = gen_selected_tiles.tile_padded(img, self.params.input_size, self.params.top_n)
         instances = torch.FloatTensor(len(tiles),
                                       self.params.num_channels, self.params.input_size, self.params.input_size)
+        tile_locs = torch.FloatTensor(len(tiles), 2)
         for i, tile in enumerate(tiles):
             if self.transform:
                 instances[i, :, :, :] = self.transform(tile)
+            tile_id = tile_idxs[i]
+            x, y = tile_id // n_col, tile_id % n_col
+            tile_locs[i, 0], tile_locs[i, 1] = max(x * self.params.input_size - pad_top, 0), \
+                                               max(y * self.params.input_size - pad_left, 0)
         # if self.phase == "test":
         #     return instances, slide_info.image_id
         # else:
-        return instances, slide_info.image_id, tile_idxs.tolist()
+        return instances, slide_info.image_id, tile_locs
 
 
 class BiopsySlideSelected(data.Dataset):

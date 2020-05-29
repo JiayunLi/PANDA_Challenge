@@ -114,11 +114,12 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
             else:
                 pooled_predicted = pooled_predicted.mean(1).argmax(-1).cpu().numpy()[:]  # [bs]
             pooled_atts = pooled_atts.mean(1).cpu().numpy()[:]
-
+            batch_idx = 0
             for image_id, cur_pred, cur_atts in zip(image_ids, pooled_predicted, pooled_atts):
                 pred_data.append({"image_id": str(image_id), "isup_grade": int(cur_pred)})
                 all_atts[str(image_id)] = cur_atts
-                all_tile_ids[str(image_id)] = tile_ids
+                all_tile_ids[str(image_id)] = tile_ids[batch_idx, :, :].cpu().numpy()[:]
+                batch_idx += 1
             del tiles
             del pooled_predicted
             del pooled_atts
