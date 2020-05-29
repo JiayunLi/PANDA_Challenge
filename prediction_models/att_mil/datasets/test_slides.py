@@ -91,8 +91,8 @@ class BiopsySlidesLowest(data.Dataset):
                 instances[i, :, :, :] = self.transform(tile)
             tile_id = tile_idxs[i]
             x, y = tile_id // n_col, tile_id % n_col
-            tile_locs[i, 0], tile_locs[i, 1] = max(x * self.params.input_size - pad_top, 0), \
-                                               max(y * self.params.input_size - pad_left, 0)
+            tile_locs[i, 0], tile_locs[i, 1] = float(max(x * self.params.input_size - pad_top, 0)), \
+                                               float(max(y * self.params.input_size - pad_left, 0))
         # if self.phase == "test":
         #     return instances, slide_info.image_id
         # else:
