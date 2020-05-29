@@ -86,7 +86,7 @@ def save_checkpoint(state, is_best, fname):
 
 if __name__ == "__main__":
     center = "radboud" ## radboud or karolinska
-    fname = "Deeplabv3Res50_12patch_multitask_whole_30_epoch_" + center
+    fname = "Deeplabv3Res101_12patch_multitask_whole_30_epoch_" + center
     nfolds = 4
     num_classes = 6 if center == 'radboud' else 3
     bs = 6
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
 
-    model = Model(arch='deeplabv3_resnet50', n=num_classes).cuda()
+    model = Model(arch='deeplabv3_resnet101', n=num_classes).cuda()
     # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
     optimizer = Over9000(model.parameters())
