@@ -37,7 +37,6 @@ class BiopsySlides(data.Dataset):
         return instances, slide_info.image_id
 
 
-
 class BiopsySlidesBatch(BiopsySlides):
     def __init__(self, params, test_df, transform, tile_normalizer):
         super().__init__(params, test_df, transform, tile_normalizer)
@@ -93,15 +92,19 @@ class BiopsySlidesLowest(data.Dataset):
 
 
 class BiopsySlideSelected(data.Dataset):
-    def __init__(self, slides_df, slides_dir, lowest_im_size, input_size, num_channels, level, top_n, transform):
-        self.lowest_im_size = lowest_im_size
-        self.slides_dir = slides_dir
-        self.level = level
+    # slides_df, slides_dir,
+    # lowest_im_size, input_size, num_channels, level, top_n, transform
+
+    def __init__(self, params, test_df, transform, phase='test'):
+        self.params = params
+        self.lowest_im_size = params.lowest_im_size
+        self.slides_dir = params.test_slides_dir
+        self.level = params.level
         rate_map = {-1: 1, -2: 4, -3: 16}
         self.rate = rate_map[self.level]
-        self.top_n = top_n
-        self.slides_df = slides_df
-        self.input_size, self.num_channels = input_size, num_channels
+        self.top_n = params.top_n
+        self.slides_df = test_df
+        self.input_size, self.num_channels = params.input_size, params.num_channels
         self.transform = transform
 
     def __len__(self):

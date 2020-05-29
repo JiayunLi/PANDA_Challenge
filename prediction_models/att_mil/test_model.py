@@ -13,8 +13,9 @@ import glob
 
 
 class TestParams:
-    def __init__(self, test_slides_dir, im_size, input_size, loss_type, top_n,
-                 dw_rate=None, ts_thres=None, overlap=None,  num_channels=3):
+    def __init__(self, test_slides_dir, im_size, input_size, loss_type,
+                 dw_rate=None, ts_thres=None, overlap=None, top_n=40, lowest_im_size=32, level=-2,
+                 num_channels=3):
         self.test_slides_dir = test_slides_dir
         self.im_size = im_size
         self.input_size = input_size
@@ -24,6 +25,8 @@ class TestParams:
         self.num_channels = num_channels
         self.loss_type = loss_type
         self.top_n = top_n
+        self.level = level
+        self.lowest_im_size = lowest_im_size
 
 
 def load_opts(ckp_dir, data_dir, cuda, num_workers, batch_size):
@@ -52,6 +55,7 @@ def load_model(ckp_path, device):
             model = mil.PoolMilBatch(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
                                      feature_dim, hp['mil_params'])
         else:
+            print("Use Attention MIL model")
             model = mil.AttMILBatch(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
                                     feature_dim, hp['mil_params'])
     model.load_state_dict(params)
@@ -137,11 +141,12 @@ def get_cv_attentions(args):
     meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304], "std": [0.36357649, 0.49984502, 0.40477625]}
     opts = load_opts(args.model_dir, args.data_dir, args.cuda, args.num_workers, args.batch_size)
     device = "cpu" if not args.cuda else "cuda"
-    test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type, args.top_n)
+    test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type, top_n=args.top_n)
     all_atts_info = {"atts": {}, "tile_ids": {}}
     model_name = get_model_name(args.model_dir)
     for fold in range(opts.n_folds):
         ckp_path = f"{args.model_dir}/checkpoint_best_{fold}.pth"
+        print(f"start loading model from {fold}, {ckp_path}")
         predictor = load_model(ckp_path, device)
         cur_df = pd.read_csv(f"{args.info_dir}/val_{fold}.csv")
         _, cur_split_atts, cur_split_tile_ids = \
