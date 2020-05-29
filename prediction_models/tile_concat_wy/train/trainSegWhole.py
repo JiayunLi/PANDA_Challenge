@@ -87,6 +87,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     center = "radboud" ## radboud or karolinska
     fname = "Deeplabv3Res50_12patch_multitask_whole_30_epoch_" + center
+    nfolds = 4
     num_classes = 6 if center == 'radboud' else 3
     bs = 6
     epochs = 30
