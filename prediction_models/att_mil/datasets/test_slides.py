@@ -67,6 +67,7 @@ class BiopsySlidesBatch(BiopsySlides):
 class BiopsySlidesLowest(data.Dataset):
     def __init__(self, params, test_df, transform, phase='test'):
         self.params = params
+        print(params)
         self.test_df = test_df
         self.test_slides_dir = params.test_slides_dir
         self.transform = transform
@@ -79,7 +80,7 @@ class BiopsySlidesLowest(data.Dataset):
         slide_info = self.test_df.iloc[ix]
         img = skimage.io.MultiImage(f"{self.test_slides_dir}/{slide_info.image_id}.tiff")[-1]
         img, pad_top, pad_left = gen_selected_tiles.get_padded(img, self.params.input_size)
-        n_row, n_col = img.size(0) // self.params.input_size, img.size(1) // self.params.input_size
+        n_row, n_col = img.shape[0] // self.params.input_size, img.shape[1] // self.params.input_size
 
         tiles, tile_idxs = gen_selected_tiles.tile_padded(img, self.params.input_size, self.params.top_n)
         instances = torch.FloatTensor(len(tiles),
