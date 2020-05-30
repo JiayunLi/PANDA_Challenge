@@ -14,7 +14,7 @@ from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
-from model.resnext_ssl import *
+from model.deeplabv3_finetune import *
 from utiles.radam import *
 from utiles.utils import *
 
@@ -28,8 +28,8 @@ class Train(object):
         self.model.train()
         train_loss = []
         for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-            # if i >= 50:
-            #     break
+            if i >= 5:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             # zero the parameter gradients
@@ -46,8 +46,8 @@ class Train(object):
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                #                 if i > 50:
-                #                     break
+                if i > 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
                 # zero the parameter gradients
@@ -75,17 +75,18 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_reg_medreso_12patch"
+    fname = "Dlabv3_ft_reg_medreso_12patch"
     nfolds = 4
     bs = 12
     epochs = 30
-    csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
+    csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
+    load = './weights/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
     ## image statistics
-    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    # mean = torch.tensor([0.5, 0.5, 0.5])
-    # std = torch.tensor([0.5, 0.5, 0.5])
+    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    mean = torch.tensor([0.5, 0.5, 0.5])
+    std = torch.tensor([0.5, 0.5, 0.5])
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
@@ -107,7 +108,13 @@ if __name__ == "__main__":
     # for fold in trange(nfolds - 1, nfolds, desc='fold'):
     for fold in range(nfolds - 1, nfolds):
         trainloader, valloader = crossValData(fold)
-        model = Model(n = 1).cuda()
+        model = Model().cuda()
+        if load:
+            pretrained_dict = torch.load(load)
+            model_dict = model.state_dict()
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+            model_dict.update(pretrained_dict)
+            model.load_state_dict(pretrained_dict)
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
         optimizer = Over9000(model.parameters())

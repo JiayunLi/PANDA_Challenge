@@ -20,14 +20,14 @@ from utiles.torchvisionSegmentation import deeplabv3_resnet50, deeplabv3_resnet1
 
 class Model(nn.Module):
     __constants__ = ['aux_classifier']
-    def __init__(self, arch='deeplabv3_resnet101', n=6, pre=True):
+    def __init__(self, arch='deeplabv3_resnet50', n=6, pre=True):
         super(Model, self).__init__()
         model_fn = {'deeplabv3_resnet101': deeplabv3_resnet101, 'deeplabv3_resnet50': deeplabv3_resnet50}
         # m = torch.hub.load('pytorch/vision:v0.6.0', arch, pretrained = pre)
         m = model_fn[arch](pretrained = pre)
         self.backbone = m.backbone
-        self.classifier = DeepLabHead(2048, n)
-        self.aux_classifier = FCNHead(1024, n)
+        # self.classifier = DeepLabHead(2048, n)
+        # self.aux_classifier = FCNHead(1024, n)
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * 2048, 512),
                                   Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 1))
 
@@ -38,29 +38,16 @@ class Model(nn.Module):
         input_shape = (h, w)
         # contract: features is a dict of tensors
         features = self.backbone(x)
-        result = OrderedDict()
         x = features["out"] ## [bs * N, 2048, h/16, w/16]
         _, c, h, w = x.shape
         ### a simple head for isup regression
         y = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         y = self.head(y) # x: bs x n
-        result["isup_grade"] = y
-
-        x = self.classifier(x)
-        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
-        result["out"] = x
-
-        if self.aux_classifier is not None:
-            x = features["aux"]
-            x = self.aux_classifier(x)
-            x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
-            result["aux"] = x
-
-        return result
+        return y
 
 if __name__ == "__main__":
-    img = torch.rand([2, 5, 3, 128, 128])
+    img = torch.rand([2, 5, 3, 256, 256])
     model = Model(arch='deeplabv3_resnet50')
     output = model(img)
-    print(output['out'].shape, output['aux'].shape)
+    print(output.shape)
