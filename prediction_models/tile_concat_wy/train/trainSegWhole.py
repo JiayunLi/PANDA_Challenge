@@ -17,7 +17,8 @@ from input.inputPipeline_seg import PandaPatchDatasetSeg
 from input.inputPipeline_seg import dataloader_collte_fn as dataloader_collte_fn_seg
 from input.inputPipeline import dataloader_collte_fn as dataloader_collte_fn_val
 from input.inputPipeline import PandaPatchDataset, data_transform
-from model.deeplabv3 import *
+# from model.deeplabv3 import *
+from model.resnext_seg import *
 from utiles.radam import *
 from utiles.utils import *
 
@@ -33,8 +34,8 @@ class Train(object):
         train_loss = []
         with torch.set_grad_enabled(True):
             for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-                # if i >= 5:
-                #     break
+                if i >= 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, grade = data
                 # zero the parameter gradients
@@ -45,9 +46,10 @@ class Train(object):
                 h,w = labels.shape[-2:]
                 labels = labels.view(-1, h, w).long().cuda()
                 loss1 = criterion[0](outputs['out'], labels)
-                loss2 = criterion[0](outputs['aux'], labels)
+                # loss2 = criterion[0](outputs['aux'], labels)
                 loss3 = criterion[1](outputs['isup_grade'].squeeze(dim=1), grade.float().cuda())
-                loss = self.segcoef * (loss1 + 0.4 * loss2) + loss3
+                # loss = self.segcoef * (loss1 + 0.4 * loss2) + loss3
+                loss = self.segcoef * loss1 + loss3
                 train_loss.append(loss.item())
                 loss.backward()
                 self.optimizer.step()
@@ -56,8 +58,8 @@ class Train(object):
         val_label, val_preds = [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 5:
-                #     break
+                if i > 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, grade = data
                 # zero the parameter gradients
@@ -97,10 +99,10 @@ if __name__ == "__main__":
     image_dir_val = '../input/panda-32x256x256-tiles-data/val/'
     mask_dir = '../input/panda-32x256x256-tiles-data/masks/'
     ## image statistics
-    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    mean = torch.tensor([0.5, 0.5, 0.5])
-    std = torch.tensor([0.5, 0.5, 0.5])
+    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    # mean = torch.tensor([0.5, 0.5, 0.5])
+    # std = torch.tensor([0.5, 0.5, 0.5])
     ## dataset, can fetch data by dataset[idx]
     dataset_train = PandaPatchDatasetSeg(csv_file_train, image_dir_train, mask_dir, [mean, std], N = 12)
     tsfm = data_transform(mean, std)
