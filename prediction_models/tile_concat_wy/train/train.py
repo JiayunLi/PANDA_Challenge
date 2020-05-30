@@ -106,7 +106,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds - 1, nfolds, desc='fold'):
-    for fold in range(nfolds - 1, nfolds):
+    for fold in range(0, 1):
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
         if load:
