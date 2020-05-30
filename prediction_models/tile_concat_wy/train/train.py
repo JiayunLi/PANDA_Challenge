@@ -28,8 +28,8 @@ class Train(object):
         self.model.train()
         train_loss = []
         for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-            if i >= 5:
-                break
+            # if i >= 5:
+            #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             # zero the parameter gradients
@@ -46,8 +46,8 @@ class Train(object):
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                if i > 5:
-                    break
+                # if i > 5:
+                #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
                 # zero the parameter gradients
