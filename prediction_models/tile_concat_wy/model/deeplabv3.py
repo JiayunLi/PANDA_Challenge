@@ -41,6 +41,7 @@ class Model(nn.Module):
         result = OrderedDict()
         x = features["out"] ## [bs * N, 2048, h/16, w/16]
         _, c, h, w = x.shape
+        print(x.shape)
         ### a simple head for isup regression
         y = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
@@ -60,7 +61,7 @@ class Model(nn.Module):
         return result
 
 if __name__ == "__main__":
-    img = torch.rand([2, 5, 3, 128, 128])
+    img = torch.rand([4, 12, 3, 256, 256])
     model = Model(arch='deeplabv3_resnet50')
     output = model(img)
     print(output['out'].shape, output['aux'].shape)
