@@ -91,7 +91,7 @@ if __name__ == "__main__":
     fname = "Deeplabv3Res101_12patch_multitask_whole_30_epoch_" + center
     nfolds = 4
     num_classes = 6 if center == 'radboud' else 3
-    bs = 3
+    bs = 8
     epochs = 30
     csv_file_train = '../input/panda-32x256x256-tiles-data/{}_{}_fold_train.csv'.format(center,nfolds)
     csv_file_val = '../input/panda-32x256x256-tiles-data/wo_mask_val.csv'
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
 
-    model = Model(arch='deeplabv3_resnet101', n=num_classes).cuda()
+    model = Model().cuda()
     # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
     optimizer = Over9000(model.parameters())
