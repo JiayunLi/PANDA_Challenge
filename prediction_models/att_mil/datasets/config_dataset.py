@@ -88,7 +88,8 @@ def get_meanstd(dataset_name):
 
 # BATCH_DATASET = set(["dw_sample_16", "dw_sample_16v2", "16_128_128"])
 
-def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, mil_arch=None):
+def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, mil_arch=None,
+                         has_drop_rate=0.0):
     """
 
     :param batch_size:
@@ -135,14 +136,15 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
 
         # T.RandomResizedCrop(dataset_params.input_size, scale=(0.3, 1.0), ratio=(0.7, 1.4),
         #                     interpolation=INTERP),
-        # T.RandomApply([
-        #     T.ColorJitter(0.2, 0.2, 0.2, 0.1)  # not strengthened
-        # ], p=0.8),
-        # T.RandomGrayscale(p=0.2),
-        # T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+        T.RandomApply([
+            T.ColorJitter(0.2, 0.2, 0.2, 0.1)  # not strengthened
+        ], p=0.8),
+        T.RandomGrayscale(p=0.2),
+        T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
         # T.RandomHorizontalFlip(),
         ] + normalize
-
+    if has_drop_rate > 0:
+        assert split == "train"
     if split == "train":
         transform = T.Compose(augmentation)
     elif split == "val" or split == "test":
@@ -155,7 +157,8 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     elif dataset_params.dataset in {"16_128_128"}:
         dataset = trainval_slides.BiopsySlidesImage(dataset_params, transform, fold, split, phase=phase)
     elif dataset_params.dataset in {'br_256_256', 'br_128_128'}:
-        dataset = trainval_slides.BiopsySlidesBatchV2(dataset_params, transform, fold, split, phase=phase)
+        dataset = trainval_slides.BiopsySlidesBatchV2(dataset_params, transform, fold, split, phase=phase,
+                                                      has_drop_rate=has_drop_rate)
     else:
         dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
 

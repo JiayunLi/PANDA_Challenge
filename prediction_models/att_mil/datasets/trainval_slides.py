@@ -110,7 +110,7 @@ class BiopsySlidesChunk(data.Dataset):
 
 
 class BiopsySlidesBatchV2(data.Dataset):
-    def __init__(self, dataset_params, transform, fold, split, phase='train'):
+    def __init__(self, dataset_params, transform, fold, split, has_drop_rate=0, phase='train'):
         self.transform = transform
         self.split, self.fold = split, fold
         self.params = dataset_params
@@ -120,6 +120,7 @@ class BiopsySlidesBatchV2(data.Dataset):
                                    lock=False, readahead=False, meminit=False)
         self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
         self.slides_df = self._config_data()
+        self.has_drop_rate = has_drop_rate
 
     def _config_data(self):
         # Use all slides to compute mean std
@@ -133,6 +134,19 @@ class BiopsySlidesBatchV2(data.Dataset):
     def __len__(self):
         return len(self.slides_df)
 
+    def _w_instance_drop(self, tiles, labels):
+        random_indices = torch.rand(len(tiles))
+        mask = torch.ones(len(tiles), 1, 1, 1)
+        for idx in range(len(tiles)):
+            # similar as dropout
+            if random_indices[idx] < self.has_drop_rate:
+                mask[idx, :, :, :] = 0
+                labels[idx] = 0
+        # mask out regions (have the pixel value same to mean, after normalization, it should be 0)
+        tiles *= mask
+
+        return tiles, labels
+
     def __getitem__(self, ix):
         slide_info = self.slides_df.iloc[ix]
         slide_label = int(slide_info.isup_grade)
@@ -145,6 +159,8 @@ class BiopsySlidesBatchV2(data.Dataset):
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
         labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
+        if self.has_drop_rate > 0:
+            tiles, labels = self._w_instance_drop(tiles, labels)
         if self.params.top_n > 0 and len(tiles) > self.params.top_n:
             tiles = tiles[:self.params.top_n, :, :, :]
             labels = [labels[i] for i in range(self.params.top_n)]

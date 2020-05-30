@@ -96,7 +96,8 @@ def trainval(opts):
         # Only support batch size 1 for MIL with variable input size.
         train_loader, train_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
-                                                split="train", phase="train", fold=fold, mil_arch=args.mil_arch)
+                                                split="train", phase="train", fold=fold, mil_arch=args.mil_arch,
+                                                has_drop_rate=args.has_drop_rate)
         val_loader, val_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
                                                 split="val", phase="val", fold=fold, mil_arch=args.mil_arch)
@@ -156,6 +157,7 @@ if __name__ == "__main__":
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
     parser.add_argument('--mil_arch', default='pool', type=str, )
+    parser.add_argument('--has_drop_rate', type=float, default=0.0)
     # parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
