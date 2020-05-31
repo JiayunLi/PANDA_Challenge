@@ -14,7 +14,8 @@ from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
-from model.deeplabv3_finetune import *
+# from model.deeplabv3_finetune import *
+from model.resnext_segft import *
 from utiles.radam import *
 from utiles.utils import *
 
