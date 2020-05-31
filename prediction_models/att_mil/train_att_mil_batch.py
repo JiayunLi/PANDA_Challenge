@@ -68,7 +68,8 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
             time_stop = time.time()
             spu = (time_stop - time_start) / 100.
             cur_stats = fast_stats.pretty_string()
-            print(f"Fold {fold}, Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, {spu:.4f}/update")
+            print(f"Fold {fold}, Epoch {epoch}, Updates {step}/{len(train_loader)}, {cur_stats}, alpha is {alpha},"
+                  f"{spu:.4f}/update")
             logger.record_stats(fast_stats.averages(iteras, prefix='train/'))
             time_start = time.time()
             fast_stats = trainval_stats.AverageMeterSet()
