@@ -56,7 +56,7 @@ class Model(nn.Module):
         x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
-        result["isup_grade"] = x
+        result["out"] = x
         return result
 
 class Model_Infer(nn.Module):
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     img = torch.rand([4, 12, 3, 256, 256])
     model = Model(n = 1)
     output = model(img)
-    print(output['isup_grade'].shape)
+    print(output['out'].shape)
