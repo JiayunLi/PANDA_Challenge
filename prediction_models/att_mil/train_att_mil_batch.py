@@ -17,22 +17,24 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
     train_iter = iter(train_loader)
     for step in range(len(train_loader)):
         tiles, tiles_labels, slide_label, _ = train_iter.next()
+        tiles_labels = torch.stack(tiles_labels, dim=0)
+        tiles_labels = tiles_labels.view(-1)
         if loss_type == "mse":
             slide_label = slide_label.float()
-
-        tiles_labels = tiles_labels.float().to(device)
+            tiles_labels = tiles_labels.float()
         slide_label = slide_label.to(device)
+        tiles_labels = tiles_labels.to(device)
         tiles = tiles.to(device)
         slide_probs, tiles_probs, _ = model(tiles)
         has_tile_loss = False
         if loss_type == "mse":
             slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
-            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0][0] != -1 and alpha > 0:
+            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0] != -1 and alpha > 0:
                 tile_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
                 has_tile_loss = True
         else:
             slide_loss = slide_criterion(slide_probs, slide_label)
-            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0][0] != -1 and alpha > 0:
+            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0] != -1 and alpha > 0:
                 tile_loss = tile_criterion(tiles_probs, tiles_labels)
                 has_tile_loss = True
         if has_tile_loss:

@@ -122,8 +122,8 @@ if __name__ == "__main__":
     # File location
     parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
     parser.add_argument('--info_dir', type=str, default='./info/16_128_128', help='Directory for cross validation information')
-    parser.add_argument('--cache_dir', type=str, default='./cache/br_256_256/', help='Directory to save trained models')
-    parser.add_argument('--dataset', type=str, default="br_256_256", help='Different types of processed tiles')
+    parser.add_argument('--cache_dir', type=str, default='./cache/br_128_128/', help='Directory to save trained models')
+    parser.add_argument('--dataset', type=str, default="br_128_128", help='Different types of processed tiles')
 
     # Cross validation
     parser.add_argument('--start_fold', type=int, default=0)
