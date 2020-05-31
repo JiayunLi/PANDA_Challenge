@@ -57,12 +57,12 @@ class Model(nn.Module):
         x = self.head(x) # x: bs x n
         result['out'] = x
 
-        # y = features["aux"]
-        # _, c, h, w = y.shape
-        # y = y.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
-        #     .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
-        # y = self.aux_head(y)
-        # result['aux'] = y
+        y = features["aux"]
+        _, c, h, w = y.shape
+        y = y.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
+            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        y = self.aux_head(y)
+        result['aux'] = y
         return result
 
 if __name__ == "__main__":
