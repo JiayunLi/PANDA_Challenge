@@ -34,7 +34,7 @@ class DatasetTest:
 
 class TrainvalParams:
     def __init__(self, lr, feat_lr, wd, train_blocks, optim, tot_epochs, feat_ft, log_every, alpha, loss_type,
-                 cls_weighted, schedule_type, slide_binary, tile_binary):
+                 cls_weighted, schedule_type, slide_binary, tile_binary, smooth_alpha):
         self.lr = lr
         self.feat_lr = feat_lr
         self.wd = wd
@@ -49,6 +49,7 @@ class TrainvalParams:
         self.schedule_type = schedule_type
         self.slide_binary = slide_binary
         self.tile_binary = tile_binary
+        self.smooth_alpha = smooth_alpha
 
 
 def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidden_dim, slide_n_classes,

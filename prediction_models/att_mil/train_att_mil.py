@@ -100,7 +100,10 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                                           trainval_params.slide_binary, slide_label_weights)
     tile_criterion = configure_criterion(trainval_params.loss_type, trainval_params.cls_weighted,
                                          trainval_params.tile_binary, tile_label_weights)
-
+    alpha_reduce_rate = trainval_params.alpha / (trainval_params.tot_epochs - 2)
+    alpha = trainval_params.alpha if not trainval_params.smooth_alpha \
+        else trainval_params.alpha - start_epoch * alpha_reduce_rate
+    alpha = max(0, alpha)
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:
@@ -110,13 +113,13 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                                               trainval_params.lr, trainval_params.wd, trainval_params.train_blocks)
         if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch' }:
             iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
-                                            train_loader, trainval_params.alpha, trainval_params.loss_type,
+                                            train_loader, alpha, trainval_params.loss_type,
                                             trainval_params.log_every, logger, device, scheduler)
             kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
                                           logger, trainval_params.slide_binary, device)
         else:
             iters = train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
-                                trainval_params.alpha, trainval_params.loss_type, trainval_params.log_every,
+                                alpha, trainval_params.loss_type, trainval_params.log_every,
                                 logger, device)
             kappa, loss = val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
                               logger, trainval_params.slide_binary, device)
@@ -130,6 +133,10 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
             scheduler.step()
         else:
             raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
+        if trainval_params.smooth_alpha:
+            alpha -= alpha_reduce_rate
+            alpha = max(0, alpha)
+
     return
 
 

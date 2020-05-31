@@ -16,17 +16,30 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
     time_start = time.time()
     train_iter = iter(train_loader)
     for step in range(len(train_loader)):
-        tiles, _, slide_label, _ = train_iter.next()
+        tiles, tiles_labels, slide_label, _ = train_iter.next()
         if loss_type == "mse":
             slide_label = slide_label.float()
+
+        tiles_labels = tiles_labels.float().to(device)
         slide_label = slide_label.to(device)
         tiles = tiles.to(device)
-        slide_probs, _, _ = model(tiles)
+        slide_probs, tiles_probs, _ = model(tiles)
+        has_tile_loss = False
         if loss_type == "mse":
             slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
+            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0][0] != -1 and alpha > 0:
+                tile_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
+                has_tile_loss = True
         else:
             slide_loss = slide_criterion(slide_probs, slide_label)
-        loss = slide_loss
+            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0][0] != -1 and alpha > 0:
+                tile_loss = tile_criterion(tiles_probs, tiles_labels)
+                has_tile_loss = True
+        if has_tile_loss:
+            loss = alpha * tile_loss + (1 - alpha) * slide_loss
+        else:
+            loss = slide_loss
+
         gc.collect()
         # backpropagate and take a step
         optimizer.zero_grad()
@@ -34,12 +47,18 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
         # Clip gradients
         torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)
         optimizer.step()
-        cur_dict = {
-            'slide_loss': slide_loss.item(),
-            'tot_loss': loss.item(),
-        }
-        # if len(tile_labels) > 0 and tile_labels[0] != -1:
-        #     cur_dict['tile_loss'] = tile_loss.item()
+        if has_tile_loss:
+            cur_dict = {
+                'slide_loss': slide_loss.item(),
+                'tile_loss': tile_loss.item(),
+                'tot_loss': loss.item(),
+            }
+        else:
+            cur_dict = {
+                'slide_loss': slide_loss.item(),
+                'tot_loss': loss.item(),
+            }
+
         fast_stats.update_dict(cur_dict, n=1)
         iteras += 1
         if step % log_every == 0 and step != 0:

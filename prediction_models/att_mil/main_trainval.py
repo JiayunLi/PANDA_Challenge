@@ -52,6 +52,7 @@ def trainval(opts):
     opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
     opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
+    opts.smooth_alpha = parse_binary_options(opts.smooth_alpha)
     if opts.tile_binary:
         opts.tile_classes = 1
     if opts.slide_binary:
@@ -86,7 +87,7 @@ def trainval(opts):
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted, opts.schedule_type,
-                                                   opts.slide_binary, opts.tile_binary)
+                                                   opts.slide_binary, opts.tile_binary, opts.smooth_alpha)
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
     device = "cpu" if not opts.cuda else "cuda"
@@ -170,12 +171,13 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
-    parser.add_argument('--alpha', default=0.5, type=int, help='weighted factor for tile loss')
+    parser.add_argument('--alpha', default=0.8, type=int, help='weighted factor for tile loss')
     parser.add_argument('--loss_type', default='ce', type=str,
                         help="Different types of loss functions; cross entropy, MSE")
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
     parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
+    parser.add_argument('--smooth_alpha', default='f', type=str, help='Whether to reduce tile loss contribution')
     parser.add_argument('--top_n', type=int, default=-1, help="Set to > 0 to limit the number of tiles")
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
