@@ -171,7 +171,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
-    parser.add_argument('--alpha', default=0.8, type=int, help='weighted factor for tile loss')
+    parser.add_argument('--alpha', default=0.8, type=float, help='weighted factor for tile loss')
     parser.add_argument('--loss_type', default='ce', type=str,
                         help="Different types of loss functions; cross entropy, MSE")
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
