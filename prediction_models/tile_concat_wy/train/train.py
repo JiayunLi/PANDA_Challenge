@@ -36,8 +36,12 @@ class Train(object):
             self.optimizer.zero_grad()
             # forward + backward + optimize
             outputs = model(inputs.cuda())
-            outputs = outputs.squeeze(dim = 1) # for regression
-            loss = criterion(outputs, labels.float().cuda())
+            outputs_main = outputs['out'].squeeze(dim = 1) # for regression
+            # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
+            loss1 = criterion(outputs_main, labels.float().cuda())
+            # loss2 = criterion(outputs_aux, labels.float().cuda())
+            # loss = loss1 + 0.4 * loss2
+            loss = loss1
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
@@ -54,11 +58,15 @@ class Train(object):
                 optimizer.zero_grad()
                 # forward + backward + optimize
                 outputs = model(inputs.cuda())
-                outputs = outputs.squeeze(dim=1)  # for regression
-                loss = criterion(outputs, labels.float().cuda())
+                outputs_main = outputs['out'].squeeze(dim=1)  # for regression
+                # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
+                loss1 = criterion(outputs_main, labels.float().cuda())
+                # loss2 = criterion(outputs_aux, labels.float().cuda())
+                # loss = loss1 + 0.4 * loss2
+                loss = loss1
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
-                val_preds.append(outputs.cpu())
+                val_preds.append(outputs['out'].cpu())
         # val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
         val_label = torch.cat(val_label)
         val_preds = torch.cat(val_preds, 0).round()
@@ -75,18 +83,18 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Dlabv3_ft_reg_medreso_12patch"
+    fname = "Resnext50_ft_reg_medreso_12patch"
     nfolds = 4
-    bs = 8
+    bs = 12
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
-    load = './weights/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
+    load = './weights/Resnext50_12patch_multitask_whole_30_epoch_radboud/Resnext50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
     ## image statistics
-    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    mean = torch.tensor([0.5, 0.5, 0.5])
-    std = torch.tensor([0.5, 0.5, 0.5])
+    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    # mean = torch.tensor([0.5, 0.5, 0.5])
+    # std = torch.tensor([0.5, 0.5, 0.5])
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
@@ -106,15 +114,15 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds - 1, nfolds, desc='fold'):
-    for fold in range(2, 3):
+    for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
-        model = Model().cuda()
-        if load:
-            pretrained_dict = torch.load(load)
-            model_dict = model.state_dict()
-            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-            model_dict.update(pretrained_dict)
-            model.load_state_dict(pretrained_dict)
+        model = Model(load = load).cuda()
+        # if load:
+        #     pretrained_dict = torch.load(load)
+        #     model_dict = model.state_dict()
+        #     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+        #     model_dict.update(pretrained_dict)
+        #     model.load_state_dict(pretrained_dict)
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
         optimizer = Over9000(model.parameters())
