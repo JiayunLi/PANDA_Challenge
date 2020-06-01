@@ -29,8 +29,8 @@ class Train(object):
         self.model.train()
         train_loss = []
         for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-            # if i >= 5:
-            #     break
+            if i >= 5:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             # zero the parameter gradients
@@ -63,8 +63,8 @@ class Train(object):
                 # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss1 = criterion(outputs_main, labels.float().cuda())
                 # loss2 = criterion(outputs_aux, labels.float().cuda())
-                loss = loss1 + 0.4 * loss2
-                # loss = loss1
+                # loss = loss1 + 0.4 * loss2
+                loss = loss1
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
                 val_preds.append(outputs['out'].cpu())
