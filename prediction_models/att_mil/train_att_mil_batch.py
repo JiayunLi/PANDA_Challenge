@@ -160,4 +160,9 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
     sys.stdout.flush()
     logger.record_stats(val_stats.averages(epoch, prefix="val/"))
     torch.cuda.empty_cache()
-    return quadratic_kappa, val_stats.avgs['slide_loss']
+    if tile_loss_only:
+        avg_loss = val_stats.avgs['tile_loss']
+    else:
+        avg_loss = val_stats.avgs['slide_loss']
+
+    return quadratic_kappa, avg_loss
