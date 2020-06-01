@@ -4,6 +4,7 @@ from prediction_models.att_mil.mil_models import config_model
 import time
 import sys
 import gc
+from prediction_models.att_mil.datasets import config_dataset
 from prediction_models.att_mil import train_att_mil_batch as batch_train
 
 
@@ -84,7 +85,7 @@ def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
     return tile_criterion
 
 
-def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
+def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params, model, optimizer, scheduler,
              checkpointer, train_loader, train_data, val_loader, device):
     logger = trainval_stats.StatTracker(log_dir=f"{exp_dir}/")
     if trainval_params.loss_type == "ce" and trainval_params.cls_weighted:
@@ -100,10 +101,53 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
                                           trainval_params.slide_binary, slide_label_weights)
     tile_criterion = configure_criterion(trainval_params.loss_type, trainval_params.cls_weighted,
                                          trainval_params.tile_binary, tile_label_weights)
-    alpha_reduce_rate = trainval_params.alpha / (trainval_params.tot_epochs - 2)
-    alpha = trainval_params.alpha if not trainval_params.smooth_alpha \
-        else trainval_params.alpha - start_epoch * alpha_reduce_rate
-    alpha = max(0, alpha)
+
+    # alpha_reduce_rate = trainval_params.alpha / (trainval_params.tot_epochs - 2)
+    # alpha = trainval_params.alpha if not trainval_params.smooth_alpha \
+    #     else trainval_params.alpha - start_epoch * alpha_reduce_rate
+    # alpha = max(0, alpha)
+    if start_epoch < trainval_params.tile_ft:
+        # Train network with tile-level only. Here we need to make sure all data comes from Radbound dataset.
+        tile_alpha = 1
+        tile_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=trainval_params.lr,
+                                                             total_steps=trainval_params.tile_ft,
+                                                             pct_start=0.0, div_factor=100)
+        for epoch in range(start_epoch, trainval_params.tile_ft):
+            print("Start training for tiles")
+            tiles_train_loader, _ = \
+                config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
+                                                    dataset_params, split="train", phase="train_tiles", fold=fold,
+                                                    mil_arch=trainval_params.mil_arch, has_drop_rate=0)
+            tiles_val_loader, _ = \
+                config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
+                                                    dataset_params, split="val", phase="val_tiles", fold=fold,
+                                                    mil_arch=trainval_params.mil_arch)
+
+            if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch'}:
+                # iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
+                #                                 tiles_train_loader, tile_alpha, trainval_params.loss_type,
+                #                                 trainval_params.log_every, logger, device, tile_scheduler)
+                kappa, loss = batch_train.val(epoch, fold, model, tiles_val_loader, slide_criterion, tile_criterion,
+                                              tile_alpha, trainval_params.loss_type,
+                                              logger, trainval_params.slide_binary, device)
+            else:
+                iters = train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
+                                    tiles_train_loader, tile_alpha, trainval_params.loss_type,
+                                    trainval_params.log_every, logger, device)
+                kappa, loss = val(epoch, fold, model, tiles_val_loader, slide_criterion, trainval_params.loss_type,
+                                  logger, trainval_params.slide_binary, device)
+            checkpointer.update(epoch, iters, kappa)
+            if trainval_params.schedule_type == "plateau":
+                print("Take one Plateau step")
+                scheduler.step(loss)
+            elif trainval_params.schedule_type == "cycle":
+                print("Take one cycle step")
+                # print("Take step per batch")
+                scheduler.step()
+            else:
+                raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
+    # Start with slide-level loss only training
+    alpha = 0
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:
@@ -115,7 +159,8 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
             iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
                                             train_loader, alpha, trainval_params.loss_type,
                                             trainval_params.log_every, logger, device, scheduler)
-            kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, trainval_params.loss_type,
+            kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, tile_criterion,
+                                          alpha, trainval_params.loss_type,
                                           logger, trainval_params.slide_binary, device)
         else:
             iters = train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
@@ -133,9 +178,9 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimize
             scheduler.step()
         else:
             raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
-        if trainval_params.smooth_alpha:
-            alpha -= alpha_reduce_rate
-            alpha = max(0, alpha)
+        # if trainval_params.smooth_alpha:
+        #     alpha -= alpha_reduce_rate
+        #     alpha = max(0, alpha)
 
     return
 

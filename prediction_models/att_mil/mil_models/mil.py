@@ -224,10 +224,7 @@ class AttMILBatch(AttMIL):
     def forward(self, tiles, phase="regular"):
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-        if phase == "regular":
-            tiles_probs = self.tile_encoder.classifier(feats)
-        else:
-            tiles_probs = None
+        tiles_probs = self.tile_encoder.classifier(feats)
 
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats)

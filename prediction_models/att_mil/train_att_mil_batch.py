@@ -26,39 +26,35 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
         tiles_labels = tiles_labels.to(device)
         tiles = tiles.to(device)
         slide_probs, tiles_probs, _ = model(tiles)
-        has_tile_loss = False
+        if model.mil_params['mil_arch'] != 'pool' and alpha == 1:
+            tile_loss_only = True
+        else:
+            tile_loss_only = False
         if loss_type == "mse":
-            slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
-            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0] != -1 and alpha > 0:
-                tile_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
-                has_tile_loss = True
+            if tile_loss_only:
+                cur_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
+            else:
+                cur_loss = slide_criterion(slide_probs.view(-1), slide_label)
         else:
-            slide_loss = slide_criterion(slide_probs, slide_label)
-            if model.mil_params['mil_arch'] != 'pool' and tiles_labels[0] != -1 and alpha > 0:
-                tile_loss = tile_criterion(tiles_probs, tiles_labels)
-                has_tile_loss = True
-        if has_tile_loss:
-            loss = alpha * tile_loss + (1 - alpha) * slide_loss
-        else:
-            loss = slide_loss
+            if tile_loss_only:
+                cur_loss = tile_criterion(tiles_probs, tiles_labels)
+            else:
+                cur_loss = slide_criterion(slide_probs, slide_label)
 
         gc.collect()
         # backpropagate and take a step
         optimizer.zero_grad()
-        loss.backward()
+        cur_loss.backward()
         # Clip gradients
         torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)
         optimizer.step()
-        if has_tile_loss:
+        if tile_loss_only:
             cur_dict = {
-                'slide_loss': slide_loss.item(),
-                'tile_loss': tile_loss.item(),
-                'tot_loss': loss.item(),
+                'tile_loss': cur_loss.item(),
             }
         else:
             cur_dict = {
-                'slide_loss': slide_loss.item(),
-                'tot_loss': loss.item(),
+                'slide_loss': cur_loss.item(),
             }
 
         fast_stats.update_dict(cur_dict, n=1)
@@ -97,7 +93,7 @@ def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
     return tile_criterion
 
 
-def val(epoch, fold, model, val_loader, slide_criterion, loss_type, logger, slide_binary, device):
+def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, loss_type, logger, slide_binary, device):
     model.eval()
     torch.cuda.empty_cache()
     # Quick check of status for log_every steps
@@ -105,22 +101,41 @@ def val(epoch, fold, model, val_loader, slide_criterion, loss_type, logger, slid
     time_start = time.time()
     val_iter = iter(val_loader)
     all_labels, all_preds = [], []
+    if model.mil_params['mil_arch'] != 'pool' and alpha == 1:
+        tile_loss_only = True
+    else:
+        tile_loss_only = False
     # optimized_rounder = config_model.OptimizedRounder()
     with torch.no_grad():
         for step in range(len(val_loader)):
-            tiles, tile_labels, slide_label, tile_names = val_iter.next()
+            tiles, tiles_labels, slide_label, tile_names = val_iter.next()
+            tiles_labels = torch.stack(tiles_labels, dim=0)
+            tiles_labels = tiles_labels.view(-1)
             tiles = tiles.to(device)
-            slide_probs, _, _ = model(tiles, phase='val')
+            slide_probs, tiles_probs, _ = model(tiles, phase='val')
             if loss_type == "mse":
                 slide_label = slide_label.float()
+                tiles_labels = tiles_labels.float()
+            tiles_labels = tiles_labels.to(device)
             slide_label = slide_label.to(device)
             if loss_type == "mse":
-                slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
+                if tile_loss_only:
+                    cur_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
+                else:
+                    cur_loss = slide_criterion(slide_probs.view(-1), slide_label)
             else:
-                slide_loss = slide_criterion(slide_probs, slide_label)
-            cur_dict = {
-                'slide_loss': slide_loss.item(),
-            }
+                if tile_loss_only:
+                    cur_loss = tile_criterion(tiles_probs, tiles_labels)
+                else:
+                    cur_loss = slide_criterion(slide_probs, slide_label)
+            if tile_loss_only:
+                cur_dict = {
+                    'tile_loss': cur_loss.item(),
+                }
+            else:
+                cur_dict = {
+                    'slide_loss': cur_loss.item(),
+                }
             val_stats.update_dict(cur_dict, n=1)
             if slide_binary:
                 normalized_probs = torch.nn.Sigmoid(slide_probs)
@@ -134,12 +149,7 @@ def val(epoch, fold, model, val_loader, slide_criterion, loss_type, logger, slid
             all_preds.append(predicted)
 
         print(f"Validation step {step}/{len(val_loader)}")
-    # if loss_type == "mse":
-    #     optimized_rounder.fit(all_preds, all_labels)
-    #     coefficients = optimized_rounder.coefficients()
-    #     all_preds = optimized_rounder.predict(all_preds, coefficients)
-    #     quadratic_kappa = trainval_stats.compute_kappa(all_preds, all_labels)
-    # else:
+
     all_preds = np.concatenate(all_preds, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
     quadratic_kappa = trainval_stats.compute_kappa(all_preds, all_labels)

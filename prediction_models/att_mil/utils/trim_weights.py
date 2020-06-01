@@ -14,9 +14,7 @@ def trim_weights(model_dir, weight_dir, n_folds):
             break
         i -= 1
 
-    if not os.path.isdir(f"{weight_dir}/{model_name}/"):
-        os.mkdir(f"{weight_dir}/{model_name}/")
-    out_dir = f"{weight_dir}/trimmed_weights/{model_name}/"
+    out_dir = f"{weight_dir}/{model_name}/"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
     shutil.copyfile(f"{model_dir}/options.pkl", f"{out_dir}/options.pkl")
@@ -35,7 +33,7 @@ if __name__ == "__main__":
 
     # File location
     parser.add_argument('--model_dir', type=str, default='./cache/', help='Root directory for processed data')
-    parser.add_argument('--weights_dir', default='/raid/jiayunli/data/storage_slides/panda-weights/')
+    parser.add_argument('--weights_dir', default='/raid/jiayunli/data/PANDA_challenge/trimmed_weights/')
     parser.add_argument('--n_folds', type=int, default=5)
 
     args = parser.parse_args()

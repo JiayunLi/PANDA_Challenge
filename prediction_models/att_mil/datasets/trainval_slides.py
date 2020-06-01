@@ -79,11 +79,11 @@ class BiopsySlidesChunk(data.Dataset):
             slides_df = pd.read_csv(f"{self.params.data_dir}/train.csv")
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
-        empty_df = pd.read_csv(f"{self.params.data_dir}/empty_slides.csv")
-        print(f"Original number of samples: {len(slides_df)}")
-        for i in range(len(empty_df)):
-            slide_id = empty_df.iloc[i]['slide_name']
-            slides_df.drop(slides_df[slides_df['image_id'] == slide_id].index, inplace=True)
+        # empty_df = pd.read_csv(f"{self.params.data_dir}/empty_slides.csv")
+        # print(f"Original number of samples: {len(slides_df)}")
+        # for i in range(len(empty_df)):
+        #     slide_id = empty_df.iloc[i]['slide_name']
+        #     slides_df.drop(slides_df[slides_df['image_id'] == slide_id].index, inplace=True)
         print(f"Number of samples after dropping out: {len(slides_df)}")
         return slides_df
 
@@ -126,6 +126,16 @@ class BiopsySlidesBatchV2(data.Dataset):
         # Use all slides to compute mean std
         if self.phase == "meanstd":
             slides_df = pd.read_csv(f"{self.params.data_dir}/4_fold_train.csv")
+        elif self.phase in {"train_tiles", "val_tiles"}:
+            print("build dataset for training with only tiles-level losses")
+            slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+            new_df = []
+            for i in range(len(slides_df)):
+                cur = slides_df.iloc[i].to_dict()
+                if cur['data_provider'] == "radboud":
+                    new_df.append(cur)
+            columns = list(slides_df.columns)
+            slides_df = pd.DataFrame(data=new_df, columns=columns)
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
         print(f"Number of {self.split} samples: {len(slides_df)}")
@@ -158,6 +168,7 @@ class BiopsySlidesBatchV2(data.Dataset):
                                               slide_name, self.transform,
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
+
         labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
         if self.has_drop_rate > 0:
             tiles, labels = self._w_instance_drop(tiles, labels)

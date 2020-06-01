@@ -52,12 +52,12 @@ def trainval(opts):
     opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
     opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
-    opts.smooth_alpha = parse_binary_options(opts.smooth_alpha)
+    # opts.smooth_alpha = parse_binary_options(opts.smooth_alpha)
     if opts.tile_binary:
         opts.tile_classes = 1
     if opts.slide_binary:
         opts.slide_classes = 1
-
+    opts.epochs = opts.epochs + opts.tile_ft
     # Write options
     print(opts)
 
@@ -87,7 +87,9 @@ def trainval(opts):
     trainval_params = config_params.TrainvalParams(opts.lr, opts.feat_lr, opts.wd, opts.train_blocks,
                                                    opts.optim, opts.epochs, opts.feat_ft, opts.log_every, opts.alpha,
                                                    opts.loss_type, opts.cls_weighted, opts.schedule_type,
-                                                   opts.slide_binary, opts.tile_binary, opts.smooth_alpha)
+                                                   opts.slide_binary, opts.tile_binary, opts.tile_ft,
+                                                   opts.batch_size, opts.num_workers, opts.mil_arch)
+
     end_fold = opts.end_fold if opts.end_fold > 0 else opts.n_folds
 
     device = "cpu" if not opts.cuda else "cuda"
@@ -111,8 +113,8 @@ def trainval(opts):
         exp_dir = f"{opts.exp_dir}/{fold}/"
         # Disable model loading for next fold.
         ckp = None
-        train_att_mil.trainval(fold, exp_dir, start_epoch, iters, trainval_params, model, optimizer, scheduler,
-                               checkpointer, train_loader, train_data, val_loader, device)
+        train_att_mil.trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
+                               model, optimizer, scheduler, checkpointer, train_loader, train_data, val_loader, device)
     return
 
 
@@ -177,7 +179,8 @@ if __name__ == "__main__":
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
     parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
-    parser.add_argument('--smooth_alpha', default='f', type=str, help='Whether to reduce tile loss contribution')
+    # parser.add_argument('--smooth_alpha', default='f', type=str, help='Whether to reduce tile loss contribution')
+    parser.add_argument('--tile_ft', default=0, type=int, help="Train tile features for couple epochs")
     parser.add_argument('--top_n', type=int, default=-1, help="Set to > 0 to limit the number of tiles")
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
