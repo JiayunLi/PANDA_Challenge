@@ -124,9 +124,9 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
                                                     mil_arch=trainval_params.mil_arch)
 
             if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch'}:
-                # iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
-                #                                 tiles_train_loader, tile_alpha, trainval_params.loss_type,
-                #                                 trainval_params.log_every, logger, device, tile_scheduler)
+                iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
+                                                tiles_train_loader, tile_alpha, trainval_params.loss_type,
+                                                trainval_params.log_every, logger, device, tile_scheduler)
                 kappa, loss = batch_train.val(epoch, fold, model, tiles_val_loader, slide_criterion, tile_criterion,
                                               tile_alpha, trainval_params.loss_type,
                                               logger, trainval_params.slide_binary, device)
