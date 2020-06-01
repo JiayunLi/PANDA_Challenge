@@ -68,7 +68,7 @@ class Model(nn.Module):
 class Model_Infer(nn.Module):
     __constants__ = ['aux_classifier']
     def __init__(self, arch='deeplabv3_resnet50', n=1, pre=True, load = None):
-        super(Model, self).__init__()
+        super(Model_Infer, self).__init__()
         model_fn = {'deeplabv3_resnet101': deeplabv3_resnet101, 'deeplabv3_resnet50': deeplabv3_resnet50}
         # m = torch.hub.load('pytorch/vision:v0.6.0', arch, pretrained = pre)
         m = model_fn[arch](pretrained = pre)
