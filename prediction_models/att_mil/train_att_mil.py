@@ -112,17 +112,16 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
         tile_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=trainval_params.lr,
                                                              total_steps=trainval_params.tile_ft,
                                                              pct_start=0.0, div_factor=100)
+        tiles_train_loader, _ = \
+            config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
+                                                dataset_params, split="train", phase="train_tiles", fold=fold,
+                                                mil_arch=trainval_params.mil_arch, has_drop_rate=0)
+        tiles_val_loader, _ = \
+            config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
+                                                dataset_params, split="val", phase="val_tiles", fold=fold,
+                                                mil_arch=trainval_params.mil_arch)
         for epoch in range(start_epoch, trainval_params.tile_ft):
             print("Start training for tiles")
-            tiles_train_loader, _ = \
-                config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
-                                                    dataset_params, split="train", phase="train_tiles", fold=fold,
-                                                    mil_arch=trainval_params.mil_arch, has_drop_rate=0)
-            tiles_val_loader, _ = \
-                config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
-                                                    dataset_params, split="val", phase="val_tiles", fold=fold,
-                                                    mil_arch=trainval_params.mil_arch)
-
             if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch'}:
                 iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
                                                 tiles_train_loader, tile_alpha, trainval_params.loss_type,
