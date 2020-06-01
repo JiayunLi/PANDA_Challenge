@@ -9,7 +9,7 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_file)
     names = list(df['image_id'])
     sz = 256  ## image patch size
-    N = 20  ## how many patches selected from each slide
+    N = 32  ## how many patches selected from each slide
     print(len(names))  ## only images that have masks
     Source_Folder = TRAIN
     Des_File = OUT_TRAIN
