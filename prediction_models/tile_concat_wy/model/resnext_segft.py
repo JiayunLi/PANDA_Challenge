@@ -80,6 +80,7 @@ class Model_Infer(nn.Module):
         x: [bs, N, 3, h, w]
         x_out: [bs, N]
         """
+        result = OrderedDict()
         bs, n, c, h, w = x.shape
         x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         x = self.enc(x)  # x: bs*N x C x 4 x 4
@@ -89,7 +90,8 @@ class Model_Infer(nn.Module):
         x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
-        return x
+        result["out"] = x
+        return result
 
 if __name__ == "__main__":
     img = torch.rand([4, 12, 3, 256, 256])
