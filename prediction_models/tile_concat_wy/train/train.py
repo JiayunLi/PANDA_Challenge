@@ -14,8 +14,8 @@ from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
-from model.deeplabv3_finetune import *
-# from model.resnext_segft import *
+# from model.deeplabv3_finetune import *
+from model.resnext_segft import *
 from utiles.radam import *
 from utiles.utils import *
 
@@ -38,11 +38,11 @@ class Train(object):
             # forward + backward + optimize
             outputs = model(inputs.cuda())
             outputs_main = outputs['out'].squeeze(dim = 1) # for regression
-            outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
+            # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
             loss1 = criterion(outputs_main, labels.float().cuda())
-            loss2 = criterion(outputs_aux, labels.float().cuda())
-            loss = loss1 + 0.4 * loss2
-            # loss = loss1
+            # loss2 = criterion(outputs_aux, labels.float().cuda())
+            # loss = loss1 + 0.4 * loss2
+            loss = loss1
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
@@ -51,8 +51,8 @@ class Train(object):
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 5:
-                #     break
+                if i > 5:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
                 # zero the parameter gradients
@@ -60,9 +60,9 @@ class Train(object):
                 # forward + backward + optimize
                 outputs = model(inputs.cuda())
                 outputs_main = outputs['out'].squeeze(dim=1)  # for regression
-                outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
+                # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss1 = criterion(outputs_main, labels.float().cuda())
-                loss2 = criterion(outputs_aux, labels.float().cuda())
+                # loss2 = criterion(outputs_aux, labels.float().cuda())
                 loss = loss1 + 0.4 * loss2
                 # loss = loss1
                 val_loss.append(loss.item())
@@ -84,14 +84,15 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Dlv3_ft_reg_medreso_12patch_aux"
+    # fname = "Dlv3_ft_reg_medreso_12patch_aux"
+    fname = "Resnext50_ft_reg_medreso_32patch"
     nfolds = 4
     bs = 6
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-32x256x256-tiles-data/train/'
-    # load = './weights/Resnext50_12patch_multitask_whole_30_epoch_radboud/Resnext50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
-    load = './weights/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
+    load = './weights/Resnext50_12patch_multitask_whole_30_epoch_radboud/Resnext50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
+    # load = './weights/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud/Deeplabv3Res50_12patch_multitask_whole_30_epoch_radboud_best.pth.tar'
     ## image statistics
     mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
     std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm, N = 12)
+    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm, N = 32)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
 
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in trange(nfolds - 1, nfolds, desc='fold'):
-    for fold in range(3, 4):
+    for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         model = Model(load = load).cuda()
         # if load:
