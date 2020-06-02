@@ -95,8 +95,8 @@ if __name__ == "__main__":
     image_dir = '../input/prostate-cancer-grade-assessment/train_images/'
 
     ## image transformation
-    # tsfm = data_transform()
-    tsfm = None
+    tsfm = data_transform()
+    # tsfm = None
     ## dataset, can fetch data by dataset[idx]
     dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 36, rand=True)
     ## dataloader

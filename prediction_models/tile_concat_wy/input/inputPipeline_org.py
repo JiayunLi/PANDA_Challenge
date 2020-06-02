@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-# import albumentations
+import albumentations
 import skimage.io
 
 class crossValInx(object):
@@ -160,13 +160,13 @@ def get_tiles(img, tile_size, n_tiles, mode=0):
         result.append({'img': img3[i], 'idx': i})
     return result, n_tiles_with_info >= n_tiles
 
-# def data_transform():
-#     tsfm = albumentations.Compose([
-#         albumentations.Transpose(p=0.5),
-#         albumentations.VerticalFlip(p=0.5),
-#         albumentations.HorizontalFlip(p=0.5),
-#     ])
-#     return tsfm
+def data_transform():
+    tsfm = albumentations.Compose([
+        albumentations.Transpose(p=0.5),
+        albumentations.VerticalFlip(p=0.5),
+        albumentations.HorizontalFlip(p=0.5),
+    ])
+    return tsfm
 
 
 if __name__ == "__main__":
