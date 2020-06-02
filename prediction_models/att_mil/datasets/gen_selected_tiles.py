@@ -236,7 +236,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     assert counter == len(slides_to_process), "%d processed slides, %d slides to be processed" \
                                               % (counter, len(slides_to_process))
     assert len(tile_ids_map) == len(slides_to_process)
-    json.dump(tile_ids_map, open(f"{out_dir}/tile_lowest_ids.json", "w"))
+    np.save(f"{out_dir}/tile_lowest_ids.npy", tile_ids_map)
 
 
 
