@@ -26,7 +26,7 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
         # If only use tile-level loss
         if tile_loss_only:
             tiles_labels = torch.stack(tiles_labels, dim=0)
-            tiles_labels = tiles_labels.view(-1)
+            tiles_labels = tiles_labels.view(tiles_labels.size(1), tiles_labels.size(0)).view(-1)
             # tiles: bs, n, c, w, h
             tiles = tiles.reshape(-1, tiles.size(2), tiles.size(3), tiles.size(4))
             _, tiles_probs, _ = model(tiles, phase="tiles_only")
@@ -117,7 +117,7 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
             # If only use tile-level loss
             if tile_loss_only:
                 labels = torch.stack(tiles_labels, dim=0)
-                labels = labels.view(-1)
+                labels = labels.view(labels.size(1), labels.size(0)).view(-1)
                 # tiles: bs, n, c, w, h
                 tiles = tiles.reshape(-1, tiles.size(2), tiles.size(3), tiles.size(4))
                 _, probs, _ = model(tiles, phase="tiles_only")

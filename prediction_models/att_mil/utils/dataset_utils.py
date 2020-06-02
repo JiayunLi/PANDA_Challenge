@@ -90,11 +90,12 @@ def generate_tile_label_json(lmdb_dir, tile_info_dir, mask_size, trainval_file, 
             slide_tiles_labels[slide_name] = []
             for i in range(len(all_masks)):
                 tile_mask = all_masks[i, :, :]
+                # Only use radbound label
                 if slide_info.data_provider == "radboud":
                     tile_label = rad_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
-                else:
-                    tile_label = karo_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
-                slide_tiles_labels[slide_name].append(tile_label)
+                # else:
+                #     tile_label = karo_converter.convert(tile_mask, slide_name, slide_pg, slide_sg)
+                    slide_tiles_labels[slide_name].append(tile_label)
             print(f"Finished tile_label generation: {counter + 1}/{tot}")
             counter += 1
     json.dump(slide_tiles_labels, open(f"{tile_info_dir}/tile_labels_{dataset_name}.json", "w"), default=default)
