@@ -5,6 +5,7 @@ import os, sys
 sys.path.append('../')
 sys.path.append('../model')
 import warnings
+from collections import OrderedDict
 warnings.filterwarnings("ignore")
 
 import torch.nn as nn
@@ -24,15 +25,13 @@ class Model(nn.Module):
 
     def forward(self, x):
         result = OrderedDict()
-        bs, N, c, h, w = x.shape
-        x = x.view(-1, c, h, w)
         x = self.extract(x)
         x = self.myfc(x)
         result['out'] = x
         return result
 
 if __name__ == "__main__":
-    img = torch.rand([4, 12, 3, 128, 128])
+    img = torch.rand([48, 3, 128, 128])
     model = Model(backbone='efficientnet-b0', out_dim=5)
     output = model(img)
-    print(output.shape)
+    print(output['out'].shape)

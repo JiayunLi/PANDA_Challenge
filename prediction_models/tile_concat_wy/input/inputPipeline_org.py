@@ -160,29 +160,6 @@ def get_tiles(img, tile_size, n_tiles, mode=0):
     return result, n_tiles_with_info >= n_tiles
 
 
-def data_transform(mean = (0.5,0.5,0.5), std = (0.5,0.5,0.5)):
-    tsfm = transforms.Compose(
-        [transforms.RandomHorizontalFlip(),
-         transforms.RandomVerticalFlip(),
-         transforms.RandomAffine(degrees=180, fillcolor=(255, 255, 255)),
-         transforms.ToTensor(),
-         transforms.Normalize(mean=mean,
-                              std=std)])
-    return tsfm
-
-def dataloader_collte_fn(batch):
-    imgs = [item['image'] for item in batch]
-    imgs = torch.stack(imgs)
-    target = [item['isup_grade'] for item in batch]
-    target = torch.stack(target)
-    return [imgs, target]
-
-def dataloader_collte_fn_infer(batch):
-    imgs = [item['image'] for item in batch]
-    imgs = torch.stack(imgs)
-    name = [item['name'] for item in batch]
-    return [imgs, name]
-
 if __name__ == "__main__":
     ## input files and folders
     nfolds = 5
