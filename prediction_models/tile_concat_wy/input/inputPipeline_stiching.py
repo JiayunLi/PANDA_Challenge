@@ -106,6 +106,7 @@ class PandaPatchDataset(Dataset):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # EXIF warning from TiffPlugin
             x = Image.open(fn).convert(convert_mode)
+            x= np.asarray(x)
         if after_open:
             x = after_open(x)
         return x
