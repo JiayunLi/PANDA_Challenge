@@ -30,12 +30,12 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
             # tiles: bs, n, c, w, h
             tiles = tiles.reshape(-1, tiles.size(2), tiles.size(3), tiles.size(4))
             _, tiles_probs, _ = model(tiles, phase="tiles_only")
-            if loss_type == "mse":
-                tiles_labels = tiles_labels.float().to(device)
-                cur_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
-            else:
-                tiles_labels = tiles_labels.to(device)
-                cur_loss = tile_criterion(tiles_probs, tiles_labels)
+            # if loss_type == "mse":
+            #     tiles_labels = tiles_labels.float().to(device)
+            #     cur_loss = tile_criterion(tiles_probs.view(-1), tiles_labels)
+            # else:
+            tiles_labels = tiles_labels.to(device)
+            cur_loss = tile_criterion(tiles_probs, tiles_labels)
         else:
             slide_probs, _, _ = model(tiles)
             if loss_type == "mse":
@@ -121,12 +121,12 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
                 # tiles: bs, n, c, w, h
                 tiles = tiles.reshape(-1, tiles.size(2), tiles.size(3), tiles.size(4))
                 _, probs, _ = model(tiles, phase="tiles_only")
-                if loss_type == "mse":
-                    labels = labels.float().to(device)
-                    cur_loss = tile_criterion(probs.view(-1), labels)
-                else:
-                    labels = labels.to(device)
-                    cur_loss = tile_criterion(probs, labels)
+                # if loss_type == "mse":
+                #     labels = labels.float().to(device)
+                #     cur_loss = tile_criterion(probs.view(-1), labels)
+                # else:
+                labels = labels.to(device)
+                cur_loss = tile_criterion(probs, labels)
                 cur_dict = {
                     'tile_loss': cur_loss.item(),
                 }

@@ -59,7 +59,7 @@ def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidd
                    tile_classes, loss_type, schedule_type, mil_arch):
     if loss_type == "mse":
         slide_n_classes = 1
-        tile_classes = 1
+        # tile_classes = 1
     params = {
         "mil_in_feat_size": mil_in_feat_size,
         "instance_embed_dim": instance_embed_dim,

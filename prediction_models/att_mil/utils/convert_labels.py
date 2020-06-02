@@ -28,11 +28,16 @@ class ConvertRad:
         slide_patterns = set([slide_pg, slide_sg])
         unique, counts = np.unique(mask, return_counts=True)
 
-        pattern_counts = dict(zip(unique, counts))
+        pattern_counts_dict = dict(zip(unique, counts))
+        pattern_counts = [0] * 6
+        for cur, count in pattern_counts_dict.items():
+            pattern_counts[cur] = count
         counts_rank = np.argsort(pattern_counts)[::-1]
         tile_pg, tile_sg = None, None
         has_cancer = False
         for cur in counts_rank:
+            if pattern_counts[cur] == 0:
+                continue
             if cur > 2:
                 if not has_cancer:
                     has_cancer = True
