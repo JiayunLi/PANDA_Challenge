@@ -86,7 +86,7 @@ def save_checkpoint(state, is_best, fname):
 
 if __name__ == "__main__":
     # fname = "Dlv3_ft_reg_medreso_12patch_aux"
-    fname = "Evnet_medreso_36patch"
+    fname = "Evnet_medreso_36patch_aug"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
