@@ -48,7 +48,7 @@ class Checkpointer:
         params = ckp['model']
         self.best_score = ckp['best_score']
 
-        from prediction_models.att_mil.mil_models import mil
+        from prediction_models.att_mil.mil_models import mil, mil_multi
 
         base_encoder, feature_dim = \
             mil.config_encoder(hp['input_size'], hp['mil_params']['n_tile_classes'],
@@ -59,6 +59,9 @@ class Checkpointer:
         elif hp['mil_params']['mil_arch'] == 'pool':
             self.model = mil.PoolMilBatch(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
                                         feature_dim, hp['mil_params'])
+        elif hp['mil_params']['mil_arch'] == "att_batch_multi":
+            self.model = mil_multi.AttMILBatchMulti(base_encoder, hp['pretrained'], hp['encoder_arch'],
+                                               hp['input_size'], feature_dim, hp['mil_params'])
         else:
             self.model = mil.AttMIL(base_encoder, hp['pretrained'], hp['encoder_arch'], hp['input_size'],
                                     feature_dim, hp['mil_params'])

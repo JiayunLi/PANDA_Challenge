@@ -1,12 +1,9 @@
 import pickle
 import os
 from PIL import ImageFilter, Image
-from prediction_models.att_mil.datasets import trainval_slides, test_slides
-from preprocessing.normalization import reinhard_bg
+from prediction_models.att_mil.datasets import trainval_slides, trainval_slides_multi
 import torch
 import random
-import glob
-from shutil import copyfile
 import torchvision.transforms as T
 import gc
 
@@ -65,6 +62,9 @@ def get_meanstd(dataset_name):
     if dataset_name == "dw_sample_16":
         meanstd = {'mean': [0.8992915, 0.79110736, 0.8844037],
                     'std': [0.13978645, 0.2604748, 0.14999403]}
+    elif dataset_name == "multi":
+        meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
+                   "std": [0.36357649, 0.49984502, 0.40477625]}
     elif dataset_name == 'dw_sample_16v2':
         meanstd = {'mean': [0.878095, 0.807221, 0.8544836],
                     'std': [0.09033537, 0.17091176, 0.11264059]}
@@ -100,29 +100,6 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     :param fold:
     :return:
     """
-
-    # if fold is not None:
-    #     if not os.path.isdir(f"{dataset_params.exp_dir}/{fold}/"):
-    #         os.mkdir(f"{dataset_params.exp_dir}/{fold}/")
-    #     meanstd_file = f"{dataset_params.exp_dir}/{fold}/meanstd.pkl"
-    # else:
-    #     meanstd_file = f"{dataset_params.exp_dir}/meanstd.pkl"
-    #
-    # if not os.path.isfile(meanstd_file):
-    #     other_exp_dirs = glob.glob(f"{dataset_params.cache_dir}/*/")
-    #     has_computed = False
-    #     for other_dir in other_exp_dirs:
-    #         exp_name = other_dir.split("/")[-2]
-    #         if exp_name == "debug":
-    #             continue
-    #         if os.path.isdir(f"{other_dir}/{fold}/") and os.path.isfile(f"{other_dir}/{fold}/meanstd.pkl"):
-    #             copyfile(f"{other_dir}/{fold}/meanstd.pkl", meanstd_file)
-    #             has_computed = True
-    #             break
-    #     if not has_computed:
-    #         meanstd = compute_meanstd(dataset_params, fold, num_workers)
-    #         pickle.dump(meanstd, open(meanstd_file, "wb"))
-    # meanstd = pickle.load(open(meanstd_file, "rb"))
     meanstd = get_meanstd(dataset_params.dataset)
     # Define different transformations
     normalize = [
@@ -151,8 +128,10 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
         transform = T.Compose(normalize)
     else:
         raise NotImplementedError(f"Not implemented for split {split}")
-    # if mil_arch == "pool" or mil_arch == "att_batch":
-    if dataset_params.dataset in {"dw_sample_16", "dw_sample_16v2"}:
+    # Multi-scale input dataset
+    if dataset_params.dataset in {'multi'}:
+        dataset = trainval_slides_multi.BiopsySlidesBatchMulti(dataset_params, transform, fold, split, phase=phase)
+    elif dataset_params.dataset in {"dw_sample_16", "dw_sample_16v2"}:
         dataset = trainval_slides.BiopsySlidesBatch(dataset_params, transform, fold, split, phase=phase)
     elif dataset_params.dataset in {"16_128_128"}:
         dataset = trainval_slides.BiopsySlidesImage(dataset_params, transform, fold, split, phase=phase)

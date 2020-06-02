@@ -4,6 +4,7 @@ import json
 import shutil
 import lmdb
 import numpy as np
+import tqdm
 from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from prediction_models.att_mil.utils import file_utils
@@ -224,6 +225,21 @@ def change_slide_encode(opts, tile_size=128):
     json.dump(tiles_labels, open(f"{opts.new_data_dir}/tiles_labels.json", "w"), default=default)
 
 
+def convert_img_lmdb(opts):
+    env = lmdb.open(f"{opts.new_data_dir}/tiles", map_size=6e+12)
+    df = pd.read_csv(f"{opts.orig_data_dir}/4_fold_train.csv")
+    with env.begin(write=True) as txn:
+        for i in tqdm.tqdm(range(len(df))):
+            cur = df.iloc[i]
+            image_id = cur.image_id
+            tiles = np.zeros((16, 128, 128, 3), dtype=np.uint8)
+
+            for tile_id in range(16):
+                tile = Image.open(f"{opts.orig_data_dir}/train/{image_id}_{tile_id}.png")
+                tiles[tile_id, :, :, :] = np.asarray(tile)
+            txn.put(str(image_id).encode(), tile.astype(np.uint8).tobytes())
+
+
 if __name__ == "__main__":
     import argparse
     import os
@@ -243,7 +259,11 @@ if __name__ == "__main__":
     parser.add_argument('--new_data_dir', type=str, default='/data/jiayun/PANDA_Challenge/slides_encode_128',
                         help='Root directory for processed data')
 
+    parser.add_argument('--convert_imgs', action='store_true')
+
     args = parser.parse_args()
+    if args.convert_imgs:
+        convert_img_lmdb(args)
     if args.dw_sample:
         if not os.path.isdir(args.dw_data_dir):
             os.mkdir(args.dw_data_dir)

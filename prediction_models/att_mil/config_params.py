@@ -1,7 +1,3 @@
-import pickle
-import h5py
-import numpy as np
-
 
 class DatasetParams:
     def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
@@ -16,6 +12,21 @@ class DatasetParams:
         self.exp_dir = exp_dir
         self.normalized = normalized
         self.top_n = top_n
+
+
+class DatasetParamsMulti:
+    def __init__(self, im_size_low, im_size_high, input_size, info_dir, data_dir_low, data_dir_high, cache_dir,
+                 exp_dir, normalized, num_channels=3, top_n=-1):
+        self.im_size_low, self.im_size_high = im_size_low, im_size_high
+        self.input_size = input_size
+        self.num_channels = num_channels
+        self.info_dir = info_dir
+        self.data_dir_low, self.data_dir_high = data_dir_low, data_dir_high
+        self.cache_dir = cache_dir
+        self.exp_dir = exp_dir
+        self.normalized = normalized
+        self.top_n = top_n
+        self.dataset = "multi"
 
 
 class DatasetTest:

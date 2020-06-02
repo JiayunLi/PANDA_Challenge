@@ -6,6 +6,7 @@ import sys
 import gc
 from prediction_models.att_mil.datasets import config_dataset
 from prediction_models.att_mil import train_att_mil_batch as batch_train
+from prediction_models.att_mil import train_att_mil_multi as multi_train
 
 
 def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, optimizer,
@@ -153,7 +154,6 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
         start_epoch = trainval_params.tile_ft
     # Start with slide-level loss only training
     alpha = 0
-
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:
@@ -161,13 +161,19 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
                 config_model.config_optimizer(model, epoch, model.hp["arch"], trainval_params.optim,
                                               trainval_params.feat_lr, trainval_params.feat_ft,
                                               trainval_params.lr, trainval_params.wd, trainval_params.train_blocks)
-        if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch' }:
+        if model.mil_params['mil_arch'] in {"pool_simple", "pool", 'att_batch', }:
             iters = batch_train.train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer,
                                             train_loader, alpha, trainval_params.loss_type,
                                             trainval_params.log_every, logger, device, scheduler)
             kappa, loss = batch_train.val(epoch, fold, model, val_loader, slide_criterion, tile_criterion,
-                                          alpha, trainval_params.loss_type,
-                                          logger, trainval_params.slide_binary, device)
+                                          alpha, trainval_params.loss_type, logger, trainval_params.slide_binary,
+                                          device)
+        elif model.mil_params['mil_arch'] in {'att_batch_multi'}:
+            iters = multi_train.train_epoch(epoch, fold, iters, model, slide_criterion, optimizer,
+                                            train_loader, alpha, trainval_params.loss_type,
+                                            trainval_params.log_every, logger, device, scheduler)
+            kappa, loss = multi_train.val(epoch, fold, model, val_loader, slide_criterion, alpha,
+                                          trainval_params.loss_type, logger, trainval_params.slide_binary, device)
         else:
             iters = train_epoch(epoch, fold, iters, model, slide_criterion, tile_criterion, optimizer, train_loader,
                                 alpha, trainval_params.loss_type, trainval_params.log_every,

@@ -1,4 +1,4 @@
-from prediction_models.att_mil.mil_models import mil
+from prediction_models.att_mil.mil_models import mil, mil_multi
 from prediction_models.att_mil.utils import model_utils, checkpoint_utils
 import torch
 import torch.optim as optim
@@ -29,6 +29,9 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
                 model = mil.AttMILBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
             elif mil_params['mil_arch'] == "pool":
                 model = mil.PoolMilBatch(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
+            elif mil_params['mil_arch'] == "att_batch_multi":
+                model = mil_multi.AttMILBatchMulti(base_encoder, opts.pretrained, opts.arch, opts.input_size,
+                                                   feature_dim, mil_params)
             else:
                 model = mil.AttMIL(base_encoder, opts.pretrained, opts.arch, opts.input_size, feature_dim, mil_params)
 

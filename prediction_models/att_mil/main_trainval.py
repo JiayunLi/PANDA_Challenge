@@ -1,17 +1,20 @@
-import torch
+
 import os
-import argparse
-import pickle
 import random
 import numpy as np
+import torch
+import argparse
+import pickle
 from prediction_models.att_mil.datasets import config_dataset
 from prediction_models.att_mil.mil_models import config_model
 from prediction_models.att_mil import train_att_mil, config_params
 from prediction_models.att_mil.utils import checkpoint_utils
 
+
 """
 python -m prediction_models.att_mil.main_trainval --data_dir /data/PANDA_challenge/  --dataset br_256_256  --info_dir ./info/16_128_128/ --num_workers 4 --im_size 256  --feat_ft 0  --arch resnext50_32x4d_ssl  --alpha 0 --input_size 256
 """
+
 
 def seed_torch(seed=1029):
     random.seed(seed)
@@ -48,8 +51,12 @@ def trainval(opts):
         ckp = None
     if not hasattr(opts, "schedule_type"):
         opts.schedule_type = "plateau"
-
-    opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
+    if opts.multi:
+        opts.data_dir_high = f"{opts.data_dir}/{opts.dataset_high}/"
+        opts.data_dir_low = f"{opts.data_dir}/{opts.dataset_low}/"
+        opts.mil_arch = opts.mil_arch + "_multi"
+    else:
+        opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
     opts.slide_binary, opts.tile_binary = parse_binary_options(opts.slide_binary), parse_binary_options(opts.tile_binary)
     # opts.smooth_alpha = parse_binary_options(opts.smooth_alpha)
@@ -62,7 +69,8 @@ def trainval(opts):
     print(opts)
 
     # Generate tile-level labels
-    if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset not in {"16_128_128"}:
+    if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset not in {"16_128_128"}\
+            and not opts.multi:
         from prediction_models.att_mil.utils import dataset_utils
         masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
         dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=opts.im_size,
@@ -78,9 +86,14 @@ def trainval(opts):
 
     pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
 
-    dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
-                                                 opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
-                                                 opts.normalized, opts.num_channels, top_n=opts.top_n)
+    if opts.multi:
+        dataset_params = config_params.DatasetParamsMulti(
+            opts.im_size_low, opts.im_size_high, opts.input_size, opts.info_dir, opts.data_dir_low,
+            opts.data_dir_high, opts.cache_dir, opts.exp_dir, opts.normalized, opts.num_channels, top_n=opts.top_n)
+    else:
+        dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
+                                                     opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
+                                                     opts.normalized, opts.num_channels, top_n=opts.top_n)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
                                               opts.loss_type, opts.schedule_type, opts.mil_arch)
@@ -104,7 +117,7 @@ def trainval(opts):
         val_loader, val_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
                                                 split="val", phase="val", fold=fold, mil_arch=args.mil_arch)
-        if opts.mil_arch in {"att_batch", "pool", "pool_simple"}:
+        if opts.mil_arch in {"att_batch", "pool", "pool_simple", "att_batch_multi"}:
             model, optimizer, scheduler, start_epoch, iters, checkpointer = \
                 config_model.config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
         else:
@@ -120,10 +133,10 @@ def trainval(opts):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
-
     # File location
     parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
-    parser.add_argument('--info_dir', type=str, default='./info/16_128_128', help='Directory for cross validation information')
+    parser.add_argument('--info_dir', type=str, default='./info/16_128_128',
+                        help='Directory for cross validation information')
     parser.add_argument('--cache_dir', type=str, default='./cache/br_128_128/', help='Directory to save trained models')
     parser.add_argument('--dataset', type=str, default="br_128_128", help='Different types of processed tiles')
 
@@ -159,22 +172,22 @@ if __name__ == "__main__":
     parser.add_argument('--bag_embed', default=512, type=int, help="Bag embedding size")
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
-    parser.add_argument('--mil_arch', default='pool', type=str, )
+    parser.add_argument('--mil_arch', default='att_batch', type=str, )
     parser.add_argument('--has_drop_rate', type=float, default=0.0)
     # parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
-    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate for classifier')
-    parser.add_argument('--feat_lr', default=1e-3, type=float, help='learning rate for features')
+    parser.add_argument('--lr', default=5e-4, type=float, help='learning rate for classifier')
+    parser.add_argument('--feat_lr', default=5e-4, type=float, help='learning rate for features')
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='aug_adam', help="Optimizer used for model training")
     parser.add_argument('--schedule_type', default='cycle', help="options: plateau | cycle")
-    parser.add_argument('--epochs', default=50, type=int)
+    parser.add_argument('--epochs', default=30, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
-    parser.add_argument('--alpha', default=0.8, type=float, help='weighted factor for tile loss')
-    parser.add_argument('--loss_type', default='ce', type=str,
+    parser.add_argument('--alpha', default=0, type=float, help='weighted factor for tile loss')
+    parser.add_argument('--loss_type', default='mse', type=str,
                         help="Different types of loss functions; cross entropy, MSE")
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
     parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
@@ -183,8 +196,15 @@ if __name__ == "__main__":
     parser.add_argument('--tile_ft', default=0, type=int, help="Train tile features for couple epochs")
     parser.add_argument('--top_n', type=int, default=-1, help="Set to > 0 to limit the number of tiles")
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
-                                                                      'classification')
-    parser.add_argument('--batch_size', default=32, type=int, help='Use batch training')
+                                                                     'classification')
+    parser.add_argument('--batch_size', default=16, type=int, help='Use batch training')
+
+    # Multi-scale input
+    parser.add_argument('--multi', action='store_true')
+    parser.add_argument('--dataset_low', default='16_128_128')
+    parser.add_argument('--dataset_high', default='br_128_128')
+    parser.add_argument('--im_size_low', default=128, type=int)
+    parser.add_argument('--im_size_high', default=128, type=int)
 
     # Exp
     parser.add_argument('--exp', default='debug', help="Name of current experiment")
@@ -198,3 +218,4 @@ if __name__ == "__main__":
         os.mkdir(args.exp_dir)
 
     trainval(args)
+
