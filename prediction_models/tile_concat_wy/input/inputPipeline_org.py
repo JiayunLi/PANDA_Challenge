@@ -59,7 +59,7 @@ class PandaPatchDataset(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
-        img_id = self.self.train_csv.loc[idx, 'image_id']
+        img_id = self.train_csv.loc[idx, 'image_id']
         fname = os.path.join(self.image_dir, img_id+'.tiff')
         image = skimage.io.MultiImage(fname)[1]
         imgs, OK = get_tiles(image, self.image_size, self.N)
