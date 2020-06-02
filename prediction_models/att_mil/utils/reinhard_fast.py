@@ -1,5 +1,6 @@
 import numpy as np
 from skimage import color
+from skimage import morphology as skmp
 
 
 class ReinhardNormalizer:
@@ -17,14 +18,15 @@ class ReinhardNormalizer:
             self.target_concentrations = values
         return
 
-    def transform(self, tile, whitemask):
+    def transform(self, tile, whitemask=None):
         """
         Transform an image
         :param tile:
         :param whitemask
         :return:
         """
-
+        if not whitemask:
+            whitemask = generate_binary_mask(tile)
         whitemask = ~whitemask
         imagelab = color.rgb2lab(tile)
 
@@ -66,3 +68,26 @@ class ReinhardNormalizer:
 
     def get_norm_method(self):
         return "reinhard"
+
+
+def generate_binary_mask(tile):
+    """
+    generate binary mask for a given tile
+    :param tile:
+    :return:
+    """
+    tile_hsv = color.rgb2hsv(np.asarray(tile))
+    roi1 = (tile_hsv[:, :, 0] >= 0.33) & (tile_hsv[:, :, 0] <= 0.67)
+    roi1 = ~roi1
+
+    skmp.remove_small_holes(roi1, area_threshold=500, connectivity=20, in_place=True)
+    skmp.remove_small_objects(roi1, min_size=500, connectivity=20, in_place=True)
+
+    tile_gray = color.rgb2gray(np.asarray(tile))
+    masked_sample = np.multiply(tile_gray, roi1)
+    roi2 = (masked_sample <= 0.8) & (masked_sample >= 0.2)
+
+    skmp.remove_small_holes(roi2, area_threshold=500, connectivity=20, in_place=True)
+    skmp.remove_small_objects(roi2, min_size=500, connectivity=20, in_place=True)
+
+    return tile_hsv, roi2

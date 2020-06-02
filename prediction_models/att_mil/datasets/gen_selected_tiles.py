@@ -3,7 +3,7 @@ from PIL import Image
 import pandas as pd
 import numpy as np
 import time
-import math
+from prediction_models.att_mil.utils import reinhard_fast
 from skimage import color
 import json
 from skimage import morphology as skmp
@@ -79,14 +79,15 @@ def select_at_lowest(img, sz, n_tiles, mask_tissue):
 
 
 def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, padded_low_shape,
-                      level, top_n, orig_mask=None):
+                      level, top_n, desire_size, orig_mask=None):
     cur_rate = RATE_MAP[level]
     cur_im = orig_img[level]
     if orig_mask:
         cur_mask = orig_mask[level][:, :, 0]
-    tiles, masks = [], []
+    tiles, masks, norm_tiles = [], [], []
     high_im_size = low_im_size * cur_rate
     n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
+    normalizer = reinhard_fast.ReinhardNormalizer()
     for tile_id in selected_idxs:
         i, j = tile_id // n_col, tile_id % n_col
         high_i = max(i * low_im_size - pad_top, 0) * cur_rate
@@ -96,33 +97,47 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
 
         if high_j + high_im_size > cur_im.shape[1]:
             high_j = cur_im.shape[1] - high_im_size
-        high_tile = cur_im[high_i: high_i + high_im_size, high_j: high_j + high_im_size, :]
+        high_tile = Image.fromarray(cur_im[high_i: high_i + high_im_size, high_j: high_j + high_im_size, :].astype(np.uint8))
+        norm_high_tile = normalizer.transform(high_tile)
+        if high_im_size > desire_size:
+            high_tile = Image.fromarray(high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
+        high_tile = np.asarray(high_tile)
         if orig_mask:
             high_tile_mask = cur_mask[high_i: high_i + high_im_size, high_j: high_j + high_im_size]
+            if high_im_size > desire_size:
+                rate = high_im_size // desire_size
+                high_tile_mask = high_tile_mask[::rate, ::rate]
             masks.append(high_tile_mask)
         tiles.append(high_tile)
+        norm_tiles.append(norm_high_tile)
 
     if len(tiles) < top_n:
         tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
     tiles = np.stack(tiles)
-    results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs}
+    norm_tiles = np.stack(norm_tiles)
+    results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs, 'norm_tiles': norm_tiles.astype(np.uint8)}
     if orig_mask:
         masks = np.pad(masks, [[0, top_n - len(masks)], [0, 0], [0, 0]], constant_values=0, mode='constant')
         masks = np.stack(masks)
         results["label_masks"] = masks.astype(np.uint8)
+    else:
+        results['label_masks'] = None
     return results
 
 
-def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n, slides_list):
+def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n, desire_size, slides_list):
     counter = 0
     for slide_name in slides_list:
         orig = skimage.io.MultiImage(f"{slides_dir}/{slide_name}.tiff")
-        mask = skimage.io.MultiImage(f"{masks_dir}/{slide_name}_mask.tiff")
+        if os.path.isfile(f"{masks_dir}/{slide_name}_mask.tiff"):
+            mask = skimage.io.MultiImage(f"{masks_dir}/{slide_name}_mask.tiff")
+        else:
+            mask = None
         lowest = orig[-1]
         pad_img, idxs, pad_top, pad_left = select_at_lowest(lowest, lowest_im_size, top_n, True)
         results = get_highres_tiles(orig, idxs, pad_top, pad_left, lowest_im_size,
-                                                       (pad_img.shape[0], pad_img.shape[1]),
-                                                       level=level, top_n=top_n, orig_mask=mask)
+                                    (pad_img.shape[0], pad_img.shape[1]),
+                                    level=level, top_n=top_n, desire_size=desire_size, orig_mask=mask)
         results['slide_name'] = slide_name
         pqueue.put(results)
         counter += 1
@@ -130,14 +145,17 @@ def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n,
     pqueue.put('Done')
 
 
-def write_batch_data(env_tiles, env_label_masks, tile_ids_map, batch_data, tot_len, start_counter):
+def write_batch_data(env_tiles, env_norm, env_label_masks, tile_ids_map, batch_data, tot_len, start_counter):
     end_counter = start_counter + len(batch_data)
-    with env_tiles.begin(write=True) as txn_tiles, env_label_masks.begin(write=True) as txn_labels:
+    with env_tiles.begin(write=True) as txn_tiles, env_norm.begin(write=True) as txn_norm, \
+            env_label_masks.begin(write=True) as txn_labels:
         while len(batch_data) > 0:
             data = batch_data.pop()
             write_start = time.time()
             slide_name = data['slide_name']
+            print(data['tiles'].shape)
             txn_tiles.put(str(slide_name).encode(), (data['tiles'].astype(np.uint8)).tobytes())
+            txn_norm.put(str(slide_name).encode(), (data['norm_tiles'].astype(np.uint8)).tobytes())
             if data['label_masks'] is None:
                 tempt = None
             else:
@@ -148,10 +166,11 @@ def write_batch_data(env_tiles, env_label_masks, tile_ids_map, batch_data, tot_l
 
 
 def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, masks_dir, lowest_im_size, level,
-                    top_n, loc_only):
+                    top_n, desire_size, loc_only):
     slides_to_process = []
-    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
-    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
+    env_norm = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
+    env_tiles = lmdb.open(f"{out_dir}/norm_tiles", map_size=6e+12)
+    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+11)
     tile_ids_map = dict()
     if not loc_only:
         with env_label_masks.begin(write=False) as txn:
@@ -169,13 +188,15 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     for i in range(num_ps - 1):
         end_idx = start_idx + batch_size
         reader_p = Process(target=generate_helper, args=(pqueue, slides_dir, masks_dir, lowest_im_size,
-                                                         level, top_n, slides_to_process[start_idx: end_idx]))
+                                                         level, top_n, desire_size,
+                                                         slides_to_process[start_idx: end_idx]))
         reader_p.start()
         reader_processes.append(reader_p)
         start_idx = end_idx
     # Ensure all slides are processed by processes.
     reader_p = Process(target=generate_helper, args=(pqueue, slides_dir, masks_dir, lowest_im_size,
-                                                     level, top_n, slides_to_process[start_idx: len(slides_to_process)]))
+                                                     level, top_n, desire_size,
+                                                     slides_to_process[start_idx: len(slides_to_process)]))
     reader_p.start()
     reader_processes.append(reader_p)
 
@@ -197,7 +218,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
             # Write a batch of data.
             if len(batches) == write_batch_size:
                 counter = \
-                    write_batch_data(env_tiles, env_label_masks, tile_ids_map, batches,
+                    write_batch_data(env_tiles, env_norm, env_label_masks, tile_ids_map, batches,
                                      len(slides_to_process), counter)
         else:
             slide_name = data['slide_name']
@@ -207,7 +228,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     if not loc_only:
         if len(batches) > 0:
             counter = \
-                write_batch_data(env_tiles, env_label_masks, tile_ids_map, batches,
+                write_batch_data(env_tiles, env_norm, env_label_masks, tile_ids_map, batches,
                                  len(slides_to_process), counter)
 
     for process in reader_processes:
@@ -235,6 +256,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', default='/br_256_256/')
 
     parser.add_argument("--lowest_im_size", default=64, type=int)
+    parser.add_argument('--desire_size', default=256, type=int)
     parser.add_argument("--level", default=-2, type=int, help="Generate tiles downsampled")
     parser.add_argument("--verbose", action='store_true', help="Whether to print debug information")
 
@@ -255,7 +277,7 @@ if __name__ == "__main__":
     pickle.dump(args, open(f"{args.out_dir}/dataset_options.pkl", "wb"))
     process_list = pd.read_csv(args.train_slide_file)['image_id'].to_list()
     save_tiled_lmdb(process_list, args.num_ps, args.write_batch_size, args.out_dir, args.slides_dir, args.masks_dir,
-                    args.lowest_im_size, args.level, args.top_n, args.loc_only)
+                    args.lowest_im_size, args.level, args.top_n, args.desire_size, args.loc_only)
 
 
 # python -m prediction_models.att_mil.datasets.gen_selected_tiles --data_dir /data/
