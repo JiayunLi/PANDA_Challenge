@@ -116,9 +116,12 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
     if start_epoch < trainval_params.tile_ft:
         # Train network with tile-level only. Here we need to make sure all data comes from Radbound dataset.
         tile_alpha = 1
-        tile_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=trainval_params.lr,
-                                                             total_steps=trainval_params.tile_ft,
-                                                             pct_start=0.0, div_factor=100)
+        if trainval_params.schedule_type == "plateau":
+            tile_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+        else:
+            tile_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=trainval_params.lr,
+                                                                 total_steps=trainval_params.tile_ft,
+                                                                 pct_start=0.0, div_factor=100)
         tiles_train_loader, _ = \
             config_dataset.build_dataset_loader(trainval_params.batch_size, trainval_params.num_workers,
                                                 dataset_params, split="train", phase="train_tiles", fold=fold,
@@ -145,11 +148,11 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
             checkpointer.update(epoch, iters, 0)
             if trainval_params.schedule_type == "plateau":
                 print("Take one Plateau step")
-                scheduler.step(loss)
+                tile_scheduler.step(loss)
             elif trainval_params.schedule_type == "cycle":
                 print("Take one cycle step")
                 # print("Take step per batch")
-                scheduler.step()
+                tile_scheduler.step()
             else:
                 raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
         start_epoch = trainval_params.tile_ft

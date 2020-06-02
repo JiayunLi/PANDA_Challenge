@@ -162,7 +162,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     else:
         dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
 
-    shuffle = True if phase == "train" else False
+    shuffle = True if split == "train" else False
 
     loader = \
         torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=False,
