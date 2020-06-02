@@ -42,7 +42,7 @@ def config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     elif mil_params['schedule_type'] == "cycle":
         print("Use cycle scheduler")
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, total_steps=opts.epochs,
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, total_steps=opts.epochs-opts.tile_ft,
                                                         pct_start=0.0, div_factor=100)
         # scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=opts.lr, steps_per_epoch=steps_per_epoch,
         #                                                 epochs=opts.epochs, pct_start=0.3, div_factor=100)

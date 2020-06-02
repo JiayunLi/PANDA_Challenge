@@ -135,7 +135,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
                                     trainval_params.log_every, logger, device)
                 kappa, loss = val(epoch, fold, model, tiles_val_loader, slide_criterion, trainval_params.loss_type,
                                   logger, trainval_params.slide_binary, device)
-            checkpointer.update(epoch, iters, kappa)
+            checkpointer.update(epoch, iters, 0)
             if trainval_params.schedule_type == "plateau":
                 print("Take one Plateau step")
                 scheduler.step(loss)
@@ -145,8 +145,10 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
                 scheduler.step()
             else:
                 raise NotImplementedError(f"{trainval_params.schedule_type} Not implemented!!")
+        start_epoch = trainval_params.tile_ft
     # Start with slide-level loss only training
     alpha = 0
+
     for epoch in range(start_epoch, trainval_params.tot_epochs):
         print(f"Start training for Fold {fold}\t Epoch: {epoch}/{trainval_params.tot_epochs}")
         if epoch == trainval_params.feat_ft and epoch > 0:

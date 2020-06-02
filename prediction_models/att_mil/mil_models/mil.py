@@ -57,9 +57,9 @@ def config_encoder(input_size, num_classes, arch, pretrained):
 class AttMIL(nn.Module):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super(AttMIL, self).__init__()
-        # self.tile_encoder = base_encoder
-        self.tile_encoder = base_encoder.features
-        self.tile_classifier = base_encoder.classifier
+        self.tile_encoder = base_encoder
+        # self.tile_encoder = base_encoder.features
+        # self.tile_classifier = base_encoder.classifier
         self.feature_dim = feature_dim
         self.pretrained = pretrained
         self.hp = {"input_size": input_size,  "encoder_arch": arch,
@@ -117,10 +117,10 @@ class AttMIL(nn.Module):
             init_helper.weight_init(m)
 
     def forward(self, tiles, phase="regular"):
-        # feats = self.tile_encoder.features(tiles.contiguous())
-        feats = self.tile_encoder(tiles.contiguous())
-        # tiles_probs = self.tile_encoder.classifier(feats)
-        tiles_probs = self.tile_classifier(feats)
+        feats = self.tile_encoder.features(tiles.contiguous())
+        # feats = self.tile_encoder(tiles.contiguous())
+        tiles_probs = self.tile_encoder.classifier(feats)
+        # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats.view(feats.size(0), -1).contiguous())
 
@@ -225,11 +225,16 @@ class AttMILBatch(AttMIL):
         return classifier
 
     def forward(self, tiles, phase="regular"):
+        if phase == "tiles_only":
+            feats = self.tile_encoder.features(tiles)
+            tiles_probs = self.tile_encoder.classifier(feats)
+            return None, tiles_probs, None
+
         batch_size, n_tiles, channel, h, w = tiles.shape
-        # feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-        feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
-        # tiles_probs = self.tile_encoder.classifier(feats)
-        tiles_probs = self.tile_classifier(feats)
+        feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+        # feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
+        tiles_probs = self.tile_encoder.classifier(feats)
+        # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats)
 
