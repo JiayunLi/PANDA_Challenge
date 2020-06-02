@@ -133,7 +133,7 @@ class PandaPatchDatasetInfer(Dataset):
 
     def __getitem__(self, idx):
         name = self.test_csv.image_id[idx]
-        img = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))[-2] # get the lowest resolution
+        img = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))[1] # get the lowest resolution
         imgs, OK = self.tile_image(img, self.tile_size, self.n_tiles) ## list of tiles per slide
 
         if self.rand:

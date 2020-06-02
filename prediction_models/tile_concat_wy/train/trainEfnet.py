@@ -14,7 +14,7 @@ from torch.utils.data.sampler import SubsetRandomSampler, RandomSampler, Sequent
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
-from input.inputPipeline_org import *
+from input.inputPipeline_stiching import *
 # from model.deeplabv3_finetune import *
 from model.evnet import *
 from utiles.radam import *
@@ -47,7 +47,7 @@ class Train(object):
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
-        ## val
+     def val   ## val
         model.eval()
         val_loss, val_label, val_preds = [], [], []
         with torch.no_grad():
@@ -68,7 +68,7 @@ class Train(object):
                 loss = loss1
                 val_loss.append(loss.item())
                 val_label.append(labels.sum(1).cpu())
-                val_preds.append(outputs['out'].sum(1).cpu())
+                val_preds.append(outputs_main.sigmoid().sum(1).cpu())
         # val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
         val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0).round()

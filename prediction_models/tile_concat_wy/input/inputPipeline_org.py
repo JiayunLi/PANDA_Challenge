@@ -98,7 +98,7 @@ class PandaPatchDataset(Dataset):
         return torch.tensor(images), torch.tensor(label)
 
 class PandaPatchDatasetInfer(Dataset):
-    def __init__(self, csv_file, image_dir, transform = None, N = 12, sz = 128):
+    def __init__(self, csv_file, image_dir, image_size, N=12, transform=None, rand=False):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -107,32 +107,51 @@ class PandaPatchDatasetInfer(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.test_csv = pd.read_csv(csv_file)
+        self.train_csv = pd.read_csv(csv_file)
         self.image_dir = image_dir
-        self.image_id = list(self.test_csv.image_id)
-        self.N = N
-        self.sz = sz
+        self.image_size = image_size
         self.transform = transform
+        self.N = N
+        self.rand = rand
 
     def __len__(self):
-        return len(self.test_csv)
+        return len(self.train_csv)
 
     def __getitem__(self, idx):
-        name = self.test_csv.image_id[idx]
-        img = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))[-2] # get the lowest resolution
-        imgs, OK = self.tile_image(img, self.tile_size, self.n_tiles) ## list of tiles per slide
+        img_id = self.train_csv.loc[idx, 'image_id']
+        name = self.train_csv.image_id[idx]
+        fname = os.path.join(self.image_dir, img_id + '.tiff')
+        image = skimage.io.MultiImage(fname)[1]
+        imgs, OK = get_tiles(image, self.image_size, self.N)
 
-        if self.rand:
-            idxes = np.random.choice(list(range(self.n_tiles)), self.n_tiles, replace=False)
+        if self.rand:  ## random shuffle the order of tiles
+            idxes = np.random.choice(list(range(self.N)), self.N, replace=False)
         else:
-            idxes = list(range(self.n_tiles))
+            idxes = list(range(self.N))
 
-        if self.transform:
-            imgs = [self.transform(img) for img in imgs]
-        ## convert the output to tensor
-        # imgs = [torch.tensor(img) for img in imgs]
-        imgs = torch.stack(imgs)
-        return {'image': imgs, 'name': name}
+        n_row_tiles = int(np.sqrt(self.N))
+
+        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3))
+        for h in range(n_row_tiles):
+            for w in range(n_row_tiles):
+                i = h * n_row_tiles + w
+                if len(imgs) > idxes[i]:
+                    this_img = imgs[idxes[i]]['img']
+                else:
+                    this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
+                this_img = 255 - this_img  ## todo: see how this trik plays out
+                if self.transform is not None:
+                    this_img = self.transform(image=this_img)['image']
+                h1 = h * self.image_size
+                w1 = w * self.image_size
+                images[h1:h1 + self.image_size, w1:w1 + self.image_size] = this_img
+
+        if self.transform is not None:
+            images = self.transform(image=images)['image']
+        images = images.astype(np.float32)
+        images /= 255
+        images = images.transpose(2, 0, 1)
+        return torch.tensor(images), name
 
 def get_tiles(img, tile_size, n_tiles, mode=0):
     result = []
