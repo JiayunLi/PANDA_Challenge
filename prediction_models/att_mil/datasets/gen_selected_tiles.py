@@ -97,11 +97,11 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
 
         if high_j + high_im_size > cur_im.shape[1]:
             high_j = cur_im.shape[1] - high_im_size
-        high_tile = Image.fromarray(cur_im[high_i: high_i + high_im_size, high_j: high_j + high_im_size, :].astype(np.uint8))
+        high_tile = cur_im[high_i: high_i + high_im_size, high_j: high_j + high_im_size, :].astype(np.uint8)
         norm_high_tile = normalizer.transform(high_tile)
         if high_im_size > desire_size:
             high_tile = Image.fromarray(high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
-        high_tile = np.asarray(high_tile)
+            high_tile = np.asarray(high_tile)
         if orig_mask:
             high_tile_mask = cur_mask[high_i: high_i + high_im_size, high_j: high_j + high_im_size]
             if high_im_size > desire_size:
