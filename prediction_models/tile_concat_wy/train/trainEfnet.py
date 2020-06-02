@@ -67,10 +67,10 @@ class Train(object):
                 # loss = loss1 + 0.4 * loss2
                 loss = loss1
                 val_loss.append(loss.item())
-                val_label.append(labels.cpu())
-                val_preds.append(outputs['out'].cpu())
+                val_label.append(labels.sum(1).cpu())
+                val_preds.append(outputs['out'].sum(1).cpu())
         # val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
-        val_label = torch.cat(val_label)
+        val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0).round()
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
         self.scheduler.step()
