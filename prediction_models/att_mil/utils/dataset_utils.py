@@ -237,7 +237,7 @@ def convert_img_lmdb(opts):
             for tile_id in range(16):
                 tile = Image.open(f"{opts.orig_data_dir}/train/{image_id}_{tile_id}.png")
                 tiles[tile_id, :, :, :] = np.asarray(tile)
-            txn.put(str(image_id).encode(), tile.astype(np.uint8).tobytes())
+            txn.put(str(image_id).encode(), tiles.astype(np.uint8).tobytes())
 
 
 if __name__ == "__main__":
