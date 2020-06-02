@@ -14,9 +14,9 @@ from torch.utils.data.sampler import SubsetRandomSampler, RandomSampler, Sequent
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
-from input.inputPipeline import *
+from input.inputPipeline_org import *
 # from model.deeplabv3_finetune import *
-from model.resnext_segft import *
+from model.evnet import *
 from utiles.radam import *
 from utiles.utils import *
 
