@@ -209,6 +209,8 @@ def compute_class_frequency(trainval_df, tile_labels_map, binary_only):
         if binary_only:
             slide_label = int(slide_label > 0)
         slide_label_counter[slide_label] += 1
+        if slide_name not in tile_labels_map:
+            continue
         tile_labels = tile_labels_map[slide_name]
         for tile_label in tile_labels:
             if binary_only:
