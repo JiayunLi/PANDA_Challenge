@@ -22,11 +22,13 @@ class Model(nn.Module):
         return self.enet(x)
 
     def forward(self, x):
+        result = OrderedDict()
         bs, N, c, h, w = x.shape
         x = x.view(-1, c, h, w)
         x = self.extract(x)
         x = self.myfc(x)
-        return x
+        result['out'] = x
+        return result
 
 if __name__ == "__main__":
     img = torch.rand([4, 12, 3, 128, 128])
