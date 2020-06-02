@@ -92,8 +92,8 @@ def write_2_zip(Source_Folder, Des_File, names, sz = 128, N = 16):
             zipfile.ZipFile(OUT_MASKS, 'w') as mask_out:
         for name in tqdm(names):
             ## read the image and label with the lowest res by [-1]
-            img = skimage.io.MultiImage(os.path.join(TRAIN, name + '.tiff'))[1]
-            mask = skimage.io.MultiImage(os.path.join(MASKS, name + '_mask.tiff'))[1]
+            img = skimage.io.MultiImage(os.path.join(TRAIN, name + '.tiff'))[0]
+            mask = skimage.io.MultiImage(os.path.join(MASKS, name + '_mask.tiff'))[0]
             ## tile the img and mask to N patches with size (sz,sz,3)
             tiles = tile(img, mask, sz, N)
             for t in tiles:
@@ -154,12 +154,12 @@ if __name__ == "__main__":
     """Define Your Input"""
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
-    OUT_TRAIN = '../input/panda-36x256x256-tiles-data/train.zip'  ## output image folder
-    OUT_MASKS = '../input/panda-36x256x256-tiles-data/masks.zip'  ## ouput label folder
+    OUT_TRAIN = '../input/panda-64x256x256-tiles-data/train.zip'  ## output image folder
+    OUT_MASKS = '../input/panda-64x256x256-tiles-data/masks.zip'  ## ouput label folder
     utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
-    N = 36 ## how many patches selected from each slide
+    N = 64 ## how many patches selected from each slide
     names = [name[:-10] for name in os.listdir(MASKS)]
     print(len(names))  ## only images that have masks
 
