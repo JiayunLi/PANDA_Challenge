@@ -256,7 +256,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', default='/br_256_256/')
 
     parser.add_argument("--lowest_im_size", default=64, type=int)
-    parser.add_argument('--desire_size', default=256, type=int)
+    parser.add_argument('-- ', default=256, type=int)
     parser.add_argument("--level", default=-2, type=int, help="Generate tiles downsampled")
     parser.add_argument("--verbose", action='store_true', help="Whether to print debug information")
 

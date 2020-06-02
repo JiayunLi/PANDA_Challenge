@@ -26,7 +26,7 @@ class ReinhardNormalizer:
         :return:
         """
         if not whitemask:
-            whitemask = generate_binary_mask(tile)
+            _, whitemask = generate_binary_mask(tile)
         whitemask = ~whitemask
         imagelab = color.rgb2lab(tile)
 
