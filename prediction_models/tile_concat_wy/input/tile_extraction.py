@@ -66,7 +66,7 @@ def tile_img(img, sz=128, N=16):
     ## sort the patches by pixel value from smallest to largest
     ## pick up the first N smallest patches, thoses are the patches that most likely contains tissues
     ## as white space (255, 255, 255) contains the largest pixel value
-    # idxs = np.argsort(img.reshape(img.shape[0], -1).sum(-1))[:N]
+    idxs = np.argsort(img.reshape(img.shape[0], -1).sum(-1))[:N]
     img = img[idxs]
     for i in range(len(img)):
         result.append({'img': img[i], 'idx': i})
