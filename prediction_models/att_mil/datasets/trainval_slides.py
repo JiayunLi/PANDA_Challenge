@@ -171,6 +171,7 @@ class BiopsySlidesBatchV2(data.Dataset):
 
         labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
         if self.has_drop_rate > 0:
+            print("Use dropout instance")
             tiles, labels = self._w_instance_drop(tiles, labels)
         if self.params.top_n > 0 and len(tiles) > self.params.top_n:
             tiles = tiles[:self.params.top_n, :, :, :]
