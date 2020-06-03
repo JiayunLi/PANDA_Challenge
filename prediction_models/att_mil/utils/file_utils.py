@@ -55,6 +55,8 @@ def read_lmdb_slide_tensor(env, data_shape, key, transform, out_im_size, data_ty
 
     with env.begin(write=False) as txn:
         buffer = txn.get(str(key).encode())
+        if buffer == None:
+            print(key)
         buffer = decode_buffer(buffer, data_shape, data_type)
     results = torch.FloatTensor(len(buffer), *out_im_size)
     for i in range(len(buffer)):
