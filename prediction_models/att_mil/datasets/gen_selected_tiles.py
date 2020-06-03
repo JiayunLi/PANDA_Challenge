@@ -264,7 +264,7 @@ def fix():
             new_tiles = []
             for tile_id in range(len(orig_tiles)):
                 cur_tile = Image.fromarray(orig_tiles[tile_id, :, :, :]).resize((256, 256), Image.ANTIALIAS)
-                new_tiles.append(cur_tile.asarray())
+                new_tiles.append(np.asarray(cur_tile))
             new_tiles = np.stack(new_tiles)
             new_txn.put(str(image_id).encode(), (new_tiles.astype(np.uint8)).tobytes())
 
