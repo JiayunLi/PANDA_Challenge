@@ -111,14 +111,14 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
                        T.RandomVerticalFlip(),
                        T.RandomAffine(degrees=180, fillcolor=(255, 255, 255)),
 
-        # T.RandomResizedCrop(dataset_params.input_size, scale=(0.3, 1.0), ratio=(0.7, 1.4),
-        #                     interpolation=INTERP),
-        # T.RandomApply([
-        #     T.ColorJitter(0.2, 0.2, 0.2, 0.1)  # not strengthened
-        # ], p=0.8),
-        # T.RandomGrayscale(p=0.2),
-        # T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
-        # T.RandomHorizontalFlip(),
+        T.RandomResizedCrop(dataset_params.input_size, scale=(0.3, 1.0), ratio=(0.7, 1.4),
+                            interpolation=INTERP),
+        T.RandomApply([
+            T.ColorJitter(0.2, 0.2, 0.2, 0.1)  # not strengthened
+        ], p=0.8),
+        T.RandomGrayscale(p=0.2),
+        T.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+        T.RandomHorizontalFlip(),
         ] + normalize
     if has_drop_rate > 0:
         assert split == "train"
