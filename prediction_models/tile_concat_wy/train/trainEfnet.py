@@ -60,7 +60,7 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 5:
+                # if i > 50:
                 #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider = data['img'], data['isup_grade'], data['datacenter']
@@ -74,10 +74,14 @@ class Train(object):
                 # loss2 = criterion(outputs_aux, labels.float().cuda())
                 # loss = loss1 + 0.4 * loss2
                 loss = loss1
+                # print("output_main", outputs_main.shape)
+                # print("labels", labels.shape)
                 val_loss.append(loss.item())
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
                 val_provider += provider
+                # print("postval_label", labels.sum(1))
+                # print("postval_label", outputs_main.sigmoid().sum(1).round())
 
         val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0)
@@ -92,6 +96,8 @@ class Train(object):
         result['kappa'] = kappa
         result['kappa_r'] = kappa_r
         result['kappa_k'] = kappa_k
+        # result['val_label'] = val_label
+        # result['val_preds'] = val_preds
         return result
 
 
@@ -149,6 +155,8 @@ if __name__ == "__main__":
             writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
             writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
+            # print(val['val_preds'], val['val_label'])
+            # print(val['val_preds'].shape, val['val_label'].shape, val['kappa'])
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train['train_loss'],
                                                                                                val['val_loss'],

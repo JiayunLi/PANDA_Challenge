@@ -67,9 +67,9 @@ class PandaPatchDataset(Dataset):
         fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                   for i in range(self.N)]
         imgs = []
-        for idx, fname in enumerate(fnames):
+        for i, fname in enumerate(fnames):
             img = self.open_image(fname)
-            imgs.append({'img': img, 'idx': idx})
+            imgs.append({'img': img, 'idx': i})
 
         if self.rand: ## random shuffle the order of tiles
             idxes = np.random.choice(list(range(self.N)), self.N, replace=False)
@@ -196,5 +196,5 @@ if __name__ == "__main__":
     ## cross val dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     trainloader, valloader = crossValData(0)
-    data = iter(trainloader).next()
+    data = iter(valloader).next()
     print("image size:{}, target sise:{}.".format(data['img'].size(), data['isup_grade'].size()))

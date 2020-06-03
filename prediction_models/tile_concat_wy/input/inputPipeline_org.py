@@ -98,7 +98,7 @@ class PandaPatchDataset(Dataset):
         return torch.tensor(images), torch.tensor(label)
 
 class PandaPatchDatasetInfer(Dataset):
-    def __init__(self, csv_file, image_dir, image_size, N=12, transform=None, rand=False):
+    def __init__(self, csv_file, image_dir, image_size, N=12, transform=None, rand=False, mode = 0):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -113,6 +113,7 @@ class PandaPatchDatasetInfer(Dataset):
         self.transform = transform
         self.N = N
         self.rand = rand
+        self.mode = mode
 
     def __len__(self):
         return len(self.train_csv)
@@ -122,7 +123,7 @@ class PandaPatchDatasetInfer(Dataset):
         name = self.train_csv.image_id[idx]
         fname = os.path.join(self.image_dir, img_id + '.tiff')
         image = skimage.io.MultiImage(fname)[1]
-        imgs, OK = get_tiles(image, self.image_size, self.N)
+        imgs, OK = get_tiles(image, self.image_size, self.N, mode = self.mode)
 
         if self.rand:  ## random shuffle the order of tiles
             idxes = np.random.choice(list(range(self.N)), self.N, replace=False)
