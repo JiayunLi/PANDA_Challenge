@@ -188,6 +188,10 @@ class BiopsySlidesBatchV2(data.Dataset):
         if self.params.top_n > 0 and len(tiles) > self.params.top_n:
             tiles = tiles[:self.params.top_n, :, :, :]
             labels = [labels[i] for i in range(self.params.top_n)]
+        if len(tiles) < 32:
+            tiles = torch.cat([tiles, torch.zeros(32 - len(tiles), 3, self.params.input_size, self.params.input_size),
+                               ], dim=0)
+            labels += [-1] * (32 - len(tiles))
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 

@@ -119,6 +119,7 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
 
     if len(tiles) < top_n:
         tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
+        norm_tiles = np.pad(norm_tiles, [[0, top_n - len(norm_tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
     tiles = np.stack(tiles)
     norm_tiles = np.stack(norm_tiles)
     results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs, 'norm_tiles': norm_tiles.astype(np.uint8)}
