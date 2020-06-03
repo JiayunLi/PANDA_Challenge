@@ -105,6 +105,8 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
         norm_high_tile = normalizer.transform(high_tile)
         if high_im_size > desire_size:
             high_tile = Image.fromarray(high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
+            norm_high_tile = Image.fromarray(norm_high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
+            norm_high_tile = np.asarray(norm_high_tile)
             high_tile = np.asarray(high_tile)
         if orig_mask:
             high_tile_mask = cur_mask[high_i: high_i + high_im_size, high_j: high_j + high_im_size]
@@ -172,8 +174,8 @@ def write_batch_data(env_tiles, env_norm, env_label_masks, tile_ids_map, batch_d
 def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, masks_dir, lowest_im_size, level,
                     top_n, desire_size, loc_only):
     slides_to_process = []
-    env_norm = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
-    env_tiles = lmdb.open(f"{out_dir}/norm_tiles", map_size=6e+12)
+    env_norm = lmdb.open(f"{out_dir}/norm_tiles", map_size=6e+12)
+    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+12)
     env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+11)
     tile_ids_map = dict()
     if not loc_only:
@@ -245,6 +247,28 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     np.save(f"{out_dir}/tile_lowest_ids.npy", tile_ids_map)
 
 
+def fix():
+    from prediction_models.att_mil.utils import file_utils
+    import tqdm
+    orig_norm_env = lmdb.open("/data/br_256_2x/norm_tiles_tempt/",
+                              max_readers=3, readonly=True,
+                              lock=False, readahead=False, meminit=False)
+    norm_env = lmdb.open("data/br_256_2x/norm_tiles", map_size=6e+12)
+    df = pd.read_csv("/data/4_fold_train.csv")
+    with orig_norm_env.begin(write=False) as orig_txn, norm_env.begin(write=True) as new_txn:
+        for i in tqdm.tqdm(range(len(df))):
+            cur = df.iloc[i]
+            image_id = cur['image_id']
+            orig_tiles = orig_txn.get(image_id.encode())
+            orig_tiles = file_utils.decode_buffer(orig_tiles, (-1, 512, 512, 3), data_type=np.uint8)
+            new_tiles = []
+            for tile_id in range(len(orig_tiles)):
+                cur_tile = Image.fromarray(orig_tiles[tile_id, :, :, :]).resize((256, 256), Image.ANTIALIAS)
+                new_tiles.append(cur_tile.asarray())
+            new_tiles = np.stack(new_tiles)
+            new_txn.put(str(image_id).encode(), (new_tiles.astype(np.uint8)).tobytes())
+
+
 
 if __name__ == "__main__":
     from multiprocessing import Process, Queue
@@ -271,8 +295,12 @@ if __name__ == "__main__":
     parser.add_argument('--top_n', type=int, default=40)
 
     parser.add_argument('--loc_only', action='store_true')
+    parser.add_argument('--fix', action='store_true')
 
     args = parser.parse_args()
+    if args.fix:
+        fix()
+        exit()
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
     args.masks_dir = f"{args.data_dir}/{args.masks_dir}/"
     args.train_slide_file = f"{args.data_dir}/{args.train_slide_file}"

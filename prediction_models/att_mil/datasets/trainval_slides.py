@@ -8,6 +8,7 @@ import torch
 import numpy as np
 from collections import defaultdict
 import glob
+import  os
 from PIL import Image
 from prediction_models.att_mil.utils import file_utils
 
@@ -118,7 +119,10 @@ class BiopsySlidesBatchV2(data.Dataset):
         print(f"Read tiles from folder {dataset_params.data_dir}/tiles/")
         self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
                                    lock=False, readahead=False, meminit=False)
-        self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
+        if not os.path.isfile(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json"):
+            self.tile_labels = None
+        else:
+            self.tile_labels = json.load(open(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json", "r"))
         self.slides_df = self._config_data()
         self.has_drop_rate = has_drop_rate
 
@@ -168,8 +172,10 @@ class BiopsySlidesBatchV2(data.Dataset):
                                               slide_name, self.transform,
                                               out_im_size=(self.params.num_channels, self.params.input_size,
                                                            self.params.input_size), data_type=np.uint8)
-
-        labels = self.tile_labels[slide_name] if slide_name in self.tile_labels else [-1] * len(tiles)
+        if not self.tile_labels or slide_name not in self.tile_labels:
+            labels = [-1] * len(tiles)
+        else:
+            labels = self.tile_labels[slide_name]
         if self.has_drop_rate > 0:
             print("Use dropout instance")
             tiles, labels = self._w_instance_drop(tiles, labels)
