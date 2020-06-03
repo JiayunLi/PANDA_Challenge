@@ -32,8 +32,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            if i >= 5:
-                break
+            # if i >= 5:
+            #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
             # zero the parameter gradients
@@ -60,8 +60,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                if i > 5:
-                    break
+                # if i > 5:
+                #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider = data['img'], data['isup_grade'], data['datacenter']
                 # zero the parameter gradients
@@ -103,9 +103,9 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Evnet_medreso_36patch_aug"
+    fname = "Evnet_medreso_36patch_adam_cosine"
     nfolds = 4
-    bs = 2
+    bs = 8
     enet_type = 'efficientnet-b0'
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
