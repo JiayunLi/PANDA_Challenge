@@ -56,9 +56,9 @@ class BiopsySlidesBatchMulti(data.Dataset):
                                                self.params.num_channels), slide_name, self.transform,
                                               out_im_size=(self.params.num_channels, self.params.im_size_low,
                                                            self.params.im_size_low), data_type=np.uint8)
-        if self.params.top_n > 0 and len(tiles_low) > self.params.top_n:
-            tiles_low = tiles_low[:self.params.top_n, :, :, :]
+        if self.params.top_n_low > 0 and len(tiles_low) > self.params.top_n_low:
+            tiles_low = tiles_low[:self.params.top_n_low, :, :, :]
 
-        if self.params.top_n > 0 and len(tiles_high) > self.params.top_n:
-            tiles_high = tiles_high[:self.params.top_n, :, :, :]
+        if self.params.top_n_high > 0 and len(tiles_high) > self.params.top_n_high:
+            tiles_high = tiles_high[:self.params.top_n_high, :, :, :]
         return tiles_low, tiles_high, slide_label

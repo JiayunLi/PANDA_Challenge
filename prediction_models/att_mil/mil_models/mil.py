@@ -36,8 +36,9 @@ def config_encoder(input_size, num_classes, arch, pretrained):
         encoder = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         feature_dim = list(encoder.children())[-1].in_features
         encoder.features = nn.Sequential(*list(encoder.children())[:-2])
-        # encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
-        #                              nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        # encoder = nn.Sequential(*list(encoder.children())[:-2])
+        encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+                                     nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
         # encoder.classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
         #                                    mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
         #                                    nn.Linear(512, num_classes))
@@ -120,8 +121,8 @@ class AttMIL(nn.Module):
             init_helper.weight_init(m)
 
     def forward(self, tiles, phase="regular"):
-        feats = self.tile_encoder.features(tiles.contiguous())
-        # feats = self.tile_encoder(tiles.contiguous())
+        # feats = self.tile_encoder.features(tiles.contiguous())
+        feats = self.tile_encoder(tiles.contiguous())
         tiles_probs = self.tile_encoder.classifier(feats)
         # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
@@ -137,60 +138,6 @@ class AttMIL(nn.Module):
         # size: 1 * bag_embed_size
         weighted_feats = torch.mm(atts, feats)
         probs = (self.slide_classifier(weighted_feats.view(-1).contiguous())).unsqueeze(dim=0)
-
-        return probs, tiles_probs, atts
-
-
-class AttMILBatchV2(AttMIL):
-    def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
-        super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
-        self.softmax = nn.Softmax(dim=1)
-
-    def _config_attention(self):
-        embed_bag_feat = nn.Sequential(
-            nn.Linear(self.mil_params["instance_embed_dim"] *
-                      self.mil_params['mil_in_feat_size'] * self.mil_params['mil_in_feat_size'],
-                      self.mil_params['bag_embed_dim']),
-            nn.ReLU(),
-            nn.Dropout(),
-        )
-
-        attention = nn.Sequential(
-            nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_hidden_dim']),
-            nn.Tanh(),
-            nn.Dropout(),
-            nn.Linear(self.mil_params["bag_hidden_dim"], 1)
-        )
-        return embed_bag_feat, attention
-
-    def _config_classifier(self):
-        classifier = nn.Sequential(nn.Linear(self.mil_params["bag_embed_dim"], 512),
-                                   mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
-                                   nn.Linear(512, self.mil_params["n_slide_classes"]))
-        return classifier
-
-    def forward(self, tiles, phase="regular"):
-        batch_size, n_tiles, channel, h, w = tiles.shape
-        feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-
-        if phase == "regular":
-            tiles_probs = self.tile_encoder.classifier(feats)
-        else:
-            tiles_probs = None
-
-        feats = self.instance_embed(feats).view(feats.size(0), -1)
-
-        feats = self.embed_bag_feat(feats)
-
-        if phase == 'extract_feats':
-            return feats.view(batch_size, n_tiles, -1)
-
-        raw_atts = self.attention(feats)
-        atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
-
-        weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
-        weighted_feats = torch.squeeze(weighted_feats, dim=1)
-        probs = (self.slide_classifier(weighted_feats))
 
         return probs, tiles_probs, atts
 
@@ -234,6 +181,7 @@ class AttMILBatch(AttMIL):
             return None, tiles_probs, None
 
         batch_size, n_tiles, channel, h, w = tiles.shape
+        # feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
         # tiles_probs = self.tile_encoder.classifier(feats)
         # tiles_probs = self.tile_classifier(feats)
@@ -339,3 +287,58 @@ class PoolSimpleInfer(nn.Module):
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
         return x, None, None
+
+
+#
+# class AttMILBatchV2(AttMIL):
+#     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
+#         super().__init__(base_encoder, pretrained, arch, input_size, feature_dim, mil_params)
+#         self.softmax = nn.Softmax(dim=1)
+#
+#     def _config_attention(self):
+#         embed_bag_feat = nn.Sequential(
+#             nn.Linear(self.mil_params["instance_embed_dim"] *
+#                       self.mil_params['mil_in_feat_size'] * self.mil_params['mil_in_feat_size'],
+#                       self.mil_params['bag_embed_dim']),
+#             nn.ReLU(),
+#             nn.Dropout(),
+#         )
+#
+#         attention = nn.Sequential(
+#             nn.Linear(self.mil_params['bag_embed_dim'], self.mil_params['bag_hidden_dim']),
+#             nn.Tanh(),
+#             nn.Dropout(),
+#             nn.Linear(self.mil_params["bag_hidden_dim"], 1)
+#         )
+#         return embed_bag_feat, attention
+#
+#     def _config_classifier(self):
+#         classifier = nn.Sequential(nn.Linear(self.mil_params["bag_embed_dim"], 512),
+#                                    mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
+#                                    nn.Linear(512, self.mil_params["n_slide_classes"]))
+#         return classifier
+#
+#     def forward(self, tiles, phase="regular"):
+#         batch_size, n_tiles, channel, h, w = tiles.shape
+#         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+#
+#         if phase == "regular":
+#             tiles_probs = self.tile_encoder.classifier(feats)
+#         else:
+#             tiles_probs = None
+#
+#         feats = self.instance_embed(feats).view(feats.size(0), -1)
+#
+#         feats = self.embed_bag_feat(feats)
+#
+#         if phase == 'extract_feats':
+#             return feats.view(batch_size, n_tiles, -1)
+#
+#         raw_atts = self.attention(feats)
+#         atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
+#
+#         weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
+#         weighted_feats = torch.squeeze(weighted_feats, dim=1)
+#         probs = (self.slide_classifier(weighted_feats))
+#
+#         return probs, tiles_probs, atts

@@ -16,7 +16,7 @@ class DatasetParams:
 
 class DatasetParamsMulti:
     def __init__(self, im_size_low, im_size_high, input_size, info_dir, data_dir_low, data_dir_high, cache_dir,
-                 exp_dir, normalized, num_channels=3, top_n=-1):
+                 exp_dir, normalized, num_channels=3, top_n_low=-1, top_n_high=-1):
         self.im_size_low, self.im_size_high = im_size_low, im_size_high
         self.input_size = input_size
         self.num_channels = num_channels
@@ -25,7 +25,8 @@ class DatasetParamsMulti:
         self.cache_dir = cache_dir
         self.exp_dir = exp_dir
         self.normalized = normalized
-        self.top_n = top_n
+        self.top_n_low = top_n_low
+        self.top_n_high = top_n_high
         self.dataset = "multi"
 
 

@@ -204,6 +204,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset_high', default='br_128_128')
     parser.add_argument('--im_size_low', default=128, type=int)
     parser.add_argument('--im_size_high', default=128, type=int)
+    parser.add_argument('--top_n_low', default=5, type=int)
+    parser.add_argument('--top_n_high', default=40, type=int)
 
     # Exp
     parser.add_argument('--exp', default='debug', help="Name of current experiment")
