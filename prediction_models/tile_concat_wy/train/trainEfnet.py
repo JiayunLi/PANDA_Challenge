@@ -16,7 +16,8 @@ from sklearn.metrics import cohen_kappa_score
 from collections import OrderedDict
 ## custom package
 from input.inputPipeline_stiching import *
-from model.evnet import *
+# from model.evnet import *
+from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
 
@@ -109,7 +110,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Evnet_medreso_36patch_adam_cosine"
+    fname = "Resnext50_medreso_36patch_adam_cosine"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
@@ -137,7 +138,8 @@ if __name__ == "__main__":
     check_folder_exists(weightsDir)
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
-        model = Model(enet_type, out_dim=5).cuda()
+        # model = Model(enet_type, out_dim=5).cuda()
+        model = Model().cuda()
         # optimizer = Over9000(model.parameters())
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
