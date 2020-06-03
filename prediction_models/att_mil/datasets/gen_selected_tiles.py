@@ -180,7 +180,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     tile_ids_map = dict()
     if not loc_only:
         print("Get not processed list")
-        with env_label_masks.begin(write=False) as txn:
+        with env_tiles.begin(write=False) as txn:
             for slide_name in slides_list:
                 if txn.get(slide_name.encode()) is None:
                     slides_to_process.append(slide_name)
