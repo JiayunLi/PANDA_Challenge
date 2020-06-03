@@ -88,7 +88,8 @@ def trainval(opts):
     if opts.multi:
         dataset_params = config_params.DatasetParamsMulti(
             opts.im_size_low, opts.im_size_high, opts.input_size, opts.info_dir, opts.data_dir_low,
-            opts.data_dir_high, opts.cache_dir, opts.exp_dir, opts.normalized, opts.num_channels, top_n=opts.top_n)
+            opts.data_dir_high, opts.cache_dir, opts.exp_dir, opts.normalized, opts.num_channels,
+            top_n_low=opts.top_n_low, top_n_high=opts.top_n_high)
     else:
         dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                      opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
