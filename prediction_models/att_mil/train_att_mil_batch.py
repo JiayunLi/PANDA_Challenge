@@ -60,7 +60,9 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
             cur_dict = {
                 'slide_loss': cur_loss.item(),
             }
-
+        del tiles
+        del tiles_labels
+        del slide_label
         fast_stats.update_dict(cur_dict, n=1)
         iteras += 1
         if step % log_every == 0 and step != 0:

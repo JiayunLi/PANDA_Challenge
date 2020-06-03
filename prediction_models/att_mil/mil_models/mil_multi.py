@@ -26,7 +26,18 @@ class AttMILBatchMulti(nn.Module):
 
         self.embed_bag_feat, self.attention = self._config_attention()
         self.slide_classifier = self._config_classifier()
+        self.softmax = nn.Softmax(dim=1)
         self._initialize()
+
+    def _initialize(self):
+        for m in self.instance_embed_1.modules():
+            init_helper.weight_init(m)
+        for m in self.instance_embed_2.modules():
+            init_helper.weight_init(m)
+        for m in self.embed_bag_feat.modules():
+            init_helper.weight_init(m)
+        for m in self.slide_classifier.modules():
+            init_helper.weight_init(m)
 
     def _config_instance_embed(self):
 
@@ -39,7 +50,7 @@ class AttMILBatchMulti(nn.Module):
 
     def _config_attention(self):
         embed_bag_feat = nn.Sequential(
-            nn.Linear(2 * self.feature_dim,
+            nn.Linear(self.feature_dim,
                       self.mil_params['bag_embed_dim']),
             mishactivation.Mish(), nn.Dropout(0.5)
         )
