@@ -64,7 +64,6 @@ def trainval(opts):
         opts.tile_classes = 1
     if opts.slide_binary:
         opts.slide_classes = 1
-    opts.epochs = opts.epochs + opts.tile_ft
     # Write options
     print(opts)
 
