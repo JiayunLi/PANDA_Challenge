@@ -83,7 +83,11 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
     cur_rate = RATE_MAP[level]
     cur_im = orig_img[level]
     if orig_mask:
-        cur_mask = orig_mask[level][:, :, 0]
+        try:
+            cur_mask = orig_mask[level][:, :, 0]
+        except:
+            cur_mask = orig_mask[level+1][:, :, 0]
+            cur_mask = cur_mask.repeat(4, axis=0).repeat(4, axis=1)
     tiles, masks, norm_tiles = [], [], []
     high_im_size = low_im_size * cur_rate
     n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
@@ -130,7 +134,6 @@ def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n,
     for slide_name in slides_list:
         orig = skimage.io.MultiImage(f"{slides_dir}/{slide_name}.tiff")
         if os.path.isfile(f"{masks_dir}/{slide_name}_mask.tiff"):
-            print(slide_name)
             mask = skimage.io.MultiImage(f"{masks_dir}/{slide_name}_mask.tiff")
         else:
             mask = None
