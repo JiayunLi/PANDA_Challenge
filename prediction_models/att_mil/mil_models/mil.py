@@ -36,8 +36,9 @@ def config_encoder(input_size, num_classes, arch, pretrained):
         encoder = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         feature_dim = list(encoder.children())[-1].in_features
         encoder.features = nn.Sequential(*list(encoder.children())[:-2])
-        encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
-                                     nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        encoder.classifier = None
+        # encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+        #                              nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
         # encoder.classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
         #                                    mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
         #                                    nn.Linear(512, num_classes))
