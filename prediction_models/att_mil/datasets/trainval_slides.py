@@ -116,9 +116,15 @@ class BiopsySlidesBatchV2(data.Dataset):
         self.split, self.fold = split, fold
         self.params = dataset_params
         self.phase = phase
-        print(f"Read tiles from folder {dataset_params.data_dir}/tiles/")
-        self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
-                                   lock=False, readahead=False, meminit=False)
+
+        if dataset_params.normalized:
+            self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/norm_tiles/", max_readers=3, readonly=True,
+                                       lock=False, readahead=False, meminit=False)
+            print(f"Read tiles from folder {dataset_params.data_dir}/norm_tiles/")
+        else:
+            self.tiles_env = lmdb.open(f"{dataset_params.data_dir}/tiles/", max_readers=3, readonly=True,
+                                       lock=False, readahead=False, meminit=False)
+            print(f"Read tiles from folder {dataset_params.data_dir}/tiles/")
         if not os.path.isfile(f"{dataset_params.data_dir}/tile_labels_{dataset_params.dataset}.json"):
             self.tile_labels = None
         else:
