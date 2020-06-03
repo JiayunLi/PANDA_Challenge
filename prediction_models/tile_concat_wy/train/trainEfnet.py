@@ -110,7 +110,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Evnet_medreso_36patch_overlook_cosine"
+    fname = "Resnext50_medreso_36patch_overlook_cosine_bin"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(nfolds):
+    for fold in range(2,3):
         trainloader, valloader = crossValData(fold)
         # model = Model(enet_type, out_dim=5).cuda()
         model = Model().cuda()
