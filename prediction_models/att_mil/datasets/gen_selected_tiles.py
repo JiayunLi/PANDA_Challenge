@@ -253,7 +253,7 @@ def fix():
     orig_norm_env = lmdb.open("/data/br_256_2x/norm_tiles_tempt/",
                               max_readers=3, readonly=True,
                               lock=False, readahead=False, meminit=False)
-    norm_env = lmdb.open("data/br_256_2x/norm_tiles", map_size=6e+12)
+    norm_env = lmdb.open("/data/br_256_2x/norm_tiles", map_size=6e+12)
     df = pd.read_csv("/data/4_fold_train.csv")
     with orig_norm_env.begin(write=False) as orig_txn, norm_env.begin(write=True) as new_txn:
         for i in tqdm.tqdm(range(len(df))):
