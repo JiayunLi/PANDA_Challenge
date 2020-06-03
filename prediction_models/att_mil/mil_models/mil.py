@@ -235,9 +235,8 @@ class AttMILBatch(AttMIL):
 
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-        # feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
         # tiles_probs = self.tile_encoder.classifier(feats)
-        # tiles_probs = self.tile_classifier(feats)
+        tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats)
 
@@ -250,7 +249,7 @@ class AttMILBatch(AttMIL):
         weighted_feats = torch.squeeze(weighted_feats, dim=1)
         probs = (self.slide_classifier(weighted_feats))
 
-        return probs, None, atts
+        return probs, tiles_probs, atts
 
 
 class PoolMilBatch(nn.Module):
