@@ -38,6 +38,9 @@ def config_encoder(input_size, num_classes, arch, pretrained):
         encoder.features = nn.Sequential(*list(encoder.children())[:-2])
         encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
                                      nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        # encoder.classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
+        #                                    mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
+        #                                    nn.Linear(512, num_classes))
         return encoder, feature_dim
     else:
         encoder_name = models.__dict__[arch]
@@ -58,6 +61,8 @@ class AttMIL(nn.Module):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params):
         super(AttMIL, self).__init__()
         self.tile_encoder = base_encoder
+        # self.tile_encoder = base_encoder.features
+        # self.tile_classifier = base_encoder.classifier
         self.feature_dim = feature_dim
         self.pretrained = pretrained
         self.hp = {"input_size": input_size,  "encoder_arch": arch,
@@ -116,8 +121,9 @@ class AttMIL(nn.Module):
 
     def forward(self, tiles, phase="regular"):
         feats = self.tile_encoder.features(tiles.contiguous())
+        # feats = self.tile_encoder(tiles.contiguous())
         tiles_probs = self.tile_encoder.classifier(feats)
-
+        # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats.view(feats.size(0), -1).contiguous())
 
@@ -222,13 +228,15 @@ class AttMILBatch(AttMIL):
         return classifier
 
     def forward(self, tiles, phase="regular"):
+        if phase == "tiles_only":
+            feats = self.tile_encoder.features(tiles)
+            tiles_probs = self.tile_encoder.classifier(feats)
+            return None, tiles_probs, None
+
         batch_size, n_tiles, channel, h, w = tiles.shape
         feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
-        if phase == "regular":
-            tiles_probs = self.tile_encoder.classifier(feats)
-        else:
-            tiles_probs = None
-
+        # tiles_probs = self.tile_encoder.classifier(feats)
+        # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)
         feats = self.embed_bag_feat(feats)
 
@@ -241,7 +249,7 @@ class AttMILBatch(AttMIL):
         weighted_feats = torch.squeeze(weighted_feats, dim=1)
         probs = (self.slide_classifier(weighted_feats))
 
-        return probs, tiles_probs, atts
+        return probs, None, atts
 
 
 class PoolMilBatch(nn.Module):
@@ -282,6 +290,35 @@ class PoolSimple(nn.Module):
         self.mil_params = mil_params
         self.hp = {"mil_params": mil_params, "arch": arch}
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
+        self.enc = nn.Sequential(*list(m.children())[:-2])
+        nc = list(m.children())[-1].in_features
+        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                  mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+
+    def forward(self, x, phase="regular"):
+        """
+        x: [bs, N, 3, h, w]
+        x_out: [bs, N]
+        """
+        bs, n, c, h, w = x.shape
+        x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
+        x = self.enc(x)  # x: bs*N x C x 4 x 4
+        _, c, h, w = x.shape
+
+        ## concatenate the output for tiles into a single map
+        x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
+            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        x = self.head(x)  # x: bs x n
+        return x, None, None
+
+
+class PoolSimpleInfer(nn.Module):
+    def __init__(self, mil_params, arch='resnext50_32x4d_ssl', n=6, pre=True):
+        super().__init__()
+        print("Use pool simple model")
+        self.mil_params = mil_params
+        self.hp = {"mil_params": mil_params, "arch": arch}
+        m =  ResNet(Bottleneck, [3, 4, 6, 3], groups=32,width_per_group=4)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
