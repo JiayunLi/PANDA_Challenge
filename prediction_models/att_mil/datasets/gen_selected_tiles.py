@@ -130,6 +130,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n,
     for slide_name in slides_list:
         orig = skimage.io.MultiImage(f"{slides_dir}/{slide_name}.tiff")
         if os.path.isfile(f"{masks_dir}/{slide_name}_mask.tiff"):
+            print(slide_name)
             mask = skimage.io.MultiImage(f"{masks_dir}/{slide_name}_mask.tiff")
         else:
             mask = None
