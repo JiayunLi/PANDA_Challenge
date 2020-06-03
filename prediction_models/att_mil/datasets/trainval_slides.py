@@ -165,7 +165,7 @@ class BiopsySlidesBatchV2(data.Dataset):
         slide_info = self.slides_df.iloc[ix]
         slide_label = int(slide_info.isup_grade)
         slide_name = slide_info.image_id
-        print(slide_name)
+        # print(slide_name)
         tiles = \
             file_utils.read_lmdb_slide_tensor(self.tiles_env,
                                               (-1, self.params.im_size, self.params.im_size, self.params.num_channels),
