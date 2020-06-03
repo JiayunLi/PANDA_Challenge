@@ -105,7 +105,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Evnet_medreso_36patch_adam_cosine"
     nfolds = 4
-    bs = 8
+    bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
