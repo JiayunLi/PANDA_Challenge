@@ -8,6 +8,8 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from torch.utils.data.sampler import RandomSampler, SequentialSampler
+from collections import OrderedDict
 import albumentations
 import skimage.io
 
@@ -30,17 +32,17 @@ class crossValDataloader(object):
         train_idx, val_idx = self.inx(fold)
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=True, num_workers=4,
-                                                  collate_fn=None, pin_memory=True,
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
+                                                  sampler=RandomSampler(train),collate_fn=None, pin_memory=True,
                                                   drop_last=True)
-        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=True, num_workers=4,
-                                                collate_fn=None, pin_memory=True,
+        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
+                                                collate_fn=None, pin_memory=True, sampler=SequentialSampler(val),
                                                 drop_last=True)
         return trainloader, valloader
 
 class PandaPatchDataset(Dataset):
     """Panda Tile dataset. With fixed tiles for each slide."""
-    def __init__(self, csv_file, image_dir, image_size, N = 12, transform=None, rand=False):
+    def __init__(self, csv_file, image_dir, image_size, N = 36, transform=None, rand=False):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -60,10 +62,9 @@ class PandaPatchDataset(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
+        result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
-        fname = os.path.join(self.image_dir, img_id+'.tiff')
-
-        fnames = [os.path.join(self.image_dir, self.train_csv.loc[idx, 'image_id'] + '_' + str(i) + '.png')
+        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                   for i in range(self.N)]
         imgs = []
         for idx, fname in enumerate(fnames):
@@ -99,8 +100,12 @@ class PandaPatchDataset(Dataset):
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
+        datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
-        return torch.tensor(images), torch.tensor(label)
+        result['img'] = torch.tensor(images)
+        result['isup_grade'] = torch.tensor(label)
+        result['datacenter'] = datacenter
+        return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
         with warnings.catch_warnings():
@@ -156,30 +161,40 @@ def data_transform():
     ])
     return tsfm
 
+def dataloader_collte_fn(batch):
+    result = OrderedDict()
+    imgs = [item['img'] for item in batch]
+    imgs = torch.stack(imgs)
+    target = [item['isup_grade'] for item in batch]
+    target = torch.stack(target)
+    datacenter = [item['datacenter'] for item in batch]
+    result['img'] = imgs
+    result['isup_grade'] = target
+    result['datacenter'] = datacenter
+    return result
+
 
 if __name__ == "__main__":
     ## input files and folders
     nfolds = 5
     bs = 4
+    sz = 256
     csv_file = './panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = './panda-32x256x256-tiles-data/train/'
-    ## image statistics
-    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
     ## image transformation
-    tsfm = data_transform(mean, std)
+    tsfm = data_transform()
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm)
+    dataset = PandaPatchDataset(csv_file, image_dir, sz, transform=tsfm, N=16, rand=True)
     ## dataloader
     dataloader = DataLoader(dataset, batch_size=bs,
                             shuffle=True, num_workers=4, collate_fn=dataloader_collte_fn)
 
     ## fetch data from dataloader
-    img, target = iter(dataloader).next()
-    print("image size:{}, target sise:{}.".format(img.size(), target.size()))
+    data = iter(dataloader).next()
+    print("image size:{}, target sise:{}.".format(data['img'].size(), data['isup_grade'].size()))
 
     ## cross val dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     trainloader, valloader = crossValData(0)
-    img, target = iter(trainloader).next()
-    print("image size:{}, target sise:{}.".format(img.size(), target.size()))
+    data = iter(trainloader).next()
+    print("image size:{}, target sise:{}.".format(data['img'].size(), data['isup_grade'].size()))
