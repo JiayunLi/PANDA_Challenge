@@ -103,7 +103,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Evnet_medreso_36patch_adam_cosine"
+    fname = "Evnet_medreso_36patch_overlook_onecycle"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
@@ -132,11 +132,11 @@ if __name__ == "__main__":
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         model = Model(enet_type, out_dim=5).cuda()
-        # optimizer = Over9000(model.parameters())
-        # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-        #                                           pct_start = 0.3, div_factor = 100)
-        optimizer = optim.Adam(model.parameters(), lr=0.00003)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+        optimizer = Over9000(model.parameters())
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
+                                                  pct_start = 0.3, div_factor = 100)
+        # optimizer = optim.Adam(model.parameters(), lr=0.00003)
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         Training = Train(model, optimizer, scheduler)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
