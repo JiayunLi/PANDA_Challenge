@@ -80,6 +80,9 @@ def get_meanstd(dataset_name):
         # {"mean": [1.0 - 0.90949707, 1.0 - 0.8188697, 1.0 - 0.87795304],
         meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
                    "std": [0.36357649, 0.49984502, 0.40477625]}
+    elif dataset_name == "br_256_2x":
+        meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
+                   "std": [0.36357649, 0.49984502, 0.40477625]}
     else:
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
 
