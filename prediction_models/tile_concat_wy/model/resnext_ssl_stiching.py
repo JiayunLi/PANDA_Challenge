@@ -16,13 +16,19 @@ from utiles.hubconf import *
 
 
 class Model(nn.Module):
-    def __init__(self, arch='resnext50_32x4d_ssl', n=5):
+    def __init__(self, arch='resnext50_32x4d_ssl', n=5, GleasonScore = False):
         super().__init__()
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
                                   Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+        self.GLS = GleasonScore
+        if self.GLS:
+            self.prim = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                      Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 4))
+            self.sec = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
+                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 4))
 
     def forward(self, x):
         """
@@ -34,9 +40,14 @@ class Model(nn.Module):
         x = self.enc(x)  # x: bs*N x C x 4 x 4
         _, c, h, w = x.shape
         # print("1", x.shape)
-        x = self.head(x)  # x: bs x n
+        y = self.head(x)  # x: bs x n
         # print("2", x.shape)
-        result['out'] = x
+        result['out'] = y
+        if self.GLS:
+            primary_gls = self.prim(x)
+            sec_gls = self.sec(x)
+            result['primary_gls'] = primary_gls
+            result['secondary_gls'] = sec_gls
         return result
 
 class Model_Infer(nn.Module):

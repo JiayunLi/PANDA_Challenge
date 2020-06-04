@@ -22,10 +22,11 @@ from utiles.radam import *
 from utiles.utils import *
 
 class Train(object):
-    def __init__(self, model, optimizer, scheduler):
+    def __init__(self, model, optimizer, scheduler, GLS = False):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.GLS = False
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
@@ -37,16 +38,21 @@ class Train(object):
             #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
+            primary_gls, secondary_gls = data['primary_gls'], data['secondary_gls']
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
             outputs = model(inputs.cuda())
             outputs_main = outputs['out'] # for regression
-            # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
             loss1 = criterion(outputs_main, labels.float().cuda())
-            # loss2 = criterion(outputs_aux, labels.float().cuda())
-            # loss = loss1 + 0.4 * loss2
-            loss = loss1
+            if self.GLS:
+                outputs_prim = outputs['primary_gls']
+                outputs_sec = outputs['secondary_gls']
+                loss2 = criterion(outputs_prim, primary_gls.float().cuda())
+                loss3 = criterion(outputs_sec, secondary_gls.float().cuda())
+                loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
+            else:
+                loss = loss1
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
@@ -112,10 +118,11 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Resnext50_medreso_36patch_adam_cosine_bin"
     nfolds = 4
-    bs = 6
+    bs = 2
     enet_type = 'efficientnet-b0'
     epochs = 30
-    csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
+    GLS = False
+    csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
 
     ## image transformation
@@ -136,10 +143,10 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(3,4):
+    for fold in range(2,3):
         trainloader, valloader = crossValData(fold)
         # model = Model(enet_type, out_dim=5).cuda()
-        model = Model().cuda()
+        model = Model(GleasonScore=GLS).cuda()
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
