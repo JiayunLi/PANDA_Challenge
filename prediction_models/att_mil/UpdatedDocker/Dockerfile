@@ -12,7 +12,7 @@ conda install -c conda-forge tqdm && \
 conda install -c conda-forge ipywidgets && \
 conda install opencv pixman=0.36.0 && \
 conda install -c pytorch -c fastai fastai && \
-pip install h5py lmdb openslide-python==1.1.1 tensorboardX Pillow tensorboard && \
+pip install h5py lmdb openslide-python==1.1.1 tensorboardX Pillow tensorboard efficientnet_pytorch && \
 pip install --upgrade jupyter_client && \
 pip install -U pip && \
 pip install tifffile imagecodecs scikit-build blosc
