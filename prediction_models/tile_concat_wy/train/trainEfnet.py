@@ -38,7 +38,6 @@ class Train(object):
             #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
-            primary_gls, secondary_gls = data['primary_gls'], data['secondary_gls']
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
@@ -46,6 +45,7 @@ class Train(object):
             outputs_main = outputs['out'] # for regression
             loss1 = criterion(outputs_main, labels.float().cuda())
             if self.GLS:
+                primary_gls, secondary_gls = data['primary_gls'], data['secondary_gls']
                 outputs_prim = outputs['primary_gls']
                 outputs_sec = outputs['secondary_gls']
                 loss2 = criterion(outputs_prim, primary_gls.float().cuda())
