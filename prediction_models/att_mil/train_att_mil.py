@@ -81,6 +81,8 @@ def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
             tile_criterion = torch.nn.CrossEntropyLoss(label_weights)
         else:
             tile_criterion = torch.nn.CrossEntropyLoss()
+    elif loss_type == 'bce':
+        tile_criterion = torch.nn.BCEWithLogitsLoss()
     else:
         raise NotImplementedError(f"Criterion not implemented {loss_type}")
     return tile_criterion
@@ -184,7 +186,7 @@ def trainval(fold, exp_dir, start_epoch, iters, trainval_params, dataset_params,
         if trainval_params.schedule_type == "plateau":
             print("Take one Plateau step")
             scheduler.step(loss)
-        elif trainval_params.schedule_type == "cycle":
+        elif trainval_params.schedule_type in {"cycle", "cosine"}:
             print("Take one cycle step")
             # print("Take step per batch")
             scheduler.step()

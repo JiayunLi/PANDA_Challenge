@@ -2,6 +2,7 @@ import torchvision.models as models
 from prediction_models.att_mil.utils import model_utils, init_helper
 import torch.nn as nn
 import torch
+from efficientnet_pytorch import EfficientNet
 from fastai.vision import *
 from torchvision.models.resnet import ResNet, Bottleneck
 from prediction_models.tile_concat_wy.utiles import mishactivation
@@ -16,6 +17,8 @@ def config_encoder_infer(input_size, num_classes, arch, pretrained=False):
         encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
                                      nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
         return encoder, feature_dim
+    elif arch.startswith("efficientnet"):
+        model = EfficientNet.from_name('efficientnet-b0')
     else:
         encoder_name = models.__dict__[arch]
         encoder = encoder_name(pretrained=pretrained)
@@ -42,6 +45,16 @@ def config_encoder(input_size, num_classes, arch, pretrained):
         # encoder.classifier = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * feature_dim, 512),
         #                                    mishactivation.Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5),
         #                                    nn.Linear(512, num_classes))
+        return encoder, feature_dim
+    elif arch.startswith("efficientnet"):
+        if arch == "efficientnet-b0":
+            feature_dim = 1280
+            encoder = EfficientNet.from_pretrained("efficientnet-b0")
+            # encoder.features = nn.Sequential(*list(encoder.children())[:-5])
+            encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+                                               nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        else:
+            raise NotImplementedError(f"{arch} Haven't implemented")
         return encoder, feature_dim
     else:
         encoder_name = models.__dict__[arch]
@@ -181,8 +194,12 @@ class AttMILBatch(AttMIL):
             return None, tiles_probs, None
 
         batch_size, n_tiles, channel, h, w = tiles.shape
+        if self.hp["arch"].startswith("efficient"):
+            feats = self.tile_encoder.extract_features(tiles.view(-1, channel, h, w).contiguous())
+        else:
+            feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
         # feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
-        feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+
         # tiles_probs = self.tile_encoder.classifier(feats)
         # tiles_probs = self.tile_classifier(feats)
         feats = self.instance_embed(feats)

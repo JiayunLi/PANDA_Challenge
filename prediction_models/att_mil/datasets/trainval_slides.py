@@ -192,6 +192,10 @@ class BiopsySlidesBatchV2(data.Dataset):
             tiles = torch.cat([tiles, torch.zeros(32 - len(tiles), 3, self.params.input_size, self.params.input_size),
                                ], dim=0)
             labels += [-1] * (32 - len(tiles))
+        if self.params.loss_type == "bce":
+            isup_grade = slide_label
+            slide_label = np.zeros(5).astype(np.float32)
+            slide_label[:isup_grade] = 1.
         return tiles, labels, slide_label, list(range(len(tiles)))
 
 

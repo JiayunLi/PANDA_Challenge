@@ -93,7 +93,7 @@ def trainval(opts):
     else:
         dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                      opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
-                                                     opts.normalized, opts.num_channels, top_n=opts.top_n)
+                                                     opts.normalized, opts.loss_type, opts.num_channels, top_n=opts.top_n)
     mil_params = config_params.set_mil_params(opts.mil_f_size, opts.ins_embed, opts.bag_embed,
                                               opts.bag_hidden, opts.slide_classes, opts.tile_classes,
                                               opts.loss_type, opts.schedule_type, opts.mil_arch)

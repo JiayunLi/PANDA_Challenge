@@ -152,10 +152,13 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
             elif loss_type == "mse":
             # elif (loss_type == "mse") and (not tile_loss_only):
                 predicted = np.squeeze(probs.cpu().round().numpy()[:], axis=1)
+            elif loss_type == "bce":
+                predicted = probs.sigmoid().sum(1).detach().round()
             else:
                 _, predicted = torch.max(probs.data, 1)
                 predicted = predicted.cpu().numpy()
-            all_labels.append(labels.cpu().numpy())
+
+            all_labels.append(labels.sum(1).cpu().numpy())
             all_preds.append(predicted)
 
         print(f"Validation step {step}/{len(val_loader)}")

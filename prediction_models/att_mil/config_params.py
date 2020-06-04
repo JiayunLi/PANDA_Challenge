@@ -1,7 +1,7 @@
 
 class DatasetParams:
     def __init__(self, im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
-                 num_channels=3, top_n=-1):
+                 loss_type, num_channels=3, top_n=-1):
         self.im_size = im_size
         self.input_size = input_size
         self.num_channels = num_channels
@@ -12,6 +12,7 @@ class DatasetParams:
         self.exp_dir = exp_dir
         self.normalized = normalized
         self.top_n = top_n
+        self.loss_type = loss_type
 
 
 class DatasetParamsMulti:
@@ -72,6 +73,8 @@ def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidd
     if loss_type == "mse":
         slide_n_classes = 1
         tile_classes = 1
+    elif loss_type == "bce":
+        slide_n_classes = 5
     params = {
         "mil_in_feat_size": mil_in_feat_size,
         "instance_embed_dim": instance_embed_dim,
