@@ -40,7 +40,7 @@ class Model(nn.Module):
         return result
 
 class Model_Infer(nn.Module):
-    def __init__(self, arch='resnext50_32x4d', n=6, pre=True):
+    def __init__(self, arch='resnext50_32x4d', n=5):
         super().__init__()
         # m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         m = self._resnext(semi_supervised_model_urls[arch], Bottleneck, [3, 4, 6, 3], False,
@@ -60,19 +60,18 @@ class Model_Infer(nn.Module):
         x: [bs, N, 3, h, w]
         x_out: [bs, N]
         """
-        bs, n, c, h, w = x.shape
-        x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
+        result = OrderedDict()
+        # bs, c, h, w = x.shape
         x = self.enc(x)  # x: bs*N x C x 4 x 4
         _, c, h, w = x.shape
-
-        ## concatenate the output for tiles into a single map
-        x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
-            .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
+        # print("1", x.shape)
         x = self.head(x)  # x: bs x n
-        return x
+        # print("2", x.shape)
+        result['out'] = x
+        return result
 
 if __name__ == "__main__":
     img = torch.rand([4, 3, 6 * 256, 6 * 256])
-    model = Model()
+    model = Model_Infer()
     output = model(img)
     print(output['out'].shape)

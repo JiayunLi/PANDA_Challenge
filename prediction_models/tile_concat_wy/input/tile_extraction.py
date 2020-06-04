@@ -92,6 +92,11 @@ def write_2_zip(Source_Folder, Des_File, names, sz = 128, N = 16):
     with zipfile.ZipFile(OUT_TRAIN, 'w') as img_out, \
             zipfile.ZipFile(OUT_MASKS, 'w') as mask_out:
         for name in tqdm(names):
+            if os.path.exists(os.path.join(os.path.dirname(OUT_TRAIN), "train/{0:s}_0.png".format(name))):
+                print("Skip {}.".format(name))
+                continue
+            ## read the image and label with the lowest res by [-1]
+            exit()
             ## read the image and label with the lowest res by [-1]
             img = skimage.io.MultiImage(os.path.join(TRAIN, name + '.tiff'))[0]
             mask = skimage.io.MultiImage(os.path.join(MASKS, name + '_mask.tiff'))[0]
@@ -131,7 +136,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, sz = 128, N = 16):
     x_tot, x2_tot = [], []
     with zipfile.ZipFile(Des_File, 'w') as img_out:
         for name in tqdm(names):
-            ## read the image and label with the lowest res by [-1]
+            # ## read the image and label with the lowest res by [-1]
             img = skimage.io.MultiImage(os.path.join(Source_Folder, name + '.tiff'))[1]
             ## tile the img and mask to N patches with size (sz,sz,3)
             tiles = tile_img(img, sz, N)
@@ -163,7 +168,7 @@ if __name__ == "__main__":
     N = 64 ## how many patches selected from each slide
     names = [name[:-10] for name in os.listdir(MASKS)]
     print(len(names))  ## only images that have masks
-
+    print(names[0])
     """Process Image"""
     Source_Folder = [TRAIN, MASKS]
     Des_File = [OUT_TRAIN, OUT_MASKS]
