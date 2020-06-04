@@ -26,7 +26,7 @@ class Train(object):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.GLS = False
+        self.GLS = GLS
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
