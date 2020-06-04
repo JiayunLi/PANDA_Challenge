@@ -96,8 +96,6 @@ def write_2_zip(Source_Folder, Des_File, names, sz = 128, N = 16):
                 print("Skip {}.".format(name))
                 continue
             ## read the image and label with the lowest res by [-1]
-            exit()
-            ## read the image and label with the lowest res by [-1]
             img = skimage.io.MultiImage(os.path.join(TRAIN, name + '.tiff'))[0]
             mask = skimage.io.MultiImage(os.path.join(MASKS, name + '_mask.tiff'))[0]
             ## tile the img and mask to N patches with size (sz,sz,3)
