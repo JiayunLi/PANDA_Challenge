@@ -69,6 +69,7 @@ class PandaPatchDataset(Dataset):
     def __getitem__(self, idx):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
+        name = self.train_csv.image_id[idx]
         fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                   for i in range(self.N)]
         imgs = []
@@ -117,6 +118,7 @@ class PandaPatchDataset(Dataset):
         secondary_gls[:gleason_score[1]] = 1.
         result['primary_gls'] = torch.tensor(primary_gls)
         result['secondary_gls'] = torch.tensor(secondary_gls)
+        result['name'] = name
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
@@ -158,6 +160,7 @@ class PandaPatchDatasetInfer(Dataset):
     def __getitem__(self, idx):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
+        name = self.train_csv.image_id[idx]
         fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                   for i in range(self.N)]
         imgs = []
@@ -206,6 +209,7 @@ class PandaPatchDatasetInfer(Dataset):
         secondary_gls[:gleason_score[1]] = 1.
         result['primary_gls'] = torch.tensor(primary_gls)
         result['secondary_gls'] = torch.tensor(secondary_gls)
+        result['name'] = name
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
@@ -234,11 +238,13 @@ def dataloader_collte_fn(batch):
     datacenter = [item['datacenter'] for item in batch]
     primary_gls = [item['primary_gls'] for item in batch]
     secondary_gls = [item['secondary_gls'] for item in batch]
+    name = [item['name'] for item in batch]
     result['img'] = imgs
     result['isup_grade'] = target
     result['datacenter'] = datacenter
     result['primary_gls'] = primary_gls
     result['secondary_gls'] = secondary_gls
+    result['name'] = name
     return result
 
 

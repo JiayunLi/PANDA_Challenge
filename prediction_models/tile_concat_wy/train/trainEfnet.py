@@ -121,7 +121,7 @@ if __name__ == "__main__":
     bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
-    GLS = True
+    GLS = False
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
 
