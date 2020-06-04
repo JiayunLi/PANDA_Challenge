@@ -153,7 +153,7 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
             # elif (loss_type == "mse") and (not tile_loss_only):
                 predicted = np.squeeze(probs.cpu().round().numpy()[:], axis=1)
             elif loss_type == "bce":
-                predicted = probs.sigmoid().sum(1).detach().round()
+                predicted = probs.sigmoid().sum(1).detach().round().cpu().numpy
             else:
                 _, predicted = torch.max(probs.data, 1)
                 predicted = predicted.cpu().numpy()
