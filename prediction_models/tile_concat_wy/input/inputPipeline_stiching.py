@@ -41,6 +41,11 @@ class crossValDataloader(object):
         return trainloader, valloader
 
 class PandaPatchDataset(Dataset):
+    """
+    gls2isu = {"0+0":0,'negative':0,'3+3':1,'3+4':2,'4+3':3,'4+4':4,'3+5':4,'5+3':4,'4+5':5,'5+4':5,'5+5':5}
+    """
+    gls = {"0+0": [0, 0], 'negative': [0, 0], '3+3': [1, 1], '3+4': [1, 2], '4+3': [2, 1], '4+4': [2, 2],
+           '3+5': [1, 3], '5+3': [3, 1], '4+5': [2, 3], '5+4': [3, 2], '5+5': [3, 3]}
     """Panda Tile dataset. With fixed tiles for each slide."""
     def __init__(self, csv_file, image_dir, image_size, N = 36, transform=None, rand=False):
         """
@@ -100,11 +105,18 @@ class PandaPatchDataset(Dataset):
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
+        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
+        primary_gls = np.zeros(4).astype(np.float32)
+        secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
+        primary_gls[:gleason_score[0]] = 1.
+        secondary_gls[:gleason_score[1]] = 1.
+        result['primary_gls'] = torch.tensor(primary_gls)
+        result['secondary_gls'] = torch.tensor(secondary_gls)
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
@@ -168,9 +180,13 @@ def dataloader_collte_fn(batch):
     target = [item['isup_grade'] for item in batch]
     target = torch.stack(target)
     datacenter = [item['datacenter'] for item in batch]
+    primary_gls = [item['primary_gls'] for item in batch]
+    secondary_gls = [item['secondary_gls'] for item in batch]
     result['img'] = imgs
     result['isup_grade'] = target
     result['datacenter'] = datacenter
+    result['primary_gls'] = primary_gls
+    result['secondary_gls'] = secondary_gls
     return result
 
 
