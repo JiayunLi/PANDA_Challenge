@@ -122,7 +122,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls_mltLoss"
     nfolds = 4
-    bs = 6
+    bs = 5
     enet_type = 'efficientnet-b0'
     epochs = 30
     GLS = True
