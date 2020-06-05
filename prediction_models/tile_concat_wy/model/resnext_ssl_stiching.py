@@ -82,7 +82,7 @@ class Model_Infer(nn.Module):
         return result
 
 class MultiTaskLoss(nn.Module):
-    def __init__(self, is_regression, reduction = 'sum'):
+    def __init__(self, is_regression, reduction = 'none'):
         super(MultiTaskLoss, self).__init__()
         self.is_regression = is_regression
         self.n_tasks= len(is_regression)
