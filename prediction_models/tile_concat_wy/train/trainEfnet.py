@@ -56,8 +56,6 @@ class Train(object):
                     loss = self.mltLoss(torch.Tensor([loss1, loss2, loss3]))
                 else:
                     loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
-                    print("use multiloss with simple coe")
-                    exit(0)
             else:
                 loss = loss1
             train_loss.append(loss.item())
@@ -124,7 +122,7 @@ def save_checkpoint(state, is_best, fname):
 if __name__ == "__main__":
     fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls"
     nfolds = 4
-    bs = 2
+    bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
     GLS = True
