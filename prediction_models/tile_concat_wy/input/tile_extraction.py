@@ -137,6 +137,9 @@ def write_2_zip_img(Source_Folder, Des_File, names, sz = 128, N = 16):
     x_tot, x2_tot = [], []
     with zipfile.ZipFile(Des_File, 'w') as img_out:
         for name in tqdm(names):
+            if os.path.exists(os.path.join(os.path.dirname(Des_File), "train/{0:s}_0.png".format(name))):
+                print("Skip {}.".format(name))
+                continue
             # ## read the image and label with the lowest res by [-1]
             img = skimage.io.MultiImage(os.path.join(Source_Folder, name + '.tiff'))[1]
             ## tile the img and mask to N patches with size (sz,sz,3)
@@ -171,6 +174,8 @@ if __name__ == "__main__":
     print(len(names))  ## only images that have masks
     print(names[0])
     """Process Image"""
-    Source_Folder = [TRAIN, MASKS]
-    Des_File = [OUT_TRAIN, OUT_MASKS]
-    mean, std = write_2_zip(Source_Folder, Des_File, names, sz, N)
+    # Source_Folder = [TRAIN, MASKS]
+    # Des_File = [OUT_TRAIN, OUT_MASKS]
+    Source_Folder = TRAIN
+    Des_File = OUT_TRAIN
+    mean, std = write_2_zip_img(Source_Folder, Des_File, names, sz, N)
