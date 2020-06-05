@@ -127,7 +127,7 @@ if __name__ == "__main__":
     epochs = 30
     GLS = True
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
-    image_dir = '../input/panda-32x256x256-tiles-data/train/'
+    image_dir = '../input/panda-36x256x256-tiles-data/train/'
 
     ## image transformation
     tsfm = data_transform()
