@@ -134,9 +134,10 @@ class BiopsySlideSelected(data.Dataset):
         for i, tile in enumerate(results['tiles']):
             if self.transform:
                 instances[i, :, :, :] = self.transform(tile)
-        if len(tile_idxs) < len(instances):
-            torch.cat([tile_idxs, torch.zeros(len(instances) - len(tile_idxs))], dim=0)
+
         if self.phase == "w_atts":
+            if len(tile_idxs) < len(instances):
+                tile_idxs = torch.cat([tile_idxs, torch.zeros(len(instances) - len(tile_idxs))], dim=0)
             return instances, slide_info.image_id, tile_idxs, pad_top, pad_left
         return instances, slide_info.image_id
 
