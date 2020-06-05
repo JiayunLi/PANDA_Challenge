@@ -114,6 +114,7 @@ class BiopsySlideSelected(data.Dataset):
         self.slides_df = test_df
         self.input_size, self.num_channels = params.input_size, params.num_channels
         self.transform = transform
+        self.phase = phase
 
     def __len__(self):
         return len(self.slides_df)
@@ -121,16 +122,20 @@ class BiopsySlideSelected(data.Dataset):
     def __getitem__(self, ix):
         slide_info = self.slides_df.iloc[ix]
         orig = skimage.io.MultiImage(f"{self.slides_dir}/{slide_info.image_id}.tiff")
-        pad_img, idxs, pad_top, pad_left = gen_selected_tiles.select_at_lowest(orig[-1], self.lowest_im_size,
+        pad_img, tile_idxs, pad_top, pad_left = gen_selected_tiles.select_at_lowest(orig[-1], self.lowest_im_size,
                                                                                self.top_n, True)
-        results = gen_selected_tiles.get_highres_tiles(orig, idxs, pad_top, pad_left, self.lowest_im_size,
+
+        results = gen_selected_tiles.get_highres_tiles(orig, tile_idxs, pad_top, pad_left, self.lowest_im_size,
                                     (pad_img.shape[0], pad_img.shape[1]),
                                     level=self.level, top_n=self.top_n, orig_mask=None)
         instances = torch.FloatTensor(len(results['tiles']),
                                       self.num_channels, self.input_size, self.input_size)
+        tile_idxs = torch.FloatTensor(tile_idxs.tolist())
         for i, tile in enumerate(results['tiles']):
             if self.transform:
                 instances[i, :, :, :] = self.transform(tile)
+        if self.phase == "w_atts":
+            return instances, slide_info.image_id, tile_idxs, pad_top, pad_left
         return instances, slide_info.image_id
 
 

@@ -86,3 +86,22 @@ def set_mil_params(mil_in_feat_size, instance_embed_dim, bag_embed_dim, bag_hidd
         "mil_arch": mil_arch
     }
     return params
+
+
+class TrainvalParamsMultiTask:
+    def __init__(self, lr, feat_lr, wd, train_blocks, optim, tot_epochs, log_every, alpha, loss_type,
+                 cls_weighted, schedule_type, batch_size, num_workers, mil_arch):
+        self.lr = lr
+        self.feat_lr = feat_lr
+        self.wd = wd
+        self.train_blocks = train_blocks
+        self.optim = optim
+        self.tot_epochs = tot_epochs
+        self.log_every = log_every
+        self.alpha = alpha
+        self.loss_type = loss_type
+        self.cls_weighted = cls_weighted
+        self.schedule_type = schedule_type
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.mil_arch = mil_arch

@@ -79,7 +79,7 @@ def select_at_lowest(img, sz, n_tiles, mask_tissue):
 
 
 def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, padded_low_shape,
-                      level, top_n, desire_size, orig_mask=None):
+                      level, top_n, desire_size=None, orig_mask=None, normalize=False):
     cur_rate = RATE_MAP[level]
     cur_im = orig_img[level]
     if orig_mask:
@@ -90,8 +90,13 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
             cur_mask = cur_mask.repeat(4, axis=0).repeat(4, axis=1)
     tiles, masks, norm_tiles = [], [], []
     high_im_size = low_im_size * cur_rate
+    if not desire_size:
+        desire_size = high_im_size
     n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
-    normalizer = reinhard_fast.ReinhardNormalizer()
+    if not normalize:
+        normalizer = None
+    else:
+        normalizer = reinhard_fast.ReinhardNormalizer()
     for tile_id in selected_idxs:
         i, j = tile_id // n_col, tile_id % n_col
         high_i = max(i * low_im_size - pad_top, 0) * cur_rate
@@ -102,12 +107,15 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
         if high_j + high_im_size > cur_im.shape[1]:
             high_j = cur_im.shape[1] - high_im_size
         high_tile = cur_im[high_i: high_i + high_im_size, high_j: high_j + high_im_size, :].astype(np.uint8)
-        norm_high_tile = normalizer.transform(high_tile)
+        norm_high_tile = normalizer.transform(high_tile) if normalizer else None
         if high_im_size > desire_size:
             high_tile = Image.fromarray(high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
-            norm_high_tile = Image.fromarray(norm_high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
-            norm_high_tile = np.asarray(norm_high_tile)
             high_tile = np.asarray(high_tile)
+            if normalizer:
+                norm_high_tile = \
+                    Image.fromarray(norm_high_tile.astype(np.uint8)).resize((desire_size, desire_size), Image.ANTIALIAS)
+                norm_high_tile = np.asarray(norm_high_tile)
+
         if orig_mask:
             high_tile_mask = cur_mask[high_i: high_i + high_im_size, high_j: high_j + high_im_size]
             if high_im_size > desire_size:
@@ -115,14 +123,20 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
                 high_tile_mask = high_tile_mask[::rate, ::rate]
             masks.append(high_tile_mask)
         tiles.append(high_tile)
-        norm_tiles.append(norm_high_tile)
+        if normalizer:
+            norm_tiles.append(norm_high_tile)
 
     if len(tiles) < top_n:
         tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
-        norm_tiles = np.pad(norm_tiles, [[0, top_n - len(norm_tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
+        if normalizer:
+            norm_tiles = \
+                np.pad(norm_tiles, [[0, top_n - len(norm_tiles)], [0, 0], [0, 0], [0, 0]],
+                       constant_values=255, mode='constant')
     tiles = np.stack(tiles)
-    norm_tiles = np.stack(norm_tiles)
-    results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs, 'norm_tiles': norm_tiles.astype(np.uint8)}
+    results = {"tiles": tiles.astype(np.uint8), "ids": selected_idxs}
+    if normalizer:
+        norm_tiles = np.stack(norm_tiles)
+        results['norm_tiles'] = norm_tiles.astype(np.uint8)
     if orig_mask:
         masks = np.pad(masks, [[0, top_n - len(masks)], [0, 0], [0, 0]], constant_values=0, mode='constant')
         masks = np.stack(masks)
@@ -144,7 +158,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, lowest_im_size, level, top_n,
         pad_img, idxs, pad_top, pad_left = select_at_lowest(lowest, lowest_im_size, top_n, True)
         results = get_highres_tiles(orig, idxs, pad_top, pad_left, lowest_im_size,
                                     (pad_img.shape[0], pad_img.shape[1]),
-                                    level=level, top_n=top_n, desire_size=desire_size, orig_mask=mask)
+                                    level=level, top_n=top_n, desire_size=desire_size, orig_mask=mask, normalize=True)
         results['slide_name'] = slide_name
         pqueue.put(results)
         counter += 1

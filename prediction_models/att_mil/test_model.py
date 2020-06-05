@@ -76,7 +76,7 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize(mean=meanstd['mean'], std=meanstd['std'])])
-    dataset = test_slides.BiopsySlidesLowest(test_params, test_slides_df, normalize)
+    dataset = test_slides.BiopsySlideSelected(test_params, test_slides_df, normalize, phase='w_atts')
     loader = \
         torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, drop_last=False,
                                     num_workers=num_workers, pin_memory=False)
@@ -84,14 +84,14 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
     pred_data = []
     test_iter = iter(loader)
     start_time = time.time()
-    all_atts, all_tile_ids = {}, {}
+    all_atts, all_tile_ids, all_tile_pads = {}, {}, {}
     for cur_model in all_models:
         cur_model.to(device)
         cur_model.eval()
     with torch.no_grad():
         for step in tqdm.tqdm(range(len(loader))):
         # for step in range(len(loader)):
-            tiles, image_ids, tile_ids = test_iter.next()
+            tiles, image_ids, tile_ids, pad_tops, pad_lefts = test_iter.next()
             tiles = tiles.to(device)
             bs, N, C, h, w = tiles.shape
             # dihedral TTA
@@ -115,17 +115,20 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
                 pooled_predicted = pooled_predicted.mean(1).argmax(-1).cpu().numpy()[:]  # [bs]
             pooled_atts = pooled_atts.mean(1).cpu().numpy()[:]
             batch_idx = 0
-            for image_id, cur_pred, cur_atts in zip(image_ids, pooled_predicted, pooled_atts):
+            for image_id, cur_pred, cur_atts, pad_top, pad_left in zip(image_ids, pooled_predicted, pooled_atts,
+                                                                       pad_tops, pad_lefts):
                 pred_data.append({"image_id": str(image_id), "isup_grade": int(cur_pred)})
                 all_atts[str(image_id)] = cur_atts
-                all_tile_ids[str(image_id)] = tile_ids[batch_idx, :, :].cpu().numpy()[:]
+                # all_tile_ids[str(image_id)] = tile_ids[batch_idx, :, :].cpu().numpy()[:]
+                all_tile_ids[str(image_id)] = tile_ids[batch_idx].cpu().numpy()[:]
+                all_tile_pads[str(image_id)] = (int(pad_top), int(pad_left))
                 batch_idx += 1
             del tiles
             del pooled_predicted
             del pooled_atts
     print(f"Total time to apply the model: {time.time() - start_time}")
     pred_df = pd.DataFrame(columns=["image_id", "isup_grade"], data=pred_data)
-    return pred_df, all_atts, all_tile_ids
+    return pred_df, all_atts, all_tile_ids, all_tile_pads
 
 
 def get_model_name(model_dir):
@@ -142,19 +145,23 @@ def get_cv_attentions(args):
     meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304], "std": [0.36357649, 0.49984502, 0.40477625]}
     opts = load_opts(args.model_dir, args.data_dir, args.cuda, args.num_workers, args.batch_size)
     device = "cpu" if not args.cuda else "cuda"
-    test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type, top_n=args.top_n)
-    all_atts_info = {"atts": {}, "tile_ids": {}}
+
+    test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type,
+                             args.lowest_im_size, args.level, top_n=args.top_n)
+    all_atts_info = {"atts": {}, "tile_ids": {}, "pad_infos": {}, "level":  args.level,
+                     "lowest_im_size": args.lowest_im_size}
     model_name = get_model_name(args.model_dir)
     for fold in range(opts.n_folds):
         ckp_path = f"{args.model_dir}/checkpoint_best_{fold}.pth"
         print(f"start loading model from {fold}, {ckp_path}")
         predictor = load_model(ckp_path, device)
         cur_df = pd.read_csv(f"{args.info_dir}/val_{fold}.csv")
-        _, cur_split_atts, cur_split_tile_ids = \
+        _, cur_split_atts, cur_split_tile_ids, all_tile_pads = \
             test_w_atts([predictor], meanstd, cur_df, test_params, opts.num_workers, opts.batch_size, device)
         for slide_id, atts in cur_split_atts.items():
             all_atts_info['atts'][slide_id] = atts
             all_atts_info['tile_ids'][slide_id] = cur_split_tile_ids[slide_id]
+            all_atts_info['pad_infos'][slide_id] = all_tile_pads[slide_id]
     np.save(f"{args.att_dir}/{model_name}_n_{args.top_n}_sz_{opts.im_size}.npy", all_atts_info)
 
 
@@ -171,9 +178,12 @@ if __name__ == "__main__":
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--top_n', type=int, default=40)
+    parser.add_argument('--lowest_im_size', type=int, default=32)
+    parser.add_argument('--level', type=int, default=-2)
+
     parser.add_argument('--cuda', action='store_true', help="whether to use GPU for training")
 
-    parser.add_argument('--att_dir', default='/br_256_256/')
+    parser.add_argument('--att_dir', default='../../cache/atts/')
 
     options = parser.parse_args()
     if not os.path.isdir(options.att_dir):
