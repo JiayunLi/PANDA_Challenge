@@ -22,11 +22,13 @@ from utiles.radam import *
 from utiles.utils import *
 
 class Train(object):
-    def __init__(self, model, optimizer, scheduler, GLS = False):
+    def __init__(self, model, optimizer, scheduler, GLS = False, mltLoss = None):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.GLS = GLS
+        self.mltLoss = mltLoss
+
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
@@ -50,7 +52,10 @@ class Train(object):
                 outputs_sec = outputs['secondary_gls']
                 loss2 = criterion(outputs_prim, primary_gls.float().cuda())
                 loss3 = criterion(outputs_sec, secondary_gls.float().cuda())
-                loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
+                if self.mltLoss is not None:
+                    loss = self.mltLoss(torch.Tensor([loss1, loss2, loss3]))
+                else:
+                    loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
             else:
                 loss = loss1
             train_loss.append(loss.item())
@@ -107,7 +112,6 @@ class Train(object):
         # result['val_preds'] = val_preds
         return result
 
-
 def save_checkpoint(state, is_best, fname):
     torch.save(state, '{}_ckpt.pth.tar'.format(fname))
     if is_best:
@@ -116,20 +120,20 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_overlook_cosine_bin"
+    fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls_mltLoss"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
-    GLS = False
+    GLS = True
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data/train/'
+    image_dir = '../input/panda-32x256x256-tiles-data/train/'
 
     ## image transformation
     tsfm = data_transform()
     # tsfm = None
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 36, rand=True)
+    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N =36, rand=True)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     # criterion = nn.CrossEntropyLoss()
@@ -143,7 +147,7 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(2):
+    for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         # model = Model(enet_type, out_dim=5).cuda()
         model = Model(GleasonScore=GLS).cuda()
@@ -152,7 +156,11 @@ if __name__ == "__main__":
         #                                           pct_start = 0.3, div_factor = 100)
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
-        Training = Train(model, optimizer, scheduler)
+        if GLS:
+            mltLoss = MultiTaskLoss(torch.Tensor([False, False, False]))
+            Training = Train(model, optimizer, scheduler, GLS = GLS, mltLoss = mltLoss)
+        else:
+            Training = Train(model, optimizer, scheduler, GLS = GLS)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in trange(epochs, desc='epoch'):

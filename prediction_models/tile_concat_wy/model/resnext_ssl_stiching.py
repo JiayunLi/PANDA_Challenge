@@ -81,8 +81,35 @@ class Model_Infer(nn.Module):
         result['out'] = x
         return result
 
+class MultiTaskLoss(nn.Module):
+    def __init__(self, is_regression, reduction = 'sum'):
+        super(MultiTaskLoss, self).__init__()
+        self.is_regression = is_regression
+        self.n_tasks= len(is_regression)
+        self.log_vars = torch.nn.Parameter(torch.zeros(self.n_tasks))
+        self.reduction = reduction
+
+    def forward(self, losses):
+        dtype = losses.dtype
+        device = losses.device
+        stds = (torch.exp(self.log_vars) ** (1 / 2)).to(device).to(dtype)
+        self.is_regression = self.is_regression.to(device).to(dtype)
+        coeffs = 1 / ((self.is_regression + 1) * (stds ** 2))
+        multi_task_losses = coeffs * losses + torch.log(stds)
+        if self.reduction == 'sum':
+            multi_task_losses = multi_task_losses.sum()
+        return multi_task_losses
+
 if __name__ == "__main__":
-    img = torch.rand([4, 3, 6 * 256, 6 * 256])
+    img = torch.rand([2, 3, 6 * 256, 6 * 256])
     model = Model_Infer()
     output = model(img)
-    print(output['out'].shape)
+    label = torch.tensor([[1,1,1,0,0],
+                         [1,1,0,0,0]])
+    criterion = nn.BCEWithLogitsLoss()
+    loss1 = criterion(output['out'], label.float())
+    loss2 = criterion(output['out'], label.float())
+    losses = torch.Tensor([loss1, loss2])
+    mltLoss = MultiTaskLoss(torch.Tensor([False, False]))
+    loss = mltLoss(losses)
+    print(output['out'].shape, loss)
