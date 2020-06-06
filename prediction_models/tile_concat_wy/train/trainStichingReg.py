@@ -137,7 +137,7 @@ if __name__ == "__main__":
     tsfm = data_transform()
     # tsfm = None
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 16, rand=True)
+    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 36, rand=True)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     # criterion = nn.CrossEntropyLoss()
@@ -161,7 +161,8 @@ if __name__ == "__main__":
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
-            mltLoss = MultiTaskLoss(3).cuda()
+            # mltLoss = MultiTaskLoss(3).cuda()
+            mltLoss = None
             Training = Train(model, optimizer, scheduler, GLS=GLS, mltLoss=mltLoss)
         else:
             Training = Train(model, optimizer, scheduler, GLS=GLS)
