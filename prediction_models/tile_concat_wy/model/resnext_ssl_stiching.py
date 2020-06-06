@@ -23,7 +23,7 @@ class Model(nn.Module):
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
                                   Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
-        self.GLS = GleasonScore
+        self.GLS = GleasonScoreafa
         if self.GLS:
             self.prim = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
                                       Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 4))
