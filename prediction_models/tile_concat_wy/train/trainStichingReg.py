@@ -124,9 +124,9 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_overlook_cosine_reg_gls_mltloss"
+    fname = "Resnext50_medreso_16patch_overlook_cosine_reg_gls_mltloss"
     nfolds = 4
-    bs = 2
+    bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
     GLS = True
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     tsfm = data_transform()
     # tsfm = None
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 36, rand=True)
+    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = 16, rand=True)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     # criterion = nn.CrossEntropyLoss()
