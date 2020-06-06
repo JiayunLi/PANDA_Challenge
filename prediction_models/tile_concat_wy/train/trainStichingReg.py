@@ -124,7 +124,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_overlook_cosine_reg_gls_mltloss"
+    fname = "Resnext50_medreso_36patch_overlook_cosine_reg_gls"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
