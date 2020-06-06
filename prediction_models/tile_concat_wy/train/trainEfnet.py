@@ -120,7 +120,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls"
+    fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls_mltloss"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
@@ -157,8 +157,8 @@ if __name__ == "__main__":
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
-            # mltLoss = MultiTaskLoss(torch.Tensor([False, False, False]))
-            mltLoss = None
+            mltLoss = MultiTaskLoss(2).cuda()
+            # mltLoss = None
             Training = Train(model, optimizer, scheduler, GLS = GLS, mltLoss = mltLoss)
         else:
             Training = Train(model, optimizer, scheduler, GLS = GLS)
