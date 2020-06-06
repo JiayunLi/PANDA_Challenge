@@ -89,7 +89,7 @@ class MultiTaskLoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, losses):
-        total_loss = losses * torch.exp(-self.eta) + 2 * self.eta
+        total_loss = losses * torch.exp(-self.eta) + self.eta
         if self.reduction == 'sum':
             total_loss = total_loss.sum()
         if self.reduction == 'mean':

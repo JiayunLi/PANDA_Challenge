@@ -137,8 +137,8 @@ if __name__ == "__main__":
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     # criterion = nn.CrossEntropyLoss()
-    # criterion = nn.MSELoss()
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.MSELoss()
+    # criterion = nn.BCEWithLogitsLoss()
     ## tensorboard writer
     writerDir = './runs'
     check_folder_exists(writerDir)

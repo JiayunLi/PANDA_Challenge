@@ -42,6 +42,8 @@ class crossValDataloader(object):
 
 class PandaPatchDataset(Dataset):
     """Panda Tile dataset. With fixed tiles for each slide."""
+    gls = {"0+0": [0, 0], 'negative': [0, 0], '3+3': [1, 1], '3+4': [1, 2], '4+3': [2, 1], '4+4': [2, 2],
+          '3+5': [1, 3], '5+3': [3, 1], '4+5': [2, 3], '5+4': [3, 2], '5+5': [3, 3]}
     def __init__(self, csv_file, image_dir, image_size, N = 36, transform=None, rand=False):
         """
         Args:
@@ -98,13 +100,14 @@ class PandaPatchDataset(Dataset):
         images = images.astype(np.float32)
         images /= 255
         images = images.transpose(2, 0, 1)
-        # label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
         datacenter = self.train_csv.loc[idx, 'data_provider']
-        # label[:isup_grade] = 1.
+        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(isup_grade)
         result['datacenter'] = datacenter
+        result['primary_gls'] = torch.tensor(gleason_score[0])
+        result['secondary_gls'] = torch.tensor(gleason_score[1])
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):

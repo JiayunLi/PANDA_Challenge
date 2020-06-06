@@ -15,17 +15,19 @@ from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 from collections import OrderedDict
 ## custom package
-from input.inputPipeline_stiching import *
+from input.inputPipeline_stiching_reg import *
 # from model.evnet import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
 
 class Train(object):
-    def __init__(self, model, optimizer, scheduler):
+    def __init__(self, model, optimizer, scheduler, mltLoss):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.mltLoss = mltLoss
+
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
@@ -44,9 +46,20 @@ class Train(object):
             outputs_main = outputs['out'].squeeze(dim = 1) # for regression
             # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
             loss1 = criterion(outputs_main, labels.float().cuda())
+            if self.GLS:
+                primary_gls, secondary_gls = data['primary_gls'], data['secondary_gls']
+                outputs_prim = outputs['primary_gls'].squeeze(dim=1)
+                outputs_sec = outputs['secondary_gls'].squeeze(dim=1)
+                loss2 = criterion(outputs_prim, primary_gls.float().cuda())
+                loss3 = criterion(outputs_sec, secondary_gls.float().cuda())
+                if self.mltLoss is not None:
+                    loss = self.mltLoss(torch.Tensor([loss1, loss2, loss3]).cuda())
+                else:
+                    loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
+            else:
+                loss = loss1
             # loss2 = criterion(outputs_aux, labels.float().cuda())
             # loss = loss1 + 0.4 * loss2
-            loss = loss1
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
@@ -110,11 +123,12 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_adam_cosine_bin"
+    fname = "Resnext50_medreso_36patch_overlook_cosine_reg_gls_mltloss"
     nfolds = 4
     bs = 6
     enet_type = 'efficientnet-b0'
     epochs = 30
+    GLS = True
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
 
@@ -139,13 +153,17 @@ if __name__ == "__main__":
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         # model = Model(enet_type, out_dim=5).cuda()
-        model = Model(n = 1).cuda()
+        model = Model(n = 1, GLS = GLS).cuda()
         optimizer = Over9000(model.parameters())
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
-        Training = Train(model, optimizer, scheduler)
+        if GLS:
+            mltLoss = MultiTaskLoss(3).cuda()
+            Training = Train(model, optimizer, scheduler, GLS=GLS, mltLoss=mltLoss)
+        else:
+            Training = Train(model, optimizer, scheduler, GLS=GLS)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in trange(epochs, desc='epoch'):
