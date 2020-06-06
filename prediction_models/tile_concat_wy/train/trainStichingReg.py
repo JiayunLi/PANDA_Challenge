@@ -22,11 +22,12 @@ from utiles.radam import *
 from utiles.utils import *
 
 class Train(object):
-    def __init__(self, model, optimizer, scheduler, mltLoss):
+    def __init__(self, model, optimizer, scheduler, GLS = False, mltLoss = None):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.mltLoss = mltLoss
+        self.GLS = GLS
 
     def train_epoch(self,trainloader, criterion):
         ## train
