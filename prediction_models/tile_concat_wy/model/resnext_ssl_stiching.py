@@ -97,15 +97,15 @@ class MultiTaskLoss(nn.Module):
         return total_loss
 
 if __name__ == "__main__":
-    img = torch.rand([2, 3, 6 * 256, 6 * 256])
-    model = Model_Infer()
+    img = torch.rand([2, 3, 1 * 256, 1 * 256]).cuda()
+    model = Model_Infer().cuda()
     output = model(img)
     label = torch.tensor([[1,1,1,0,0],
-                         [1,1,0,0,0]])
+                         [1,1,0,0,0]]).cuda()
     criterion = nn.BCEWithLogitsLoss()
     loss1 = criterion(output['out'], label.float())
     loss2 = criterion(output['out'], label.float())
-    losses = torch.Tensor([loss1, loss2])
-    mltLoss = MultiTaskLoss(2)
+    losses = torch.Tensor([loss1, loss2]).cuda()
+    mltLoss = MultiTaskLoss(2).cuda()
     loss = mltLoss(losses)
     print(output['out'].shape, loss)

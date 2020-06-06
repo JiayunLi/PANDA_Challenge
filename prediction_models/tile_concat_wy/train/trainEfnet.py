@@ -53,7 +53,7 @@ class Train(object):
                 loss2 = criterion(outputs_prim, primary_gls.float().cuda())
                 loss3 = criterion(outputs_sec, secondary_gls.float().cuda())
                 if self.mltLoss is not None:
-                    loss = self.mltLoss(torch.Tensor([loss1, loss2, loss3]))
+                    loss = self.mltLoss(torch.Tensor([loss1, loss2, loss3])).cuda()
                 else:
                     loss = loss1 + 0.5 * (loss2 + 0.5 * loss3)
             else:
