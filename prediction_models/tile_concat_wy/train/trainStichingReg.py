@@ -153,7 +153,7 @@ if __name__ == "__main__":
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         # model = Model(enet_type, out_dim=5).cuda()
-        model = Model(n = 1, GLS = GLS).cuda()
+        model = Model(n = 1, GGleasonScore = GLS).cuda()
         optimizer = Over9000(model.parameters())
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
