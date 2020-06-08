@@ -3,6 +3,7 @@ from prediction_models.att_mil.utils import trainval_stats, model_utils
 from prediction_models.att_mil.mil_models import config_model
 import time
 import sys
+import numpy as np
 import gc
 
 
@@ -94,23 +95,24 @@ def val_epoch(epoch, fold, model, val_loader, slide_criterion, tile_criterion, l
     optimized_rounder = config_model.OptimizedRounder()
     with torch.no_grad():
         for step in range(len(val_loader)):
-            tiles, tile_labels, slide_label, tile_names = val_iter.next()
+            tiles, tile_labels, slide_labels, tile_names = val_iter.next()
             tiles = torch.squeeze(tiles, dim=0)
             tiles = tiles.to(device)
             slide_probs, tiles_probs, _ = model(tiles)
+            tile_labels = torch.stack(tile_labels, dim=0)
             tile_labels = tile_labels.view(tile_labels.size(1), tile_labels.size(0)).view(-1)
             if loss_type == "mse":
-                slide_label = slide_label.float()
+                slide_labels = slide_labels.float()
                 tile_labels = tile_labels.float()
 
-            slide_label = slide_label.to(device)
+            slide_labels = slide_labels.to(device)
             tile_labels = tile_labels.to(device)
 
             if loss_type == "mse":
-                slide_loss = slide_criterion(slide_probs.view(-1), slide_label)
+                slide_loss = slide_criterion(slide_probs.view(-1), slide_labels)
                 tile_loss = tile_criterion(tiles_probs.view(-1), tile_labels)
             else:
-                slide_loss = slide_criterion(slide_probs, slide_label)
+                slide_loss = slide_criterion(slide_probs, slide_labels)
                 tile_loss = tile_criterion(tiles_probs, tile_labels)
             tile_loss_mask = tile_labels > 0
             tile_loss *= tile_loss_mask
@@ -124,11 +126,15 @@ def val_epoch(epoch, fold, model, val_loader, slide_criterion, tile_criterion, l
             val_stats.update_dict(cur_dict, n=1)
 
             if loss_type == "mse":
-                predicted = int(slide_probs.cpu().item())
+                # elif (loss_type == "mse") and (not tile_loss_only):
+                predicted = np.squeeze(slide_probs.cpu().round().numpy()[:], axis=1)
+            elif loss_type == "bce":
+                predicted = slide_probs.sigmoid().sum(1).detach().round().cpu().numpy()
             else:
                 _, predicted = torch.max(slide_probs.data, 1)
-                predicted = int(predicted.cpu().item())
-            all_labels.append(int(slide_label[0]))
+                predicted = predicted.cpu().numpy()
+
+            all_labels.append(slide_labels.sum(1).cpu().numpy())
             all_preds.append(predicted)
 
         print(f"Validation step {step}/{len(val_loader)}")

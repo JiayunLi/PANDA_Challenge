@@ -18,7 +18,14 @@ def config_encoder_infer(input_size, num_classes, arch, pretrained=False):
                                      nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
         return encoder, feature_dim
     elif arch.startswith("efficientnet"):
-        model = EfficientNet.from_name('efficientnet-b0')
+        if arch == "efficientnet-b0":
+            feature_dim = 1280
+            encoder = EfficientNet.from_name("efficientnet-b0")
+            encoder.classifier = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)), Flatten(),
+                                               nn.Linear(in_features=feature_dim, out_features=num_classes, bias=True))
+        else:
+            raise NotImplementedError(f"{arch} Haven't implemented")
+        return encoder, feature_dim
     else:
         encoder_name = models.__dict__[arch]
         encoder = encoder_name(pretrained=pretrained)
@@ -29,6 +36,7 @@ def config_encoder_infer(input_size, num_classes, arch, pretrained=False):
 
     elif arch.startswith("res"):
         feature_dim = model_utils.config_resnet_layers(encoder, arch, num_classes)
+
     else:
         raise NotImplementedError(f"{arch} Haven't implemented")
     return encoder, feature_dim

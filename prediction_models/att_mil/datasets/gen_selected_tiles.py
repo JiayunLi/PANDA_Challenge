@@ -45,14 +45,14 @@ def get_tissue_roi(dw_sample):
     return roi2
 
 
-def get_padded(img, sz):
+def get_padded(img, sz, mode=0):
     shape = img.shape
-    pad0, pad1 = (sz - shape[0] % sz) % sz, (sz - shape[1] % sz) % sz
+    pad0, pad1 = (sz - shape[0] % sz) % sz + ((sz * mode) // 2), (sz - shape[1] % sz) % sz + ((sz * mode) // 2)
     img = np.pad(img, [[pad0//2, pad0-pad0//2], [pad1//2, pad1-pad1//2], [0, 0]], constant_values=255)
     return img, pad0 // 2, pad1 // 2
 
 
-def tile_padded(padded_img, sz, top_n):
+def tile_padded(padded_img, sz, top_n, mode=0):
 
     padded_img = padded_img.reshape(padded_img.shape[0] // sz, sz, padded_img.shape[1] // sz, sz, 3)
     padded_img = padded_img.transpose(0, 2, 1, 3, 4).reshape(-1, sz, sz, 3)
@@ -64,8 +64,8 @@ def tile_padded(padded_img, sz, top_n):
     return padded_img, idxs[:top_n]
 
 
-def select_at_lowest(img, sz, n_tiles, mask_tissue):
-    pad_img, pad_top, pad_left = get_padded(img, sz)
+def select_at_lowest(img, sz, n_tiles, mask_tissue, mode=0):
+    pad_img, pad_top, pad_left = get_padded(img, sz, mode)
     br_img = compute_blue_ratio(pad_img)
     if mask_tissue:
         roi = get_tissue_roi(pad_img)
@@ -126,7 +126,7 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
         if normalizer:
             norm_tiles.append(norm_high_tile)
 
-    if len(tiles) < top_n:
+    if top_n > 0 and len(tiles) < top_n:
         tiles = np.pad(tiles, [[0, top_n - len(tiles)], [0, 0], [0, 0], [0, 0]], constant_values=255, mode='constant')
         if normalizer:
             norm_tiles = \

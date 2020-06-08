@@ -79,26 +79,6 @@ def train_epoch(epoch, fold, iteras, model, slide_criterion, tile_criterion, opt
     return iteras
 
 
-def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
-    if use_binary:
-        if cls_weighted:
-            tile_criterion = torch.nn.BCEWithLogitsLoss(label_weights)
-        else:
-            tile_criterion = torch.nn.BCEWithLogitsLoss()
-        return tile_criterion
-
-    if loss_type == 'mse':
-        tile_criterion = torch.nn.MSELoss()
-    elif loss_type == 'ce':
-        if cls_weighted:
-            tile_criterion = torch.nn.CrossEntropyLoss(label_weights)
-        else:
-            tile_criterion = torch.nn.CrossEntropyLoss()
-    else:
-        raise NotImplementedError(f"Criterion not implemented {loss_type}")
-    return tile_criterion
-
-
 def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, loss_type, logger, slide_binary, device):
     model.eval()
     torch.cuda.empty_cache()
@@ -157,8 +137,10 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
             else:
                 _, predicted = torch.max(probs.data, 1)
                 predicted = predicted.cpu().numpy()
-
-            all_labels.append(labels.sum(1).cpu().numpy())
+            if loss_type == 'bce':
+                all_labels.append(labels.sum(1).cpu().numpy())
+            else:
+                all_labels.append(labels.cpu().numpy())
             all_preds.append(predicted)
 
         print(f"Validation step {step}/{len(val_loader)}")
@@ -180,3 +162,23 @@ def val(epoch, fold, model, val_loader, slide_criterion, tile_criterion, alpha, 
         avg_loss = val_stats.avgs['slide_loss']
 
     return quadratic_kappa, avg_loss
+
+
+# def configure_criterion(loss_type, cls_weighted, use_binary, label_weights):
+#     if use_binary:
+#         if cls_weighted:
+#             tile_criterion = torch.nn.BCEWithLogitsLoss(label_weights)
+#         else:
+#             tile_criterion = torch.nn.BCEWithLogitsLoss()
+#         return tile_criterion
+#
+#     if loss_type == 'mse':
+#         tile_criterion = torch.nn.MSELoss()
+#     elif loss_type == 'ce':
+#         if cls_weighted:
+#             tile_criterion = torch.nn.CrossEntropyLoss(label_weights)
+#         else:
+#             tile_criterion = torch.nn.CrossEntropyLoss()
+#     else:
+#         raise NotImplementedError(f"Criterion not implemented {loss_type}")
+#     return tile_criterion

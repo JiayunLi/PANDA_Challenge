@@ -103,7 +103,7 @@ class BiopsySlideSelected(data.Dataset):
     # slides_df, slides_dir,
     # lowest_im_size, input_size, num_channels, level, top_n, transform
 
-    def __init__(self, params, test_df, transform, phase='test'):
+    def __init__(self, params, test_df, transform, mode=0, phase='test'):
         self.params = params
         self.lowest_im_size = params.lowest_im_size
         self.slides_dir = params.test_slides_dir
@@ -115,6 +115,7 @@ class BiopsySlideSelected(data.Dataset):
         self.input_size, self.num_channels = params.input_size, params.num_channels
         self.transform = transform
         self.phase = phase
+        self.mode = mode
 
     def __len__(self):
         return len(self.slides_df)
@@ -123,11 +124,11 @@ class BiopsySlideSelected(data.Dataset):
         slide_info = self.slides_df.iloc[ix]
         orig = skimage.io.MultiImage(f"{self.slides_dir}/{slide_info.image_id}.tiff")
         pad_img, tile_idxs, pad_top, pad_left = gen_selected_tiles.select_at_lowest(orig[-1], self.lowest_im_size,
-                                                                               self.top_n, True)
+                                                                                    self.top_n, True, self.mode)
 
         results = gen_selected_tiles.get_highres_tiles(orig, tile_idxs, pad_top, pad_left, self.lowest_im_size,
                                     (pad_img.shape[0], pad_img.shape[1]),
-                                    level=self.level, top_n=self.top_n, orig_mask=None)
+                                    level=self.level, top_n=self.top_n, desire_size=self.input_size, orig_mask=None)
         instances = torch.FloatTensor(len(results['tiles']),
                                       self.num_channels, self.input_size, self.input_size)
         tile_idxs = torch.FloatTensor(tile_idxs.tolist())

@@ -145,7 +145,7 @@ def get_cv_attentions(args):
     meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304], "std": [0.36357649, 0.49984502, 0.40477625]}
     opts = load_opts(args.model_dir, args.data_dir, args.cuda, args.num_workers, args.batch_size)
     device = "cpu" if not args.cuda else "cuda"
-
+    print(opts)
     test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type,
                              args.lowest_im_size, args.level, top_n=args.top_n)
     all_atts_info = {"atts": {}, "tile_ids": {}, "pad_infos": {}, "level":  args.level,
