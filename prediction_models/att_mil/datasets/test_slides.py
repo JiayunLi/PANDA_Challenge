@@ -131,8 +131,10 @@ class BiopsySlideSelected(data.Dataset):
                                     level=self.level, top_n=self.top_n, desire_size=self.input_size, orig_mask=None)
         instances = torch.FloatTensor(len(results['tiles']),
                                       self.num_channels, self.input_size, self.input_size)
+        print(instances.size())
         tile_idxs = torch.FloatTensor(tile_idxs.tolist())
         for i, tile in enumerate(results['tiles']):
+            print(results['tiles'].shape)
             if self.transform:
                 instances[i, :, :, :] = self.transform(tile)
 
