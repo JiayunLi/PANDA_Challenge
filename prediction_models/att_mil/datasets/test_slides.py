@@ -125,7 +125,6 @@ class BiopsySlideSelected(data.Dataset):
         orig = skimage.io.MultiImage(f"{self.slides_dir}/{slide_info.image_id}.tiff")
         pad_img, tile_idxs, pad_top, pad_left = gen_selected_tiles.select_at_lowest(orig[-1], self.lowest_im_size,
                                                                                     self.top_n, True, self.mode)
-        print(self.lowest_im_size)
         results = gen_selected_tiles.get_highres_tiles(orig, tile_idxs, pad_top, pad_left, self.lowest_im_size,
                                     (pad_img.shape[0], pad_img.shape[1]),
                                     level=self.level, top_n=self.top_n, desire_size=self.input_size, orig_mask=None)
