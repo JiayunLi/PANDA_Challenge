@@ -243,10 +243,45 @@ def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
         result.append({'img': warped_img[:sz,:sz,:], 'mask': warped_mask[:sz,:sz,:], 'location': cnt})
     if len(idxsort) < N:
         for i in range(N - len(idxsort)):
-            result.append({'img': np.zeros((sz,sz,3)).astype(np.uint8),
+            result.append({'img': 255 * np.ones((sz,sz,3)).astype(np.uint8),
                            'mask': np.zeros((sz,sz,3)).astype(np.uint8), 'location': None})
     return result
 
+def tile_img(img, location, iou, sz=256, N=36, scale = 8):
+    result = []
+    idxsort = np.argsort(iou)[::-1]
+    for i in range(min(N, len(idxsort))):
+        idx = idxsort[i]
+        cnt = np.expand_dims(location[idx], 1) * scale
+        cnt = cnt.astype('int')
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        width = int(rect[1][0])
+        height = int(rect[1][1])
+        src_pts = box.astype("float32")
+        dst_pts = np.array([[0, height - 1],
+                            [0, 0],
+                            [width - 1, 0],
+                            [width - 1, height - 1]], dtype="float32")
+
+        # the perspective transformation matrix
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+
+        # directly warp the rotated rectangle to get the straightened rectangle
+        warped_img = cv2.warpPerspective(img, M, (width, height))
+        shape = warped_img.shape
+
+        if shape[0] < sz or shape[1] < sz:
+            pad0, pad1 = (sz - shape[0] % sz) % sz, (sz - shape[1] % sz) % sz
+            warped_img = np.pad(warped_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant', constant_values=255)
+
+        result.append({'img': warped_img[:sz,:sz,:], 'location': cnt})
+    if len(idxsort) < N:
+        for i in range(N - len(idxsort)):
+            result.append({'img': 255 * np.ones((sz,sz,3)).astype(np.uint8),
+                           'location': None})
+    return result
 
 
 

@@ -1,7 +1,6 @@
 ## system package
-import os, sys, shutil
+import os, sys
 sys.path.append('../')
-from pathlib import Path
 from datetime import datetime
 from pytz import timezone
 import warnings
@@ -10,13 +9,11 @@ warnings.filterwarnings("ignore")
 ## general package
 from fastai.vision import *
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data.sampler import SubsetRandomSampler, RandomSampler, SequentialSampler
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 from collections import OrderedDict
 ## custom package
 from input.inputPipeline_stiching import *
-# from model.evnet import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
@@ -120,14 +117,13 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_overlook_cosine_bin_gls_mltloss"
+    fname = "Resnext50_medreso_36patch_aam_cosine_bin"
     nfolds = 4
-    bs = 2
-    enet_type = 'efficientnet-b0'
+    bs = 6
     epochs = 30
     GLS = True
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data/train/'
+    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
 
     ## image transformation
     tsfm = data_transform()
@@ -149,16 +145,15 @@ if __name__ == "__main__":
     check_folder_exists(weightsDir)
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
-        # model = Model(enet_type, out_dim=5).cuda()
         model = Model(GleasonScore=GLS).cuda()
-        optimizer = Over9000(model.parameters(), lr = 0.00003)
+        # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
-        # optimizer = optim.Adam(model.parameters(), lr=0.00003)
+        optimizer = optim.Adam(model.parameters(), lr=0.00003)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
-            mltLoss = MultiTaskLoss(3).cuda()
-            # mltLoss = None
+            # mltLoss = MultiTaskLoss(3).cuda()
+            mltLoss = None
             Training = Train(model, optimizer, scheduler, GLS = GLS, mltLoss = mltLoss)
         else:
             Training = Train(model, optimizer, scheduler, GLS = GLS)
@@ -173,8 +168,6 @@ if __name__ == "__main__":
             writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
             writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
-            # print(val['val_preds'], val['val_label'])
-            # print(val['val_preds'].shape, val['val_label'].shape, val['kappa'])
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train['train_loss'],
                                                                                                val['val_loss'],
