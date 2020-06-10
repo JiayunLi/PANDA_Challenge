@@ -213,7 +213,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
     def _config_data(self):
         # Use all slides to compute mean std
         if self.phase == "meanstd":
-            slides_df = pd.read_csv(f"{self.params.data_dir}/4_fold_train.csv")
+            slides_df = pd.read_csv(f"{self.params.info_dir}/4_fold_train.csv")
         else:
             slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
         print(f"Number of {self.split} samples: {len(slides_df)}")

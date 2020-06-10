@@ -52,7 +52,7 @@ def compute_meanstd(num_workers, dataset, batch_size=1):
     return meanstd
 
 
-def get_meanstd(dataset_name, all_selected=None, num_workers=0):
+def get_meanstd(dataset_name, dataset_params=None, all_selected=None, num_workers=0):
     if dataset_name == "dw_sample_16":
         meanstd = {'mean': [0.8992915, 0.79110736, 0.8844037],
                     'std': [0.13978645, 0.2604748, 0.14999403]}
@@ -81,7 +81,7 @@ def get_meanstd(dataset_name, all_selected=None, num_workers=0):
         cur_transform = T.Compose([
             T.ToTensor()
         ])
-        dataset = trainval_slides.BiopsySlidesSelectedOTF(cur_transform, all_selected, cur_transform, 0, None,
+        dataset = trainval_slides.BiopsySlidesSelectedOTF(dataset_params, all_selected, cur_transform, None, None,
                                                           phase="meanstd")
         meanstd = compute_meanstd(num_workers, dataset, batch_size=1)
         print(meanstd)
@@ -106,7 +106,7 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     :return:
     """
     if dataset_params.dataset in {"selected_10x"}:
-        meanstd = get_meanstd(dataset_params.dataset, all_selected, num_workers)
+        meanstd = get_meanstd(dataset_params.dataset, dataset_params, all_selected, num_workers)
     else:
         meanstd = get_meanstd(dataset_params.dataset)
     # Define different transformations
