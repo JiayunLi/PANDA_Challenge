@@ -15,4 +15,4 @@ if __name__ == "__main__":
     utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     Source_Folder = TRAIN
     Des_File = OUT_TRAIN
-    mean, std = write_2_zip_img(Source_Folder, Des_File, names, sz, N)
+    mean, std, ratio, tile_number = write_2_zip_img(Source_Folder, Des_File, names, sz, N)
