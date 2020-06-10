@@ -7,7 +7,7 @@ import collections
 from collections import OrderedDict
 from skimage.color import rgb2hsv
 from skimage.measure import regionprops
-from skimage.morphology import reconstruction, thin, skeletonize, medial_axis
+from skimage.morphology import reconstruction, thin, skeletonize
 from PIL import Image, ImageDraw
 
 def skeleton_endpoints(skel):
@@ -104,7 +104,7 @@ def spine(img, **kwargs):
     mask = im7.astype('int')
     cc = regionprops(im9.astype(np.uint8))
     rad = patch_size / 2.0
-    rad3 = patch_size * 4
+    rad3 = patch_size * 2
     for prop in cc:
         tim = np.zeros_like(im9).astype('int')
         tim[prop.bbox[0]:prop.bbox[2], prop.bbox[1]:prop.bbox[3]] = prop.image
