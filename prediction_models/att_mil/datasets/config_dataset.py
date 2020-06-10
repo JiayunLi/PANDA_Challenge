@@ -78,13 +78,15 @@ def get_meanstd(dataset_name, dataset_params=None, all_selected=None, num_worker
         meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
                    "std": [0.36357649, 0.49984502, 0.40477625]}
     elif dataset_name == "selected_10x":
-        cur_transform = T.Compose([
-            T.ToTensor()
-        ])
-        dataset = trainval_slides.BiopsySlidesSelectedOTF(dataset_params, all_selected, cur_transform, None, None,
-                                                          phase="meanstd")
-        meanstd = compute_meanstd(num_workers, dataset, batch_size=1)
-        print(meanstd)
+        meanstd = {"mean": [0.772427, 0.539656, 0.693181],
+                   "std": [0.147167, 0.187551, 0.136804]}
+        # cur_transform = T.Compose([
+        #     T.ToTensor()
+        # ])
+        # dataset = trainval_slides.BiopsySlidesSelectedOTF(dataset_params, all_selected, cur_transform, None, None,
+        #                                                   phase="meanstd")
+        # meanstd = compute_meanstd(num_workers, dataset, batch_size=1)
+        # print(meanstd)
     else:
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
 
