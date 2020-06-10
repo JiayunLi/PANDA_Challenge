@@ -112,6 +112,8 @@ def spine(img, **kwargs):
             continue
         _, pts = bfs(tim, E[0], E[1])  # find the shortest path on the spine
         pvt = rad
+        if not pts:
+            continue
         while pvt < len(pts) - tan_size:
             #             print(pvt)
             ## for each pvt 1: find perpendicular line and its width
