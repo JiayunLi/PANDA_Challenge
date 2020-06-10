@@ -208,12 +208,12 @@ def remove_pen_marks(img, scale=1):
     img[img == 0] = 255
     return img, img_mask1, img_mask2
 
-def tile(img, mask, location, iou, sz=256, N=36):
+def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
     result = []
     idxsort = np.argsort(iou)[::-1]
     for i in range(min(N, len(idxsort))):
         idx = idxsort[i]
-        cnt = np.expand_dims(location[idx], 1) * 2 * 4
+        cnt = np.expand_dims(location[idx], 1) * scale
         cnt = cnt.astype('int')
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
