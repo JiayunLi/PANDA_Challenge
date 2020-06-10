@@ -9,9 +9,10 @@ import numpy as np
 from collections import defaultdict
 import glob
 import  os
+import openslide
 from PIL import Image
 from prediction_models.att_mil.utils import file_utils
-
+from prediction_models.att_mil.datasets.gen_selected_tiles import RATE_MAP
 MAX_N_TILES = 500
 
 
@@ -197,6 +198,86 @@ class BiopsySlidesBatchV2(data.Dataset):
             slide_label = np.zeros(5).astype(np.float32)
             slide_label[:isup_grade] = 1.
         return tiles, labels, slide_label, list(range(len(tiles)))
+
+
+class BiopsySlidesSelectedOTF(data.Dataset):
+    def __init__(self, dataset_params, selected_locs, transform, fold, split, has_drop_rate=0, phase='train'):
+        self.transform = transform
+        self.split, self.fold = split, fold
+        self.params = dataset_params
+        self.phase = phase
+        self.selected_locs = selected_locs
+        self.has_drop_rate = has_drop_rate
+        self.slides_df = self._config_data()
+
+    def _config_data(self):
+        # Use all slides to compute mean std
+        if self.phase == "meanstd":
+            slides_df = pd.read_csv(f"{self.params.data_dir}/4_fold_train.csv")
+        else:
+            slides_df = pd.read_csv(f"{self.params.info_dir}/{self.split}_{self.fold}.csv")
+        print(f"Number of {self.split} samples: {len(slides_df)}")
+        return slides_df
+
+    def __len__(self):
+        return len(self.slides_df)
+
+    def __getitem__(self, ix):
+        slide_info = self.slides_df.iloc[ix]
+        slide_label = int(slide_info.isup_grade)
+        slide_id = slide_info.image_id
+        tiles = self._get_tiles(slide_id)
+        if self.has_drop_rate > 0:
+            print("Use dropout instance")
+            tiles = self._w_instance_drop(tiles)
+        return tiles, [-1] * len(tiles), slide_label, list(range(len(tiles)))
+
+    def _get_tiles(self, slide_id):
+        rate = RATE_MAP[-3]
+        high_im_size = self.params.lowest_im_size * rate
+
+        cur_slide = openslide.OpenSlide(f"{self.params.data_dir}/{slide_id}.tiff")
+        cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
+                        cur_slide.level_dimensions[self.params.level + 3][0])
+        lowest_locs = self.selected_locs[slide_id]
+
+        if self.phase == "meanstd":
+            n = len(lowest_locs)
+        else:
+            n = self.params.top_n
+        instances = torch.FloatTensor(n, self.params.num_channels,
+                                      self.params.input_size, self.params.input_size,)
+        counter = 0
+        for low_i, low_j in lowest_locs:
+            high_i = max(low_i * rate, 0)
+            high_j = max(low_j * rate, 0)
+            # print(f"{high_i}_{high_j}")
+            if high_i + high_im_size > cur_im_shape[0]:
+                high_i = cur_im_shape[0] - high_im_size
+            if high_j + high_im_size > cur_im_shape[1]:
+                high_j = cur_im_shape[1] - high_im_size
+            high_tile = cur_slide.read_region((high_j, high_i), self.params.level + 3,
+                                              (high_im_size, high_im_size)).convert("RGB")
+            if high_im_size > self.params.input_size:
+                high_tile = high_tile.resize((self.params.input_size, self.params.input_size), Image.ANTIALIAS)
+            if self.transform:
+                high_tile = self.transform(high_tile)
+            instances[counter, :, :, :] = high_tile
+            counter += 1
+            if counter >= len(instances):
+                break
+        return instances
+
+    def _w_instance_drop(self, tiles):
+        random_indices = torch.rand(len(tiles))
+        mask = torch.ones(len(tiles), 1, 1, 1)
+        for idx in range(len(tiles)):
+            # similar as dropout
+            if random_indices[idx] < self.has_drop_rate:
+                mask[idx, :, :, :] = 0
+        # mask out regions (have the pixel value same to mean, after normalization, it should be 0)
+        tiles *= mask
+        return tiles
 
 
 FIX_N_TILES=16

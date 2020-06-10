@@ -203,24 +203,27 @@ class AttMILBatch(AttMIL):
 
         batch_size, n_tiles, channel, h, w = tiles.shape
         if self.hp["arch"].startswith("efficient"):
-            feats = self.tile_encoder.extract_features(tiles.view(-1, channel, h, w).contiguous())
+            feats_map = self.tile_encoder.extract_features(tiles.view(-1, channel, h, w).contiguous())
         else:
-            feats = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
+            feats_map = self.tile_encoder.features(tiles.view(-1, channel, h, w).contiguous())
         # feats = self.tile_encoder(tiles.view(-1, channel, h, w).contiguous())
 
         # tiles_probs = self.tile_encoder.classifier(feats)
         # tiles_probs = self.tile_classifier(feats)
-        feats = self.instance_embed(feats)
+        feats = self.instance_embed(feats_map)
         feats = self.embed_bag_feat(feats)
 
-        if phase == 'extract_feats':
-            return feats.view(batch_size, n_tiles, -1)
+        # if phase == 'extract_feats':
+        #     return feats.view(batch_size, n_tiles, -1)
 
         raw_atts = self.attention(feats)
         atts = self.softmax(raw_atts.view(batch_size, n_tiles, -1))
         weighted_feats = torch.matmul(atts.permute(0, 2, 1), feats.view(batch_size, n_tiles, -1))
         weighted_feats = torch.squeeze(weighted_feats, dim=1)
         probs = (self.slide_classifier(weighted_feats))
+
+        if phase == "get_feats":
+            return probs, None, atts, feats_map, feats
 
         return probs, None, atts
 
@@ -312,6 +315,22 @@ class PoolSimpleInfer(nn.Module):
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
         return x, None, None
+
+if __name__ == "__main__":
+    from prediction_models.att_mil import config_params
+
+    mil_params = config_params.set_mil_params(4, 128, 512,
+                                              256, 6, 6,
+                                              "bce", "cosine", "att_batch")
+    base_encoder, feature_dim = config_encoder(256, mil_params["n_tile_classes"],
+                                                "resnext50_32x4d_ssl", True)
+
+    model = AttMILBatch(base_encoder, True, "resnext50_32x4d_ssl", 256, feature_dim, mil_params)
+
+    x = torch.FloatTensor(2, 10, 3, 256, 256)
+    _, _, _, feat_map, all_feat = model(x)
+    m = nn.AdaptiveAvgPool1d(all_feat.size(-1))
+
 
 
 #

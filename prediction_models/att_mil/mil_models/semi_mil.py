@@ -7,9 +7,9 @@ import torch.nn as nn
 from prediction_models.att_mil.mil_models import costs
 
 
-class Model(nn.Module):
+class AttMILSemi(nn.Module):
     def __init__(self, base_encoder, pretrained, arch, input_size, feature_dim, mil_params, device):
-        super(Model, self).__init__()
+        super(AttMILSemi, self).__init__()
         self.tile_encoder = base_encoder
         self.feature_dim = feature_dim
         self.pretrained = pretrained

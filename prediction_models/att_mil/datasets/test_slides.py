@@ -139,8 +139,8 @@ class BiopsySlideSelected(data.Dataset):
 
         if self.phase == "w_atts":
             if len(tile_idxs) < len(instances):
-                tile_idxs = torch.cat([tile_idxs, torch.zeros(len(instances) - len(tile_idxs))], dim=0)
-            return instances, slide_info.image_id, tile_idxs, pad_top, pad_left
+                tile_idxs = torch.cat([tile_idxs, torch.zeros(len(instances) - len(tile_idxs)) - 1], dim=0)
+            return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
         return instances, slide_info.image_id
 
 

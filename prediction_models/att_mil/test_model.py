@@ -91,7 +91,7 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
     with torch.no_grad():
         for step in tqdm.tqdm(range(len(loader))):
         # for step in range(len(loader)):
-            tiles, image_ids, tile_ids, pad_tops, pad_lefts = test_iter.next()
+            tiles, image_ids, tile_ids, pad_tops, pad_lefts, nrow, ncol = test_iter.next()
             tiles = tiles.to(device)
             bs, N, C, h, w = tiles.shape
             # dihedral TTA
@@ -121,7 +121,7 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
                 all_atts[str(image_id)] = cur_atts
                 # all_tile_ids[str(image_id)] = tile_ids[batch_idx, :, :].cpu().numpy()[:]
                 all_tile_ids[str(image_id)] = tile_ids[batch_idx].cpu().numpy()[:]
-                all_tile_pads[str(image_id)] = (int(pad_top), int(pad_left))
+                all_tile_pads[str(image_id)] = (int(pad_top), int(pad_left), int(nrow), int(ncol))
                 batch_idx += 1
             del tiles
             del pooled_predicted

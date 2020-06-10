@@ -55,6 +55,8 @@ def trainval(opts):
         opts.data_dir_high = f"{opts.data_dir}/{opts.dataset_high}/"
         opts.data_dir_low = f"{opts.data_dir}/{opts.dataset_low}/"
         opts.mil_arch = opts.mil_arch + "_multi"
+    elif opts.dataset in {"selected_10x"}:
+        opts.data_dir = f"{opts.data_dir}/train_images/"
     else:
         opts.data_dir = f"{opts.data_dir}/{opts.dataset}/"
     opts.cls_weighted = parse_binary_options(opts.cls_weighted)
@@ -68,8 +70,8 @@ def trainval(opts):
     print(opts)
 
     # Generate tile-level labels
-    if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset not in {"16_128_128", 'br_256_2x'}\
-            and not opts.multi:
+    if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset \
+            not in {"16_128_128", 'br_256_2x', 'selected_10x'} and not opts.multi:
         from prediction_models.att_mil.utils import dataset_utils
         masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
         dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=opts.im_size,
@@ -83,6 +85,26 @@ def trainval(opts):
         dataset_utils.generate_cv_split(
             f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
 
+    if opts.dataset in {'selected_10x'}:
+        select_att_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
+        select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs.npy"
+        if not os.path.isfile(select_att_file_loc):
+            raise FileNotFoundError(f"Plase use test_model.py to generate attention values first for model "
+                                    f"{opts.select_model}!")
+        if not os.path.isfile(select_locs_file_loc):
+            from prediction_models.att_mil.datasets import get_selected_locs
+
+            all_selected = get_selected_locs.att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
+                                                             select_att_file_loc, att_low_tile_size=64, att_level=-2,
+                                                             select_n=18, select_sub_size=64,  select_per_tile=2,
+                                                             method='4x4')
+            np.save(select_locs_file_loc, all_selected)
+        else:
+            all_selected = np.load(select_locs_file_loc, allow_pickle=True)
+            all_selected = dict(all_selected.tolist())
+    else:
+        all_selected = None
+
     pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
 
     if opts.multi:
@@ -90,6 +112,11 @@ def trainval(opts):
             opts.im_size_low, opts.im_size_high, opts.input_size, opts.info_dir, opts.data_dir_low,
             opts.data_dir_high, opts.cache_dir, opts.exp_dir, opts.normalized, opts.num_channels,
             top_n_low=opts.top_n_low, top_n_high=opts.top_n_high)
+    elif opts.dataset in {'selected_10x'}:
+        dataset_params = \
+            config_params.SelectedDatasetParams(opts.at_level, opts.lowest_im_size, opts.input_size, opts.info_dir,
+                                                opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
+                                                opts.normalized, opts.loss_type, opts.num_channels, top_n=opts.top_n)
     else:
         dataset_params = config_params.DatasetParams(opts.im_size, opts.input_size, opts.info_dir,
                                                      opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
@@ -112,11 +139,12 @@ def trainval(opts):
         # Only support batch size 1 for MIL with variable input size.
         train_loader, train_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
-                                                split="train", phase="train", fold=fold, mil_arch=args.mil_arch,
-                                                has_drop_rate=args.has_drop_rate)
+                                                split="train", phase="train", all_selected=all_selected,
+                                                fold=fold, mil_arch=args.mil_arch, has_drop_rate=args.has_drop_rate)
         val_loader, val_data = \
             config_dataset.build_dataset_loader(opts.batch_size, opts.num_workers, dataset_params,
-                                                split="val", phase="val", fold=fold, mil_arch=args.mil_arch)
+                                                split="val", phase="val", all_selected=all_selected,
+                                                fold=fold, mil_arch=args.mil_arch)
         if opts.mil_arch in {"att_batch", "pool", "pool_simple", "att_batch_multi"}:
             model, optimizer, scheduler, start_epoch, iters, checkpointer = \
                 config_model.config_model_optimizer_all(opts, ckp, fold, mil_params, steps_per_epoch=len(train_loader))
@@ -198,6 +226,14 @@ if __name__ == "__main__":
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                      'classification')
     parser.add_argument('--batch_size', default=16, type=int, help='Use batch training')
+
+    # Attention selection options
+    parser.add_argument('--att_dir', type=str, default='../../info/att_selected/',
+                        help='Directory for cross validation information')
+    parser.add_argument('--select_model', default="resnext50_3e-4_bce_256",
+                        help="Use which model to generate attention map")
+    parser.add_argument('--lowest_im_size', default=32, type=int)
+    parser.add_argument('--at_level', default=-3, type=int)
 
     # Multi-scale input
     parser.add_argument('--multi', action='store_true')

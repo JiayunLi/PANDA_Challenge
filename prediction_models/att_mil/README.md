@@ -4,3 +4,6 @@
  python -m prediction_models.att_mil.main_trainval --cuda --num_workers 4 --data_dir /data/ --dataset br_256_256 --cache_dir ./cache/br_256_256/  --im_size 256 --input_size 256  --top_n 32 --arch efficientnet-b0 --lr 0.0003 --schedule_type cosine --loss_type bce --batch_size 8 --exp effieicntnet_3e-4_bce_256
  
  python -m prediction_models.att_mil.main_trainval --cuda --num_workers 4 --data_dir /data/ --dataset br_256_2x  --cache_dir ./cache/br_256_2x/  --im_size 256 --input_size 256  --top_n 32 --arch efficientnet-b0 --lr 0.0003 --schedule_type cosine --loss_type bce
+ 
+ #### Training with selected tiles
+ python -m prediction_models.att_mil.main_trainval --cuda --num_workers 4 --data_dir /slides_data/ --dataset selected_10x  --cache_dir ./cache/selected_10x/  --input_size 256  --top_n 36 --lr 0.0003 --schedule_type cosine --loss_type bce

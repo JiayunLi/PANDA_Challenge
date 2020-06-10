@@ -22,30 +22,25 @@ class GaussianBlur(object):
         return x
 
 
-def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=200):
+def compute_meanstd(num_workers, dataset, batch_size=1):
     print("Start compute mean and std")
-    cur_transform = T.Compose([
-        T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),
-        T.ToTensor()
-    ])
-    dataset = trainval_slides.BiopsySlidesChunk(dataset_params, cur_transform, fold, split="train", phase="meanstd")
+
     train_mean = torch.zeros(3)
     train_std = torch.zeros(3)
     loader = \
-        torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=True, drop_last=False,
+        torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, drop_last=False,
                                     num_workers=num_workers, pin_memory=False)
     loader_iter = iter(loader)
 
     cur_num, step = 0, 0
-    tot = min(len(loader), from_k_slides)
-    while step < tot:
+    while step < len(loader):
         tiles, _, _, _ = loader_iter.next()
         tiles = torch.squeeze(tiles, dim=0)
         train_mean += torch.sum(torch.mean(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
         train_std += torch.sum(torch.std(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
         cur_num += tiles.size(0)
         step += 1
-        print(f"{step}/{tot}")
+        print(f"{step}/{len(loader)}")
         gc.collect()
     train_std /= cur_num
     train_mean /= cur_num
@@ -58,7 +53,7 @@ def compute_meanstd(dataset_params, fold, num_workers, from_k_slides=200):
     return meanstd
 
 
-def get_meanstd(dataset_name):
+def get_meanstd(dataset_name, all_selected=None, num_workers=0):
     if dataset_name == "dw_sample_16":
         meanstd = {'mean': [0.8992915, 0.79110736, 0.8844037],
                     'std': [0.13978645, 0.2604748, 0.14999403]}
@@ -83,6 +78,14 @@ def get_meanstd(dataset_name):
     elif dataset_name == "br_256_2x":
         meanstd = {"mean": [0.90949707, 0.8188697, 0.87795304],
                    "std": [0.36357649, 0.49984502, 0.40477625]}
+    elif dataset_name == "selected_10x":
+        cur_transform = T.Compose([
+            T.ToTensor()
+        ])
+        dataset = trainval_slides.BiopsySlidesSelectedOTF(cur_transform, all_selected, cur_transform, 0, None,
+                                                          phase="meanstd")
+        meanstd = compute_meanstd(num_workers, dataset, batch_size=1)
+        print(meanstd)
     else:
         raise NotImplementedError(f"Mean and std for {dataset_name} not computed!!")
 
@@ -91,7 +94,7 @@ def get_meanstd(dataset_name):
 
 # BATCH_DATASET = set(["dw_sample_16", "dw_sample_16v2", "16_128_128"])
 
-def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, fold=None, mil_arch=None,
+def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, all_selected, fold=None, mil_arch=None,
                          has_drop_rate=0.0):
     """
 
@@ -103,7 +106,10 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     :param fold:
     :return:
     """
-    meanstd = get_meanstd(dataset_params.dataset)
+    if dataset_params.dataset in {"selected_10x"}:
+        meanstd = get_meanstd(dataset_params.dataset, all_selected, num_workers)
+    else:
+        meanstd = get_meanstd(dataset_params.dataset)
     # Define different transformations
     normalize = [
         # T.Resize(dataset_params.input_size, interpolation=Image.ANTIALIAS),
@@ -141,6 +147,10 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     elif dataset_params.dataset in {'br_256_256', 'br_128_128', 'br_256_2x'}:
         dataset = trainval_slides.BiopsySlidesBatchV2(dataset_params, transform, fold, split, phase=phase,
                                                       has_drop_rate=has_drop_rate)
+    elif dataset_params.dataset in {"selected_10x"}:
+        dataset = trainval_slides.BiopsySlidesSelectedOTF(dataset_params, all_selected, transform, fold, split,
+                                                          phase=phase, has_drop_rate=has_drop_rate)
+
     else:
         dataset = trainval_slides.BiopsySlidesChunk(dataset_params, transform, fold, split, phase=phase)
 
