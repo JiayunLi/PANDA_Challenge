@@ -117,12 +117,12 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_med_36_adam_cosine_bin_spine_pretrain"
+    fname = "Resnext50_med_36_adam_cosine_bin_spine"
     nfolds = 4
     bs = 6
     epochs = 30
     GLS = False
-    Pre_Train = True
+    Pre_Train = False
     csv_file = '../input/panda-64x256x256-tiles-data-spine-medreso/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-64x256x256-tiles-data-spine-medreso/train/'
 
