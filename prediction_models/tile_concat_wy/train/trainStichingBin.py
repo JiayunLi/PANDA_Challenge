@@ -33,8 +33,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            # if i >= 5:
-            #     break
+            if i >= 5:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
             # zero the parameter gradients
@@ -69,8 +69,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 50:
-                #     break
+                if i > 50:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider = data['img'], data['isup_grade'], data['datacenter']
                 # zero the parameter gradients
@@ -117,13 +117,14 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_medreso_36patch_aam_cosine_bin"
+    fname = "Resnext50_med_36_adam_cosine_bin_spine"
     nfolds = 4
     bs = 6
     epochs = 30
-    GLS = True
+    GLS = False
+    Pre_Train = True
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    image_dir = '../input/panda-64x256x256-tiles-data-spine-medreso/train/'
 
     ## image transformation
     tsfm = data_transform()
@@ -146,6 +147,14 @@ if __name__ == "__main__":
     for fold in range(nfolds):
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
+        if Pre_Train:
+            model_path = '.weights/Resnext50_medreso_36patch_adam_cosine_bin/Resnext50_medreso_36patch_adam_cosine_bin_{}_ckpt.pth.tar'.format(fold)
+            pretrained_dict = torch.load(model_path)['state_dict']
+            model_dict = model.state_dict()
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+            model_dict.update(pretrained_dict)
+            model.load_state_dict(pretrained_dict)
+            print("Load pre-trained weights for model!")
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
