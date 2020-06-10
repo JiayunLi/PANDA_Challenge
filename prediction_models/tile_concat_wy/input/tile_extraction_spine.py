@@ -101,7 +101,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
                 continue
             ## read the image and label with the lowest res by [-1]
             try:
-                biopsy = skimage.io.MultiImage(os.path.join(TRAIN, name + '.tiff'))
+                biopsy = skimage.io.MultiImage(os.path.join(Source_Folder, name + '.tiff'))
             except:
                 continue
 
