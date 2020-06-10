@@ -57,6 +57,7 @@ def spine(img, **kwargs):
     patch_size = kwargs['patch_size'] if 'patch_size' in kwargs else 128
     step_size = kwargs['step_size'] if 'step_size' in kwargs else int(0.8 * patch_size)
     slide_thresh = kwargs['slide_thresh'] if 'slide_thresh' in kwargs else 0.6
+    overlap_thresh = kwargs['overlap_thresh'] if 'overlap_thresh' in kwargs else 0.2
 
     ## first step: find the spine
     im2 = img
@@ -148,7 +149,7 @@ def spine(img, **kwargs):
                 valid = np.multiply(mask, polymask)
                 if np.sum(valid) > slide_thresh * np.sum(polymask): # more than thresh are tissues
                     valid = np.multiply(polymask, polymasks).astype('bool')
-                    if np.sum(valid) < slide_thresh * np.sum(polymask): # overlap with current selection smaller than thresh
+                    if np.sum(valid) < overlap_thresh * np.sum(polymask): # overlap with current selection smaller than thresh
                         polymasks += polymask
                         location.append([[x[0], y[0]], [x[1], y[1]], [x[2], y[2]], [x[3], y[3]]])
     result['tile_location'] = location
