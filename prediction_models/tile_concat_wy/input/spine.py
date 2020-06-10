@@ -124,7 +124,7 @@ def spine(img, **kwargs):
             x2 = x2[np.multiply(x2 >= 0, x2 < tim.shape[0])]
             x2 = x2[np.multiply(y2 >= 0, y2 < tim.shape[1])]
             y2 = y2[np.multiply(y2 >= 0, y2 < tim.shape[1])] # x2, y2 represents the line perpendicular to the spline
-            valid = mask[x2.round().astype('int'), y2.round().astype('int')] == 1
+            valid = mask[x2.round().astype('int').clip(0, tim.shape[0]), y2.round().astype('int').clip(0, tim.shape[1])] == 1
             x2 = x2[valid]
             y2 = y2[valid]
             x2 = [x2[0], x2[-1]]
