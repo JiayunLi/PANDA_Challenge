@@ -1,12 +1,8 @@
-import os,sys
-import skimage.io
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import collections
 from collections import OrderedDict
-from skimage.color import rgb2hsv
-from skimage.measure import regionprops
+from skimage.measure import label
 from skimage.morphology import reconstruction, thin, skeletonize
 from PIL import Image, ImageDraw
 
