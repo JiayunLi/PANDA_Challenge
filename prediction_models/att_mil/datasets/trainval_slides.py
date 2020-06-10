@@ -230,6 +230,10 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         if self.has_drop_rate > 0:
             print("Use dropout instance")
             tiles = self._w_instance_drop(tiles)
+        if self.params.loss_type == "bce":
+            isup_grade = slide_label
+            slide_label = np.zeros(5).astype(np.float32)
+            slide_label[:isup_grade] = 1.
         return tiles, [-1] * len(tiles), slide_label, list(range(len(tiles)))
 
     def _get_tiles(self, slide_id):
