@@ -133,7 +133,7 @@ def spine(img, **kwargs):
             dist = np.sqrt((x2[1] - x2[0]) ** 2 + (y2[1] - y2[0]) ** 2)  # tissue width of current pvt point
 
             ## for each width assign bx n based on patch width
-            n = max(1, int((dist - patch_size + step_size) / (step_size)))
+            n = max(1, int((dist - patch_size) / (0.8 * patch_size)))
             x3 = np.linspace(x2[0], x2[1], n)
             y3 = np.linspace(y2[0], y2[1], n)
 
