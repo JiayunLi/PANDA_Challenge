@@ -5,6 +5,7 @@ from prediction_models.att_mil.datasets import trainval_slides, trainval_slides_
 import torch
 import random
 import torchvision.transforms as T
+import tqdm
 import gc
 
 INTERP = 3
@@ -33,14 +34,12 @@ def compute_meanstd(num_workers, dataset, batch_size=1):
     loader_iter = iter(loader)
 
     cur_num, step = 0, 0
-    while step < len(loader):
+    for step in tqdm.tqdm(range(len(loader))):
         tiles, _, _, _ = loader_iter.next()
         tiles = torch.squeeze(tiles, dim=0)
         train_mean += torch.sum(torch.mean(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
         train_std += torch.sum(torch.std(tiles.view(tiles.size(0), tiles.size(1), -1), dim=2), dim=0)
         cur_num += tiles.size(0)
-        step += 1
-        print(f"{step}/{len(loader)}")
         gc.collect()
     train_std /= cur_num
     train_mean /= cur_num

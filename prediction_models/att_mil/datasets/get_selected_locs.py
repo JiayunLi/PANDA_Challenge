@@ -1,6 +1,7 @@
 import numpy as np
 import skimage.io
 import pandas as pd
+import tqdm
 from prediction_models.att_mil.datasets import gen_selected_tiles
 
 
@@ -79,7 +80,8 @@ def att_select_locs(slides_dir, slides_df_loc, attention_selected_loc, att_low_t
     attention_selected = dict(attention_selected.tolist())
     slides_df = pd.read_csv(slides_df_loc)
     all_selected_locs = dict()
-    for i in range(len(slides_df)):
+    print("Generate selected tile locations")
+    for i in tqdm.tqdm(range(len(slides_df))):
         slide_id = str(slides_df.iloc[i].image_id)
         selected_locs = att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_tile_size, att_level,
                                                select_n, select_sub_size, select_per_tile, method)
