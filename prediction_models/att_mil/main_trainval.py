@@ -228,7 +228,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=16, type=int, help='Use batch training')
 
     # Attention selection options
-    parser.add_argument('--att_dir', type=str, default='../../info/att_selected/',
+    parser.add_argument('--att_dir', type=str, default='./info/att_selected/',
                         help='Directory for cross validation information')
     parser.add_argument('--select_model', default="resnext50_3e-4_bce_256",
                         help="Use which model to generate attention map")
