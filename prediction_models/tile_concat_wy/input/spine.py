@@ -146,9 +146,11 @@ def spine(img, **kwargs):
                 ImageDraw.Draw(polymask).polygon([y[0], x[0], y[1], x[1], y[2], x[2], y[3], x[3]], outline=1, fill=1)
                 polymask = np.array(polymask)
                 valid = np.multiply(mask, polymask)
-                if np.sum(valid) > slide_thresh * np.sum(polymask):
-                    polymasks += polymask
-                    location.append([[x[0], y[0]], [x[1], y[1]], [x[2], y[2]], [x[3], y[3]]])
+                if np.sum(valid) > slide_thresh * np.sum(polymask): # more than thresh are tissues
+                    valid = np.multiply(polymask, polymasks).astype('bool')
+                    if np.sum(valid) < slide_thresh * np.sum(polymask): # overlap with current selection smaller than thresh
+                        polymasks += polymask
+                        location.append([[x[0], y[0]], [x[1], y[1]], [x[2], y[2]], [x[3], y[3]]])
     result['tile_location'] = location
     result['mask'] = mask
     result['spline'] = im9
