@@ -1,6 +1,7 @@
 import os, sys
 sys.path.append('../')
 from input.tile_extraction_spine import write_2_zip_img
+from utiles import utils
 import pandas as pd
 if __name__ == "__main__":
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
@@ -11,6 +12,7 @@ if __name__ == "__main__":
     sz = 256  ## image patch size
     N = 36  ## how many patches selected from each slide
     print(len(names))  ## only images that have masks
+    utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     Source_Folder = TRAIN
     Des_File = OUT_TRAIN
     mean, std = write_2_zip_img(Source_Folder, Des_File, names, sz, N)
