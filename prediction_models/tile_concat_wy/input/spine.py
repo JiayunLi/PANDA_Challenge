@@ -10,7 +10,7 @@ from skimage.measure import regionprops
 from skimage.morphology import reconstruction, thin, skeletonize, medial_axis
 from PIL import Image, ImageDraw
 
-def skeleton_endpoints(im, skel):
+def skeleton_endpoints(skel):
     # Find row and column locations that are non-zero
     (rows,cols) = np.nonzero(skel)
     # Initialize empty list of co-ordinates
@@ -23,7 +23,7 @@ def skeleton_endpoints(im, skel):
         col_neigh = col_neigh.astype('int')
         row_neigh = row_neigh.astype('int')
         # Convert into a single 1D array and check for non-zero locations
-        pix_neighbourhood = im[row_neigh,col_neigh].ravel() != 0
+        pix_neighbourhood = skel[row_neigh,col_neigh].ravel() != 0
         # If the number of non-zero locations equals 2, add this to
         # our list of co-ordinates
         if np.sum(pix_neighbourhood) == 2:
