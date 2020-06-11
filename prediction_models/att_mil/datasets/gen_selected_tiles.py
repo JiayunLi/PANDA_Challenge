@@ -79,7 +79,7 @@ def select_at_lowest(img, sz, n_tiles, mask_tissue, mode=0):
 
 
 def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, padded_low_shape,
-                      level, top_n, desire_size=None, orig_mask=None, normalize=False):
+                      level, top_n, desire_size=None, orig_mask=None, normalize=False, n_row=None, n_col=None):
     cur_rate = RATE_MAP[level]
     cur_im = orig_img[level]
     if orig_mask:
@@ -92,7 +92,8 @@ def get_highres_tiles(orig_img, selected_idxs, pad_top, pad_left, low_im_size, p
     high_im_size = low_im_size * cur_rate
     if not desire_size:
         desire_size = high_im_size
-    n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
+    if not n_row or not n_col:
+        n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
     if not normalize:
         normalizer = None
     else:

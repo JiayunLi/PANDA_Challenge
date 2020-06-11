@@ -7,6 +7,7 @@ import torch
 import torch.utils.data as data
 import numpy as np
 import skimage.io
+import openslide
 from prediction_models.att_mil.datasets import gen_selected_tiles
 
 
@@ -144,3 +145,51 @@ class BiopsySlideSelected(data.Dataset):
         return instances, slide_info.image_id
 
 
+class BiopsyHighresSelected(data.Dataset):
+    def __init__(self, dataset_params, test_df, selected_locs, transform,  phase='test'):
+        self.transform = transform
+        self.params = dataset_params
+        self.phase = phase
+        self.selected_locs = selected_locs
+        self.slides_df = test_df
+
+    def __len__(self):
+        return len(self.slides_df)
+
+    def __getitem__(self, ix):
+        slide_info = self.slides_df.iloc[ix]
+        slide_id = slide_info.image_id
+        tiles = self._get_tiles(slide_id)
+        return tiles
+
+    def _get_tiles(self, slide_id):
+        rate = gen_selected_tiles.RATE_MAP[-3]
+        high_im_size = self.params.lowest_im_size * rate
+
+        cur_slide = openslide.OpenSlide(f"{self.params.test_slides_dir}/{slide_id}.tiff")
+        cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
+                        cur_slide.level_dimensions[self.params.level + 3][0])
+        lowest_locs = self.selected_locs[slide_id]
+        n = self.params.top_n
+        instances = torch.FloatTensor(n, self.params.num_channels,
+                                      self.params.input_size, self.params.input_size, )
+        counter = 0
+        for low_i, low_j in lowest_locs:
+            high_i = max(low_i * rate, 0)
+            high_j = max(low_j * rate, 0)
+            # print(f"{high_i}_{high_j}")
+            if high_i + high_im_size > cur_im_shape[0]:
+                high_i = cur_im_shape[0] - high_im_size
+            if high_j + high_im_size > cur_im_shape[1]:
+                high_j = cur_im_shape[1] - high_im_size
+            high_tile = cur_slide.read_region((high_j, high_i), self.params.level + 3,
+                                              (high_im_size, high_im_size)).convert("RGB")
+            if high_im_size > self.params.input_size:
+                high_tile = high_tile.resize((self.params.input_size, self.params.input_size), Image.ANTIALIAS)
+            if self.transform:
+                high_tile = self.transform(high_tile)
+            instances[counter, :, :, :] = high_tile
+            counter += 1
+            if counter >= len(instances):
+                break
+        return instances

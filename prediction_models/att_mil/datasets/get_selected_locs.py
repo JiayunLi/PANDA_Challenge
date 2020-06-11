@@ -6,7 +6,7 @@ from prediction_models.att_mil.datasets import gen_selected_tiles
 
 
 def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pad_left, lowest_sub_size,
-                          sub_size, tiles, max_per_tile):
+                          sub_size, tiles, max_per_tile, n_row=None, n_col=None):
     """
     Select lowest_ids with top attention value (50%). Divide the mid-resolution tile into 4 * 4 sub-grid and select
     two sub-tiles. Around each sub-tile, select a low_im_size // 2 region as the region to be zoomed in.
@@ -21,8 +21,8 @@ def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pa
     :param max_per_tile:
     :return:
     """
-
-    n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
+    if not n_row or not n_col:
+        n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
 
     locs = []
     shift_size = lowest_sub_size // 2
