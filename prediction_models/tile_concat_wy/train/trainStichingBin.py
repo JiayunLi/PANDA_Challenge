@@ -158,7 +158,7 @@ if __name__ == "__main__":
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
-        optimizer = optim.Adam(model.parameters(), lr=0.003) # current best 0.00003
+        optimizer = optim.Adam(model.parameters(), lr=0.0003) # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
