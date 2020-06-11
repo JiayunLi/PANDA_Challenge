@@ -63,7 +63,7 @@ def get_saved_tiles_locs(slide_df, slides_dir, out_dir, marker_slides):
 
 if __name__ == "__main__":
     import pandas as pd
-    trainval_df = pd.read_csv("./info/16_128_128/4_fold_train.csv", index_col=0)
+    trainval_df = pd.read_csv("./info/16_128_128/4_fold_train.csv")
     tile_sz = 256 # image patch size
     top_n = 64 # how many patches selected from each slide
     trainval_slides_dir = "/slides_data/"
