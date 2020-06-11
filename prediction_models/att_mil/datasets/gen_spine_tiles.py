@@ -40,7 +40,7 @@ def get_saved_tiles_locs(slide_df, slides_dir, out_dir, marker_slides):
               'min_size': 40}
     x_tot, x2_tot = [], []
     tile_locations = dict()
-    for i in range(len(slide_df)):
+    for i in tqdm.tqdm(range(len(slide_df))):
         slide_id = slide_df.iloc[i].image_id
         if slide_id in marker_slides:
             has_marker = True
@@ -49,7 +49,7 @@ def get_saved_tiles_locs(slide_df, slides_dir, out_dir, marker_slides):
         tiles = detect_spine_tile(kwargs, slide_id, slides_dir,  has_marker=has_marker, sz=256, N=36)
         for idx, t in enumerate(tiles):
             img, mask = t['img'], t['mask']
-            x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
+            x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  # append channel mean
             x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
             cur_loc = t['orig_location']
             tile_name = '{0:s}_{1:d}'.format(slide_id, idx)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     trainval_df = pd.read_csv("./info/16_128_128/4_fold_train.csv")
     tile_sz = 256 # image patch size
     top_n = 64 # how many patches selected from each slide
-    trainval_slides_dir = "/slides_data/"
+    trainval_slides_dir = "/slides_data/train_images/"
     pen_marker_slides = set(np.load("./info/marker_images.npy", allow_pickle=True).tolist())
     save_dir = './info/'
     get_saved_tiles_locs(trainval_df, trainval_slides_dir, save_dir, pen_marker_slides)
