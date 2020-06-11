@@ -40,8 +40,8 @@ def get_saved_tiles_locs(slide_df, slides_dir, out_dir, marker_slides):
               'min_size': 40}
     x_tot, x2_tot = [], []
     tile_locations = dict()
-    # for i in tqdm.tqdm(range(len(slide_df))):
-    for i in tqdm.tqdm(range(3)):
+    for i in tqdm.tqdm(range(len(slide_df))):
+    # for i in tqdm.tqdm(range(3)):
         slide_id = slide_df.iloc[i].image_id
         if slide_id in marker_slides:
             has_marker = True
