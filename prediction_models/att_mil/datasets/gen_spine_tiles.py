@@ -48,7 +48,7 @@ def get_saved_tiles_locs(slide_df, slides_dir, out_dir, marker_slides):
             has_marker = False
         tiles = detect_spine_tile(kwargs, slide_id, slides_dir,  has_marker=has_marker, sz=256, N=36)
         for idx, t in enumerate(tiles):
-            img, mask = t['img'], t['mask']
+            img = t['img']
             x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  # append channel mean
             x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
             cur_loc = t['orig_location']
