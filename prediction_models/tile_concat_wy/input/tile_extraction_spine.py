@@ -172,7 +172,7 @@ if __name__ == "__main__":
     for i in slide_has_less_tiles:
         if i in img_ids:
             temp.append(i)
-    img_ids = temp
+    img_ids = temp[1:]
     print(len(img_ids))  ## only images that have masks
     """Process Image"""
     Source_Folder = [TRAIN, MASKS]
