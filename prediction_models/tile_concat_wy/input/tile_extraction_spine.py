@@ -151,7 +151,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
 
 if __name__ == "__main__":
     """Define Your Input"""
-    process_num = 2
+    process_num = 0
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     sz = 256 ## image patch size
     N = 36 ## how many patches selected from each slide
     img_ids = [name[:-10] for name in os.listdir(MASKS)]
-    img_ids = img_ids[5000*process_num:min(len(img_ids), 5000*(process_num + 1))]
+    img_ids = img_ids[2500*process_num:min(len(img_ids), 2500*(process_num + 1))]
     pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
     print(len(img_ids))  ## only images that have masks
     """Process Image"""
