@@ -329,10 +329,10 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
     count = 0
     img_shape = img.shape
     for idx in idxsort:
-        if count > N:
+        if count >= N:
             break
         if grid_iou[idx] < slide_thresh:
-            continue
+            break
         x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
         if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
             tile = img[x:x + sz, y:y + sz, :]
@@ -382,10 +382,10 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
     count = 0
     img_shape = img.shape
     for idx in idxsort:
-        if count > N:
+        if count >= N:
             break
         if grid_iou[idx] < slide_thresh:
-            continue
+            break
         x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
         if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
             tile = img[x:x + sz, y:y + sz, :]
