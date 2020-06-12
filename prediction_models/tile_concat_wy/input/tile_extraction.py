@@ -73,7 +73,6 @@ def tile_img(img, sz=128, N=16):
     ## result: list [{'img': img[0], 'mask': mask[0], 'idx': 0},{'img': img[1], 'mask': mask[1], 'idx': 1},...]
     return result
 
-
 def write_2_zip(Source_Folder, Des_File, names, sz = 128, N = 16):
     """
     Extract patches from orginal images and save them to des file.
