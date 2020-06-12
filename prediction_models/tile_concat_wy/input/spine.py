@@ -299,7 +299,8 @@ def tile_img(img, location, iou, sz=256, N=36, scale = 8, mode = "random"):
                                'location': None})
     return result
 
-def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random"):
+def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random", **kwargs):
+    slide_thresh = kwargs['slide_thresh'] if 'slide_thresh' in kwargs else 0.1
     bdx = ndimage.find_objects(bn_mask)
     mask_shape = bn_mask.shape
     x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
@@ -325,8 +326,11 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
 
     idxsort = np.argsort(grid_iou)[::-1]
     result = []
+    count = 0
     img_shape = img.shape
     for idx in idxsort:
+        if grid_iou[idx] < slide_thresh:
+            continue
         x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
         if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
             tile = img[x:x + sz, y:y + sz, :]
@@ -334,7 +338,8 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
             cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
             cnt = np.expand_dims(cnt, 1)
             result.append({'img': tile, 'mask': tile_mask, 'location': cnt})
-    if len(idxsort) < N:
+            count += 1
+    if count < N:
         if mode == "random":
             complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
             for i in complete_idx:
@@ -345,15 +350,16 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
                                'mask': np.zeros((sz, sz, 3)).astype(np.uint8), 'location': None})
     return result, ra, update_patch_mask
 
-def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random"):
+def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random",**kwargs):
+    slide_thresh = kwargs['slide_thresh'] if 'slide_thresh' in kwargs else 0.1
     bdx = ndimage.find_objects(bn_mask)
     mask_shape = bn_mask.shape
     x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
     eq_mask_size = int(sz / scale)
     x_n = (x1 - x0) / (overlap_ratio * eq_mask_size)
     y_n = (y1 - y0) / (overlap_ratio * eq_mask_size)
-    x_grid = np.linspace(x0, x1, int(x_n)).astype('int')
-    y_grid = np.linspace(y0, y1, int(y_n)).astype('int')
+    x_grid = np.linspace(x0, x1, int(x_n) + 1).astype('int')
+    y_grid = np.linspace(y0, y1, int(y_n) + 1).astype('int')
     grid_iou = []
     tiles_location = []
     tim = np.zeros_like(bn_mask)
@@ -369,15 +375,19 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
 
     idxsort = np.argsort(grid_iou)[::-1]
     result = []
+    count = 0
     img_shape = img.shape
     for idx in idxsort:
+        if grid_iou[idx] < slide_thresh:
+            continue
         x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
         if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
             tile = img[x:x + sz, y:y + sz, :]
             cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
             cnt = np.expand_dims(cnt, 1)
             result.append({'img': tile, 'location': cnt})
-    if len(idxsort) < N:
+            count += 1
+    if count < N:
         if mode == "random":
             complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
             for i in complete_idx:
