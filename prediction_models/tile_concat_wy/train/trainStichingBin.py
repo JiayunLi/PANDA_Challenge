@@ -117,14 +117,14 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Best_6_12_20_fold2"
+    fname = "Resnext50_36patch_adam_cos_pretrain"
     nfolds = 4
     bs = 6
     epochs = 30
     GLS = False
-    Pre_Train = False
-    csv_file = '../input/panda-36x256x256-tiles-data/{}_fold_whole_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data/train/'
+    Pre_Train = True
+    csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_whole_train.csv'.format(nfolds)
+    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
 
     ## image transformation
     tsfm = data_transform()
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(2,3):
+    for fold in range(0:2):
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
         if Pre_Train:
