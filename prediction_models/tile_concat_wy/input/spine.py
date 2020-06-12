@@ -234,14 +234,19 @@ def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
         # directly warp the rotated rectangle to get the straightened rectangle
         warped_img = cv2.warpPerspective(img, M, (width, height), borderValue = (255,255,255))
         warped_mask = cv2.warpPerspective(mask, M, (width, height), borderValue = (0,0,0))
-        shape = warped_img.shape
+        shape = warped_img.
 
-        if shape[0] < sz or shape[1] < sz:
-            pad0, pad1 = (sz - shape[0] % sz) % sz, (sz - shape[1] % sz) % sz
+        pad0, pad1 = 0,0
+        if shape[0] < sz:
+            pad0 = (sz - shape[0] % sz) % sz
+        if shape[1] < sz:
+            pad1 = (sz - shape[1] % sz) % sz
+        if pad0 or pad1:
             warped_mask = np.pad(warped_mask, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant', constant_values=0)
             warped_img = np.pad(warped_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant', constant_values=255)
-
-        result.append({'img': warped_img[:sz,:sz,:], 'mask': warped_mask[:sz,:sz,:], 'location': cnt})
+        shape = warped_img.shape
+        top, left = int((shape[0] - sz) / 2), int((shape[1] - sz) / 2)
+        result.append({'img': warped_img[top:top+sz,left:left+sz,:], 'mask': warped_mask[top:top+sz,left:left+sz,:], 'location': cnt})
     if len(idxsort) < N:
         for i in range(N - len(idxsort)):
             result.append({'img': 255 * np.ones((sz,sz,3)).astype(np.uint8),
