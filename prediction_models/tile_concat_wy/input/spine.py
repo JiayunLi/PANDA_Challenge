@@ -5,7 +5,7 @@ from collections import OrderedDict
 from skimage.measure import label
 from skimage.morphology import reconstruction, thin, skeletonize
 from PIL import Image, ImageDraw
-
+from scipy import ndimage
 
 def skeleton_endpoints(skel):
     h,w = skel.shape
@@ -210,7 +210,7 @@ def remove_pen_marks(img, scale=1):
     img[img == 0] = 255
     return img, img_mask1, img_mask2
 
-def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
+def tile(img, mask, location, iou, sz=256, N=36, scale = 8, mode = "random"):
     result = []
     idxsort = np.argsort(iou)[::-1]
     for i in range(min(N, len(idxsort))):
@@ -248,12 +248,17 @@ def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
         top, left = int((shape[0] - sz) / 2), int((shape[1] - sz) / 2)
         result.append({'img': warped_img[top:top+sz,left:left+sz,:], 'mask': warped_mask[top:top+sz,left:left+sz,:], 'location': cnt})
     if len(idxsort) < N:
-        for i in range(N - len(idxsort)):
-            result.append({'img': 255 * np.ones((sz,sz,3)).astype(np.uint8),
-                           'mask': np.zeros((sz,sz,3)).astype(np.uint8), 'location': None})
+        if mode == "random":
+            complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
+            for i in complete_idx:
+                result.append(result[i])
+        elif mode == "blank":
+            for i in range(N - len(idxsort)):
+                result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
+                               'mask': np.zeros((sz, sz, 3)).astype(np.uint8), 'location': None})
     return result
 
-def tile_img(img, location, iou, sz=256, N=36, scale = 8):
+def tile_img(img, location, iou, sz=256, N=36, scale = 8, mode = "random"):
     result = []
     idxsort = np.argsort(iou)[::-1]
     for i in range(min(N, len(idxsort))):
@@ -284,12 +289,102 @@ def tile_img(img, location, iou, sz=256, N=36, scale = 8):
 
         result.append({'img': warped_img[:sz,:sz,:], 'location': cnt})
     if len(idxsort) < N:
-        for i in range(N - len(idxsort)):
-            result.append({'img': 255 * np.ones((sz,sz,3)).astype(np.uint8),
-                           'location': None})
+        if mode == "random":
+            complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
+            for i in complete_idx:
+                result.append(result[i])
+        elif mode == "blank":
+            for i in range(N - len(idxsort)):
+                result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
+                               'location': None})
     return result
 
+def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random"):
+    bdx = ndimage.find_objects(bn_mask)
+    mask_shape = bn_mask.shape
+    x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
+    eq_mask_size = int(sz / scale)
+    x_n = (x1 - x0) / (overlap_ratio * eq_mask_size)
+    y_n = (y1 - y0) / (overlap_ratio * eq_mask_size)
+    x_grid = np.linspace(x0, x1, int(x_n)).astype('int')
+    y_grid = np.linspace(y0, y1, int(y_n)).astype('int')
+    grid_iou = []
+    tiles_location = []
+    tim = np.zeros_like(bn_mask)
+    for x in x_grid:
+        for y in y_grid:
+            if x >= 0 and x < mask_shape[0] - eq_mask_size and y >= 0 and y < mask_shape[1] - eq_mask_size:
+                tiles_location.append([x, y])
+                iou = np.sum(bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]) / (eq_mask_size * eq_mask_size)
+                grid_iou.append(iou)
+                tim[x:x + eq_mask_size, y:y + eq_mask_size] += bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]
+    tim = (tim > 0).astype('int')
+    ra = np.sum(np.multiply(tim, bn_mask)) / np.sum(bn_mask)
 
+    idxsort = np.argsort(grid_iou)[::-1]
+    result = []
+    img_shape = img.shape
+    for idx in idxsort:
+        x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
+        if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
+            tile = img[x:x + sz, y:y + sz, :]
+            tile_mask = mask[x:x + sz, y:y + sz]
+            cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
+            cnt = np.expand_dims(cnt, 1)
+            result.append({'img': tile, 'mask': tile_mask, 'location': cnt})
+    if len(idxsort) < N:
+        if mode == "random":
+            complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
+            for i in complete_idx:
+                result.append(result[i])
+        elif mode == "blank":
+            for i in range(N - len(idxsort)):
+                result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
+                               'mask': np.zeros((sz, sz, 3)).astype(np.uint8), 'location': None})
+    return result, ra
+
+def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random"):
+    bdx = ndimage.find_objects(bn_mask)
+    mask_shape = bn_mask.shape
+    x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
+    eq_mask_size = int(sz / scale)
+    x_n = (x1 - x0) / (overlap_ratio * eq_mask_size)
+    y_n = (y1 - y0) / (overlap_ratio * eq_mask_size)
+    x_grid = np.linspace(x0, x1, int(x_n)).astype('int')
+    y_grid = np.linspace(y0, y1, int(y_n)).astype('int')
+    grid_iou = []
+    tiles_location = []
+    tim = np.zeros_like(bn_mask)
+    for x in x_grid:
+        for y in y_grid:
+            if x >= 0 and x < mask_shape[0] - eq_mask_size and y >= 0 and y < mask_shape[1] - eq_mask_size:
+                tiles_location.append([x, y])
+                iou = np.sum(bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]) / (eq_mask_size * eq_mask_size)
+                grid_iou.append(iou)
+                tim[x:x + eq_mask_size, y:y + eq_mask_size] += bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]
+    tim = (tim > 0).astype('int')
+    ra = np.sum(np.multiply(tim, bn_mask)) / np.sum(bn_mask)
+
+    idxsort = np.argsort(grid_iou)[::-1]
+    result = []
+    img_shape = img.shape
+    for idx in idxsort:
+        x, y = tiles_location[idx][0] * scale, tiles_location[idx][1] * scale
+        if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
+            tile = img[x:x + sz, y:y + sz, :]
+            cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
+            cnt = np.expand_dims(cnt, 1)
+            result.append({'img': tile, 'location': cnt})
+    if len(idxsort) < N:
+        if mode == "random":
+            complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
+            for i in complete_idx:
+                result.append(result[i])
+        elif mode == "blank":
+            for i in range(N - len(idxsort)):
+                result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
+                               'location': None})
+    return result, ra
 
 if __name__ == "__main__":
     img = None

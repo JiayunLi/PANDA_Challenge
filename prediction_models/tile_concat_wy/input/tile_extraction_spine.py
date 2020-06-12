@@ -6,7 +6,7 @@ from tqdm import tqdm
 import zipfile
 import numpy as np
 from utiles import utils
-from spine import spine, tile, remove_pen_marks, tile_img
+from spine import spine, tile, tile_rect, remove_pen_marks, tile_img
 
 def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     """
@@ -28,7 +28,8 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
               'patch_size': 32,
               'slide_thresh': 0.6,
               'overlap_thresh': 0.6,
-              'min_size': 40}
+              'min_size': 40,
+              'cover_mask_thresh':0.84}
     ratio = []
     tile_number = []
     with zipfile.ZipFile(OUT_TRAIN, 'w') as img_out, \
@@ -53,7 +54,11 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
             tile_number.append(len(result['tile_location']))
             img = biopsy[1]
             ## tile the img and mask to N patches with size (sz,sz,3)
-            tiles = tile(img, mask, result['tile_location'], result['IOU'], sz=sz, N=N)
+            if ra < kwargs['cover_mask_thresh'] or tile_number < N:
+                tiles = tile_rect(img, mask, result['mask'], sz=sz,
+                                  N = N, overlap_ratio = kwargs['h_step_size'], mode = kwargs['low_tile_mode'])
+            else:
+                tiles = tile(img, mask, result['tile_location'], result['IOU'], sz=sz, N=N)
             for idx, t in enumerate(tiles):
                 img, mask = t['img'], t['mask']
                 x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
