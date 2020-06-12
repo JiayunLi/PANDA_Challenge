@@ -167,12 +167,12 @@ def spine(img, **kwargs):
                     valid1 = np.multiply(polymask.astype('bool'), polymasks.astype('bool')).astype('bool')
                     if np.sum(valid1) < overlap_thresh * np.sum(
                             polymask):  # overlap with current selection smaller than thresh
-                        step_size = 0.8 * step_size
+                        # step_size = 0.8 * step_size
                         polymasks += polymask
                         location.append([[y[0], x[0]], [y[1], x[1]], [y[2], x[2]], [y[3], x[3]]])
                         IOU.append(np.sum(valid) / np.sum(polymask))
                     else:
-                        step_size = 1.1 * step_size
+                        # step_size = 1.1 * step_size
             pvt = int(pvt + step_size)
     result['tile_location'] = location
     result['patch_mask'] = polymasks
