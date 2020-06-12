@@ -173,6 +173,7 @@ def spine(img, **kwargs):
                         IOU.append(np.sum(valid) / np.sum(polymask))
                     else:
                         # step_size = 1.1 * step_size
+                        pass
             pvt = int(pvt + step_size)
     result['tile_location'] = location
     result['patch_mask'] = polymasks
