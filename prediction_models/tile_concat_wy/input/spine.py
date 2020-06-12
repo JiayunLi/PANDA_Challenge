@@ -306,8 +306,8 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
     eq_mask_size = int(sz / scale)
     x_n = (x1 - x0) / (overlap_ratio * eq_mask_size)
     y_n = (y1 - y0) / (overlap_ratio * eq_mask_size)
-    x_grid = np.linspace(x0, x1, int(x_n)).astype('int')
-    y_grid = np.linspace(y0, y1, int(y_n)).astype('int')
+    x_grid = np.linspace(x0, x1, int(x_n) + 1).astype('int')
+    y_grid = np.linspace(y0, y1, int(y_n) + 1).astype('int')
     grid_iou = []
     tiles_location = []
     tim = np.zeros_like(bn_mask)

@@ -6,7 +6,7 @@ from tqdm import tqdm
 import zipfile
 import numpy as np
 from utiles import utils
-from spine import spine, tile, tile_rect, remove_pen_marks, tile_img
+from spine import spine, tile, tile_rect, remove_pen_marks, tile_img, tile_rect_img
 
 def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     """
@@ -94,12 +94,14 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     ## x_tot: [np.array(r_mean,g_mean,b_mean), np.array(r_mean,g_mean,b_mean),....]
     ## x2_tot: [np.array(r^2_mean,g^2_mean,b_mean), np.array(r^2_mean,g^2_mean,b^2_mean),....]
     x_tot, x2_tot = [], []
-    kwargs = {'step_size': 1,
-              'h_step_size': 0.2,
-              'patch_size': 32,
-              'slide_thresh': 0.6,
-              'overlap_thresh': 0.6,
-              'min_size': 40}
+    kwargs = {'step_size': 5,
+              'h_step_size': 0.15,
+              'patch_size': 33,
+              'slide_thresh': 0.1,
+              'overlap_thresh': 0.5,
+              'min_size': 1,
+              'iou_cover_thresh': 0.84,
+              'low_tile_mode': 'random'}
     ratio = []
     tile_number = []
     with zipfile.ZipFile(Des_File, 'w') as img_out:
@@ -118,11 +120,19 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
                 img0, _, _ = remove_pen_marks(img0, scale=8)
             result = spine(img0, **kwargs)
             ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
+
+            img = biopsy[1]
+
+            ## tile the img and mask to N patches with size (sz,sz,3)
+            if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
+                tiles, ra, _ = tile_rect_img(img,result['mask'], sz=sz,
+                                         N=N, overlap_ratio=0.8, mode=kwargs['low_tile_mode'])
+            else:
+                tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
+
             ratio.append(ra)
             tile_number.append(len(result['tile_location']))
-            img = biopsy[1]
-            ## tile the img and mask to N patches with size (sz,sz,3)
-            tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
+
             for idx, t in enumerate(tiles):
                 img = t['img']
                 x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
