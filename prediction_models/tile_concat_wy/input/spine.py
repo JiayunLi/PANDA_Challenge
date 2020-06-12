@@ -232,8 +232,8 @@ def tile(img, mask, location, iou, sz=256, N=36, scale = 8):
         M = cv2.getPerspectiveTransform(src_pts, dst_pts)
 
         # directly warp the rotated rectangle to get the straightened rectangle
-        warped_img = cv2.warpPerspective(img, M, (width, height))
-        warped_mask = cv2.warpPerspective(mask, M, (width, height))
+        warped_img = cv2.warpPerspective(img, M, (width, height), borderValue = 255)
+        warped_mask = cv2.warpPerspective(mask, M, (width, height), borderValue = 0)
         shape = warped_img.shape
 
         if shape[0] < sz or shape[1] < sz:
