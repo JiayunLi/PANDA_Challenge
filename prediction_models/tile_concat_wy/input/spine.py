@@ -341,7 +341,7 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
             count += 1
     if count < N:
         if mode == "random":
-            complete_idx = np.random.choice(count, size=N - len(idxsort))
+            complete_idx = np.random.choice(count, size=N - count)
             for i in complete_idx:
                 result.append(result[i])
         elif mode == "blank":
@@ -389,7 +389,7 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
             count += 1
     if count < N:
         if mode == "random":
-            complete_idx = np.random.choice(count, size=N - len(idxsort))
+            complete_idx = np.random.choice(count, size=N -count)
             for i in complete_idx:
                 result.append(result[i])
         elif mode == "blank":
