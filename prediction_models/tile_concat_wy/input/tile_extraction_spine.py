@@ -152,7 +152,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
 
 if __name__ == "__main__":
     """Define Your Input"""
-    process_num = 14
+    process_num = 15
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     for i in slide_has_less_tiles:
         if i in img_ids:
             temp.append(i)
-    img_ids = temp[600:800]
+    img_ids = temp[800:]
     print(len(img_ids))  ## only images that have masks
     """Process Image"""
     Source_Folder = [TRAIN, MASKS]
