@@ -23,13 +23,14 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     ## x_tot: [np.array(r_mean,g_mean,b_mean), np.array(r_mean,g_mean,b_mean),....]
     ## x2_tot: [np.array(r^2_mean,g^2_mean,b_mean), np.array(r^2_mean,g^2_mean,b^2_mean),....]
     x_tot, x2_tot = [], []
-    kwargs = {'step_size': 1,
-              'h_step_size': 0.2,
-              'patch_size': 32,
-              'slide_thresh': 0.6,
-              'overlap_thresh': 0.6,
-              'min_size': 40,
-              'cover_mask_thresh':0.84}
+    kwargs = {'step_size': 5,
+              'h_step_size': 0.15,
+              'patch_size': 33,
+              'slide_thresh': 0.1,
+              'overlap_thresh': 0.5,
+              'min_size': 1,
+              'iou_cover_thresh':0.84,
+              'low_tile_mode': 'random'}
     ratio = []
     tile_number = []
     with zipfile.ZipFile(OUT_TRAIN, 'w') as img_out, \
@@ -50,15 +51,17 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
                 img0, _, _ = remove_pen_marks(img0, scale=8)
             result = spine(img0, **kwargs)
             ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
-            ratio.append(ra)
-            tile_number.append(len(result['tile_location']))
+
             img = biopsy[1]
             ## tile the img and mask to N patches with size (sz,sz,3)
-            if ra < kwargs['cover_mask_thresh'] or tile_number < N:
-                tiles = tile_rect(img, mask, result['mask'], sz=sz,
-                                  N = N, overlap_ratio = kwargs['h_step_size'], mode = kwargs['low_tile_mode'])
+            if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
+                tiles, ra, _ = tile_rect(img, mask, result['mask'], sz=sz,
+                                  N = N, overlap_ratio = 0.8, mode = kwargs['low_tile_mode'])
             else:
                 tiles = tile(img, mask, result['tile_location'], result['IOU'], sz=sz, N=N)
+
+            ratio.append(ra)
+            tile_number.append(len(result['tile_location']))
             for idx, t in enumerate(tiles):
                 img, mask = t['img'], t['mask']
                 x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
@@ -141,13 +144,13 @@ if __name__ == "__main__":
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
-    OUT_TRAIN = '../input/panda-64x256x256-tiles-data-spine/train4.zip'  ## output image folder
-    OUT_MASKS = '../input/panda-64x256x256-tiles-data-spine/masks4.zip'  ## ouput label folder
+    OUT_TRAIN = '../input/panda-32x256x256-tiles-data-spine/train0.zip'  ## output image folder
+    OUT_MASKS = '../input/panda-32x256x256-tiles-data-spine/masks0.zip'  ## ouput label folder
     utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
-    N = 64 ## how many patches selected from each slide
-    img_ids = [name[:-10] for name in os.listdir(MASKS)][10000:]
+    N = 32 ## how many patches selected from each slide
+    img_ids = [name[:-10] for name in os.listdir(MASKS)][0:2500]
     pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
     print(len(img_ids))  ## only images that have masks
     """Process Image"""
