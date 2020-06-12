@@ -363,6 +363,7 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
     grid_iou = []
     tiles_location = []
     tim = np.zeros_like(bn_mask)
+    update_patch_mask = np.zeros_like(bn_mask)
     for x in x_grid:
         for y in y_grid:
             if x >= 0 and x < mask_shape[0] - eq_mask_size and y >= 0 and y < mask_shape[1] - eq_mask_size:
@@ -370,6 +371,7 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
                 iou = np.sum(bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]) / (eq_mask_size * eq_mask_size)
                 grid_iou.append(iou)
                 tim[x:x + eq_mask_size, y:y + eq_mask_size] += bn_mask[x:x + eq_mask_size, y:y + eq_mask_size]
+                update_patch_mask[x:x + eq_mask_size, y:y + eq_mask_size] += 1
     tim = (tim > 0).astype('int')
     ra = np.sum(np.multiply(tim, bn_mask)) / np.sum(bn_mask)
 
@@ -396,7 +398,7 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
             for i in range(N - len(idxsort)):
                 result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
                                'location': None})
-    return result, ra
+    return result, ra, update_patch_mask
 
 if __name__ == "__main__":
     img = None

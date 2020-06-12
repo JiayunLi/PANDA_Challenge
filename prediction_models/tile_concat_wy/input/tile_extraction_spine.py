@@ -56,7 +56,7 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
             ## tile the img and mask to N patches with size (sz,sz,3)
             if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
                 tiles, ra, _ = tile_rect(img, mask, result['mask'], sz=sz,
-                                  N = N, overlap_ratio = 0.8, mode = kwargs['low_tile_mode'])
+                                  N = N, overlap_ratio = 0.6, mode = kwargs['low_tile_mode'])
             else:
                 tiles = tile(img, mask, result['tile_location'], result['IOU'], sz=sz, N=N)
 
@@ -126,7 +126,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
             ## tile the img and mask to N patches with size (sz,sz,3)
             if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
                 tiles, ra, _ = tile_rect_img(img,result['mask'], sz=sz,
-                                         N=N, overlap_ratio=0.8, mode=kwargs['low_tile_mode'])
+                                         N=N, scale = 8, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
             else:
                 tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
 
