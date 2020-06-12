@@ -305,8 +305,8 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
     mask_shape = bn_mask.shape
     x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
     eq_mask_size = int(sz / scale)
-    x_n = (x1 - x0) / (overlap_ratio * eq_mask_size)
-    y_n = (y1 - y0) / (overlap_ratio * eq_mask_size)
+    x_n = (x1 + sz / 2 - x0) / (overlap_ratio * eq_mask_size)
+    y_n = (y1 + sz / 2 - y0) / (overlap_ratio * eq_mask_size)
     x_grid = np.linspace(x0, x1 + sz/2, int(x_n) + 1).astype('int')
     y_grid = np.linspace(y0, y1 + sz/2, int(y_n) + 1).astype('int')
     grid_iou = []
@@ -356,10 +356,10 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
     mask_shape = bn_mask.shape
     x0, x1, y0, y1 = bdx[0][0].start, bdx[0][0].stop, bdx[0][1].start, bdx[0][1].stop
     eq_mask_size = int(sz / scale)
-    x_n = (x1 + sz/2 - x0) / (overlap_ratio * eq_mask_size)
-    y_n = (y1 + sz/2 - y0) / (overlap_ratio * eq_mask_size)
-    x_grid = np.linspace(x0, x1, int(x_n) + 1).astype('int')
-    y_grid = np.linspace(y0, y1, int(y_n) + 1).astype('int')
+    x_n = (x1 + sz / 2 - x0) / (overlap_ratio * eq_mask_size)
+    y_n = (y1 + sz / 2 - y0) / (overlap_ratio * eq_mask_size)
+    x_grid = np.linspace(x0, x1 + sz / 2, int(x_n) + 1).astype('int')
+    y_grid = np.linspace(y0, y1 + sz / 2, int(y_n) + 1).astype('int')
     grid_iou = []
     tiles_location = []
     tim = np.zeros_like(bn_mask)
