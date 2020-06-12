@@ -117,7 +117,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Best_6_12_20_fold0"
+    fname = "Best_6_12_20_fold1"
     nfolds = 4
     bs = 6
     epochs = 30
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(0,1):
+    for fold in range(1,2):
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
         if Pre_Train:
