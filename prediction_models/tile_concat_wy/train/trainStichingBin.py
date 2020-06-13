@@ -122,7 +122,7 @@ if __name__ == "__main__":
     bs = 6
     epochs = 30
     GLS = False
-    Pre_Train = False
+    Pre_Train = True
     csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
 
