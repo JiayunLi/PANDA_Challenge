@@ -117,7 +117,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_36patch_adam_cos_spine"
+    fname = "Resnext50_36patch_adam_cos_pretrain_spine_lr3e-6"
     nfolds = 4
     bs = 6
     epochs = 30
@@ -144,7 +144,8 @@ if __name__ == "__main__":
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
-    for fold in range(nfolds):
+    # for fold in range(nfolds):
+    for fold in [0,1,3]:
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
         if Pre_Train:
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
-        optimizer = optim.Adam(model.parameters(), lr=0.00003) # current best 0.00003
+        optimizer = optim.Adam(model.parameters(), lr=0.000003) # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
