@@ -1,4 +1,4 @@
-import os
+import os,sys
 import warnings
 warnings.filterwarnings("ignore")
 from PIL import Image
@@ -58,10 +58,10 @@ class PandaPatchDatasetInfer(Dataset):
         ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
         img = biopsy[1]
         if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < self.N:
-            tiles, ra, _ = tile_rect_img(img, result['mask'], sz = self.sz,
+            tiles, ra, _ = tile_rect_img(img, result['mask'], sz = self.image_size,
                                      N = self.N, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
         else:
-            tiles = tile_img(img, result['tile_location'], result['IOU'], sz = self.sz, N = self.N)
+            tiles = tile_img(img, result['tile_location'], result['IOU'], sz = self.image_size, N = self.N)
         imgs = []
         for i in range(self.N):
             img = tiles[i]['img']
