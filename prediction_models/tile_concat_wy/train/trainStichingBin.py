@@ -145,7 +145,8 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in range(nfolds):
-    for fold in [2,3]:
+    for fold in [0,1,2,3]:
+        print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
         if Pre_Train:
