@@ -175,7 +175,7 @@ if __name__ == "__main__":
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
             writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            # writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
             writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
