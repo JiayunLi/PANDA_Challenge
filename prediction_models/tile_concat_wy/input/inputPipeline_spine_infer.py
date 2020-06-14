@@ -54,14 +54,14 @@ class PandaPatchDatasetInfer(Dataset):
         name = self.train_csv.image_id[idx]
         biopsy = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))
         img0 = cv2.resize(biopsy[-1], (int(biopsy[-1].shape[1] / 2), int(biopsy[-1].shape[0] / 2)))
-        result = spine(img0, **kwargs)
-        ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
+        spine_result = spine(img0, **kwargs)
+        ra = np.sum(np.multiply((spine_result['patch_mask'] > 0).astype('int'), spine_result['mask'])) / np.sum(spine_result['mask'])
         img = biopsy[1]
-        if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < self.N:
-            tiles, ra, _ = tile_rect_img(img, result['mask'], sz = self.image_size,
+        if ra < kwargs['iou_cover_thresh'] or len(spine_result['tile_location']) < self.N:
+            tiles, ra, _ = tile_rect_img(img, spine_result['mask'], sz = self.image_size,
                                      N = self.N, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
         else:
-            tiles = tile_img(img, result['tile_location'], result['IOU'], sz = self.image_size, N = self.N)
+            tiles = tile_img(img, spine_result['tile_location'], spine_result['IOU'], sz = self.image_size, N = self.N)
         imgs = []
         for i in range(self.N):
             img = tiles[i]['img']
@@ -94,19 +94,8 @@ class PandaPatchDatasetInfer(Dataset):
         images = images.astype(np.float32)
         images /= 255
         images = images.transpose(2, 0, 1)
-        label = np.zeros(5).astype(np.float32)
-        isup_grade = self.train_csv.loc[idx, 'isup_grade']
-        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
-        primary_gls = np.zeros(4).astype(np.float32)
-        secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
-        label[:isup_grade] = 1.
         result['img'] = torch.tensor(images)
-        result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
-        primary_gls[:gleason_score[0]] = 1.
-        secondary_gls[:gleason_score[1]] = 1.
-        result['primary_gls'] = torch.tensor(primary_gls)
-        result['secondary_gls'] = torch.tensor(secondary_gls)
         result['name'] = name
         return result
