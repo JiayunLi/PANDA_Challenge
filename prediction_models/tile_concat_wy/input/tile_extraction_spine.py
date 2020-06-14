@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 from utiles import utils
 from spine import spine, tile, tile_rect, remove_pen_marks, tile_img, tile_rect_img
+import argparse
 
 def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     """
@@ -152,7 +153,10 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
 
 if __name__ == "__main__":
     """Define Your Input"""
-    process_num = 17
+    parser = argparse.ArgumentParser(description='Optional arguments')
+    parser.add_argument('--process_num', type = int, default = 0, help = 'An optional integer for batch to process')
+    args = parser.parse_args()
+    process_num = args.process_num
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
@@ -163,17 +167,18 @@ if __name__ == "__main__":
     sz = 256 ## image patch size
     N = 36 ## how many patches selected from each slide
     img_ids = [name[:-10] for name in os.listdir(MASKS)]
-    # img_ids = img_ids[2500*process_num:min(len(img_ids), 2500*(process_num + 1))]
+    img_ids = img_ids[1000*process_num:min(len(img_ids), 1000*(process_num + 1))]
     # img_ids = img_ids[1020:]
-    with open('slide_has_less_tiles.pkl', 'rb') as f:
-        slide_has_less_tiles = pickle.load(f)
-    pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
-    temp = []
-    for i in slide_has_less_tiles:
-        if i in img_ids:
-            temp.append(i)
-    img_ids = temp[1:]
+    # with open('slide_has_less_tiles.pkl', 'rb') as f:
+    #     slide_has_less_tiles = pickle.load(f)
+    # pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
+    # temp = []
+    # for i in img_ids:
+    #     if i not in slide_has_less_tiles:
+    #         temp.append(i)
+    # img_ids = temp
     print(len(img_ids))  ## only images that have masks
+    exit()
     """Process Image"""
     Source_Folder = [TRAIN, MASKS]
     Des_File = [OUT_TRAIN, OUT_MASKS]
