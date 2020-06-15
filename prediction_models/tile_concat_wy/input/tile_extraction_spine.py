@@ -172,8 +172,8 @@ if __name__ == "__main__":
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
     MASKS = '../input/prostate-cancer-grade-assessment/train_label_masks/'  ## train mask folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
-    OUT_TRAIN = '../input/panda-36x256x256-tiles-data-spine/train{}.zip'.format(process_num)  ## output image folder
-    OUT_MASKS = '../input/panda-36x256x256-tiles-data-spine/masks{}.zip'.format(process_num)  ## ouput label folder
+    OUT_TRAIN = '../input/panda-36x256x256-tiles-data-spine-loc/train{}.zip'.format(process_num)  ## output image folder
+    OUT_MASKS = '../input/panda-36x256x256-tiles-data-spine-loc/masks{}.zip'.format(process_num)  ## ouput label folder
     utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
