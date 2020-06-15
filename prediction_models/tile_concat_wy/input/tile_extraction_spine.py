@@ -191,7 +191,6 @@ if __name__ == "__main__":
             temp.append(i)
     img_ids = temp
     print(len(img_ids))  ## only images that have masks
-    exit()
     """Process Image"""
     Source_Folder = [TRAIN, MASKS]
     Des_File = [OUT_TRAIN, OUT_MASKS]
