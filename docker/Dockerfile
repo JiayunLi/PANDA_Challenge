@@ -12,8 +12,10 @@ conda install -c conda-forge tqdm && \
 conda install -c conda-forge ipywidgets && \
 conda install opencv pixman=0.36.0 && \
 conda install -c pytorch -c fastai fastai && \
+conda install -c conda-forge albumentations && \
 pip install h5py lmdb openslide-python tensorboardX Pillow tensorboard && \
 pip install --upgrade jupyter_client && \
+pip install imagecodecs && \
 pip install tifffile
 RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
   groupadd -g ${GROUP_ID} docker-user &&\
