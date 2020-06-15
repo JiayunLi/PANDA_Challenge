@@ -5,9 +5,9 @@ from utiles import utils
 import pandas as pd
 if __name__ == "__main__":
     TRAIN = '../input/prostate-cancer-grade-assessment/train_images/'  ## train image folder
-    OUT_TRAIN = '../input/panda-36x256x256-tiles-data-spine/val.zip'  ## output image folder
+    OUT_TRAIN = '../input/panda-36x256x256-tiles-data-spine-loc/val.zip'  ## output image folder
     MARKER = "../input/prostate-cancer-grade-assessment/marker_images/"
-    csv_file = '../input/panda-36x256x256-tiles-data/wo_mask_val.csv'
+    csv_file = '../input/panda-36x256x256-tiles-data-spine/wo_mask_val.csv'
     df = pd.read_csv(csv_file)
     names = list(df['image_id'])
     pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
