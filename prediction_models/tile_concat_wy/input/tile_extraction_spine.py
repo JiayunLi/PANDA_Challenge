@@ -35,6 +35,7 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
               'low_tile_mode': 'random'}
     ratio = []
     tile_number = []
+    tile_location = {}
     with zipfile.ZipFile(OUT_TRAIN, 'w') as img_out, \
             zipfile.ZipFile(OUT_MASKS, 'w') as mask_out:
         for name in tqdm(names):
@@ -64,8 +65,9 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
 
             ratio.append(ra)
             tile_number.append(len(result['tile_location']))
+            loc = []
             for idx, t in enumerate(tiles):
-                img, mask = t['img'], t['mask']
+                img, mask, t_loc = t['img'], t['mask'], t['location']
                 x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
                 x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
                 # if read with PIL RGB turns into BGR
@@ -73,7 +75,11 @@ def write_2_zip(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
                 img_out.writestr('{0:s}_{1:d}.png'.format(name, idx), img)
                 mask = cv2.imencode('.png', mask[:, :, 0])[1]
                 mask_out.writestr('{0:s}_{1:d}.png'.format(name, idx), mask)
-
+                loc.append(t_loc)
+            tile_location[name] = loc
+    # save tile locations:
+    with open(f'{OUT_TRAIN}_tile_loc.pkl', 'wb') as f:
+        pickle.dump(tile_location, f)
     # image stats
     # print(np.array(x_tot).shape) ## (168256, 3)
     img_avr = np.array(x_tot).mean(0)
@@ -106,6 +112,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
               'low_tile_mode': 'random'}
     ratio = []
     tile_number = []
+    tile_location = {}
     with zipfile.ZipFile(Des_File, 'w') as img_out:
         for name in tqdm(names):
             if os.path.exists(os.path.join(os.path.dirname(Des_File), "train/{0:s}_0.png".format(name))):
@@ -134,14 +141,19 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
 
             ratio.append(ra)
             tile_number.append(len(result['tile_location']))
-
+            loc = []
             for idx, t in enumerate(tiles):
-                img = t['img']
+                img, t_loc = t['img'], t['location']
                 x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
                 x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
                 # if read with PIL RGB turns into BGR
                 img = cv2.imencode('.png', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))[1]
                 img_out.writestr('{0:s}_{1:d}.png'.format(name, idx), img)
+                loc.append(t_loc)
+            tile_location[name] = loc
+    # save tile locations:
+    with open(f'{Des_File}_tile_loc.pkl', 'wb') as f:
+        pickle.dump(tile_location, f)
     # image stats
     # print(np.array(x_tot).shape) ## (168256, 3)
     img_avr = np.array(x_tot).mean(0)
@@ -166,17 +178,18 @@ if __name__ == "__main__":
     utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
     N = 36 ## how many patches selected from each slide
+    step_size = 5
     img_ids = [name[:-10] for name in os.listdir(MASKS)]
-    img_ids = img_ids[1000*process_num:min(len(img_ids), 1000*(process_num + 1))]
+    img_ids = img_ids[step_size*process_num:min(len(img_ids), step_size*(process_num + 1))]
     # img_ids = img_ids[1020:]
-    # with open('slide_has_less_tiles.pkl', 'rb') as f:
-    #     slide_has_less_tiles = pickle.load(f)
-    # pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
-    # temp = []
-    # for i in img_ids:
-    #     if i not in slide_has_less_tiles:
-    #         temp.append(i)
-    # img_ids = temp
+    with open('slide_has_less_tiles.pkl', 'rb') as f:
+        slide_has_less_tiles = pickle.load(f)
+    pen_marked_images = [name[:-4] for name in os.listdir(MARKER)]
+    temp = []
+    for i in img_ids:
+        if i not in slide_has_less_tiles:
+            temp.append(i)
+    img_ids = temp
     print(len(img_ids))  ## only images that have masks
     exit()
     """Process Image"""
