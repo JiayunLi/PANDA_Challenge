@@ -8,7 +8,7 @@ import torch.utils.data as data
 import numpy as np
 import skimage.io
 import openslide
-from prediction_models.att_mil.datasets import gen_selected_tiles
+from prediction_models.att_mil.datasets import gen_selected_tiles, get_selected_locs
 
 
 class BiopsySlides(data.Dataset):
@@ -68,7 +68,6 @@ class BiopsySlidesBatch(BiopsySlides):
 class BiopsySlidesLowest(data.Dataset):
     def __init__(self, params, test_df, transform, phase='test'):
         self.params = params
-        print(params)
         self.test_df = test_df
         self.test_slides_dir = params.test_slides_dir
         self.transform = transform
@@ -128,7 +127,8 @@ class BiopsySlideSelected(data.Dataset):
                                                                                     self.top_n, True, self.mode)
         results = gen_selected_tiles.get_highres_tiles(orig, tile_idxs, pad_top, pad_left, self.lowest_im_size,
                                     (pad_img.shape[0], pad_img.shape[1]),
-                                    level=self.level, top_n=self.top_n, desire_size=self.input_size, orig_mask=None)
+                                    level=self.level, top_n=self.top_n, desire_size=self.input_size, orig_mask=None,
+                                    normalize=self.params.stain_norm)
         instances = torch.FloatTensor(len(results['tiles']),
                                       self.num_channels, self.input_size, self.input_size)
 
@@ -139,9 +139,20 @@ class BiopsySlideSelected(data.Dataset):
                 instances[i, :, :, :] = self.transform(tile)
 
         if self.phase == "w_atts":
+            padded_low_shape = pad_img.shape
+            sub_tile_locs = \
+                get_selected_locs.select_sub_simple_4x4(tile_idxs, self.lowest_im_size, None,
+                                                        pad_top, pad_left, lowest_sub_size=16, sub_size=64,
+                                                        tiles=results['tiles'], max_per_tile=2, n_row=results['nrow'],
+                                                        n_col=results['ncol'])
+            sub_tile_locs = torch.FloatTensor(sub_tile_locs)
             if len(tile_idxs) < len(instances):
-                tile_idxs = torch.cat([tile_idxs, torch.zeros(len(instances) - len(tile_idxs)) - 1], dim=0)
-            return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
+                pad_n = len(instances) - len(tile_idxs)
+                # tile_idxs = torch.cat([tile_idxs, torch.zeros(pad_n) - 1], dim=0)
+                # n_tiles, n_sub_tiles, xy
+                sub_tile_locs = torch.cat([sub_tile_locs, torch.zeros(pad_n, 2, 2) - 1], dim=0)
+            # return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
+            return instances, slide_info.image_id, sub_tile_locs
         return instances, slide_info.image_id
 
 

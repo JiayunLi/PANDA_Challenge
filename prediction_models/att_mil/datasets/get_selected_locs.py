@@ -24,7 +24,7 @@ def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pa
     if not n_row or not n_col:
         n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
 
-    locs = []
+    locs = {"high_res": [], "low_res": []}
     shift_size = lowest_sub_size // 2
     n_sub_col = low_im_size // lowest_sub_size
     for idx, tile_id in enumerate(lowest_ids):
@@ -37,11 +37,14 @@ def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pa
         ss_tiles = cur_tile.reshape(cur_tile.shape[0] // sub_size, sub_size, cur_tile.shape[0] // sub_size, sub_size, 3)
         ss_tiles = ss_tiles.transpose(0, 2, 1, 3, 4).reshape(-1, sub_size, sub_size, 3)
         sub_ids = np.argsort(ss_tiles.reshape(ss_tiles.shape[0], -1).sum(-1))[:max_per_tile]
-
+        sub_locs = []
         for sub_id in sub_ids:
             sub_i = i + (sub_id // n_sub_col) * lowest_sub_size - shift_size
             sub_j = j + (sub_id % n_sub_col) * lowest_sub_size - shift_size
-            locs.append((sub_i, sub_j))
+            sub_locs.append((sub_i, sub_j))
+        # locs.append([sub_i, sub_j])
+        locs['high_res'].append(sub_locs)
+        locs['low_res'].append((i, j))
     return locs
 
 
@@ -86,8 +89,28 @@ def att_select_locs(slides_dir, slides_df_loc, attention_selected_loc, att_low_t
         selected_locs = att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_tile_size, att_level,
                                                select_n, select_sub_size, select_per_tile, method)
         all_selected_locs[slide_id] = selected_locs
+    all_selected_locs['low_level'] = att_level
+    all_selected_locs['high_level'] = att_level - 1
+    all_selected_locs['lowest_tile_size_low'] = att_low_tile_size
+    all_selected_locs['lowest_tile_size_high'] = att_low_tile_size // 2
     return all_selected_locs
 
 
 
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
+    # File location
+    parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
+    parser.add_argument('--info_dir', type=str, default='./info/16_128_128')
+    parser.add_argument('--select_model', default="resnext50_3e-4_bce_256",
+                        help="Use which model to generate attention map")
+    parser.add_argument('--att_dir', type=str, default='./info/att_selected/',
+                        help='Directory for cross validation information')
+    opts = parser.parse_args()
 
+    select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
+    all_selected = att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
+                                   select_locs_file_loc, att_low_tile_size=64, att_level=-2,
+                                   select_n=18, select_sub_size=64, select_per_tile=1, method='4x4')
+    np.save(f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs_update.npy", all_selected)

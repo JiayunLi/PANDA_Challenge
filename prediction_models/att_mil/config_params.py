@@ -32,6 +32,21 @@ class SelectedDatasetParams:
         self.loss_type = loss_type
 
 
+class SelectedMultiDatasetParams:
+    def __init__(self, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
+                 loss_type, num_channels=3, top_n=-1):
+        self.input_size = input_size
+        self.num_channels = num_channels
+        self.info_dir = info_dir
+        self.data_dir = data_dir
+        self.cache_dir = cache_dir
+        self.dataset = dataset
+        self.exp_dir = exp_dir
+        self.normalized = normalized
+        self.top_n = top_n
+        self.loss_type = loss_type
+
+
 class DatasetParamsMulti:
     def __init__(self, im_size_low, im_size_high, input_size, info_dir, data_dir_low, data_dir_high, cache_dir,
                  exp_dir, normalized, num_channels=3, top_n_low=-1, top_n_high=-1):

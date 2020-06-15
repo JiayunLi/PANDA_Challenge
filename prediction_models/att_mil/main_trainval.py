@@ -52,8 +52,11 @@ def trainval(opts):
     if not hasattr(opts, "schedule_type"):
         opts.schedule_type = "plateau"
     if opts.multi:
-        opts.data_dir_high = f"{opts.data_dir}/{opts.dataset_high}/"
-        opts.data_dir_low = f"{opts.data_dir}/{opts.dataset_low}/"
+        if opts.dataset in {'selected_10x_5x'}:
+            opts.data_dir = f"{opts.data_dir}/train_images/"
+        else:
+            opts.data_dir_high = f"{opts.data_dir}/{opts.dataset_high}/"
+            opts.data_dir_low = f"{opts.data_dir}/{opts.dataset_low}/"
         opts.mil_arch = opts.mil_arch + "_multi"
     elif opts.dataset in {"selected_10x"}:
         opts.data_dir = f"{opts.data_dir}/train_images/"
@@ -85,7 +88,7 @@ def trainval(opts):
         dataset_utils.generate_cv_split(
             f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
 
-    if opts.dataset in {'selected_10x'}:
+    if opts.dataset in {'selected_10x', "selected_10x_5x"}:
         select_att_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
         select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs.npy"
         if not os.path.isfile(select_att_file_loc):
@@ -107,11 +110,17 @@ def trainval(opts):
 
     pickle.dump(opts, open(f"{opts.exp_dir}/options.pkl", "wb"))
 
-    if opts.multi:
+    if opts.dataset in {'selected_10x_5x'}:
+        dataset_params = \
+            config_params.SelectedMultiDatasetParams(opts.input_size, opts.info_dir, opts.data_dir, opts.cache_dir,
+                                                     opts.exp_dir, opts.dataset, opts.normalized, opts.loss_type,
+                                                     opts.num_channels, top_n=opts.top_n)
+    elif opts.dataset in {'multi'}:
         dataset_params = config_params.DatasetParamsMulti(
             opts.im_size_low, opts.im_size_high, opts.input_size, opts.info_dir, opts.data_dir_low,
             opts.data_dir_high, opts.cache_dir, opts.exp_dir, opts.normalized, opts.num_channels,
             top_n_low=opts.top_n_low, top_n_high=opts.top_n_high)
+
     elif opts.dataset in {'selected_10x'}:
         dataset_params = \
             config_params.SelectedDatasetParams(opts.at_level, opts.lowest_im_size, opts.input_size, opts.info_dir,

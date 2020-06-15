@@ -18,7 +18,7 @@ from prediction_models.att_mil.datasets.gen_selected_tiles import RATE_MAP
 class TestParams:
     def __init__(self, test_slides_dir, im_size, input_size, loss_type,
                  dw_rate=None, ts_thres=None, overlap=None, top_n=40, lowest_im_size=32, level=-2,
-                 num_channels=3):
+                 num_channels=3, stain_norm=False):
         self.test_slides_dir = test_slides_dir
         self.im_size = im_size
         self.input_size = input_size
@@ -30,6 +30,7 @@ class TestParams:
         self.top_n = top_n
         self.level = level
         self.lowest_im_size = lowest_im_size
+        self.stain_norm = stain_norm
 
 
 def load_opts(ckp_dir, data_dir, cuda, num_workers, batch_size):
@@ -142,12 +143,12 @@ def test_helper(all_models, loader, device, w_atts):
     for cur_model in all_models:
         cur_model.to(device)
         cur_model.eval()
-    att_results = {"atts": {}, "tile_ids": {}, "tile_pads": {}}
-    # all_atts, all_tile_ids, all_tile_pads = {}, {}, {}
+
+    att_results = {"atts": {}, "sub_tile_locs": {}}
     with torch.no_grad():
         for _ in tqdm.tqdm(range(len(loader))):
             if w_atts:
-                tiles, image_ids, tile_ids, pad_tops, pad_lefts, nrows, ncols = test_iter.next()
+                tiles, image_ids, sub_tile_locs = test_iter.next()
             else:
                 tiles = test_iter.next()
             tiles = tiles.to(device)
@@ -175,11 +176,9 @@ def test_helper(all_models, loader, device, w_atts):
                 pooled_atts = pooled_atts.view(bs, 8 * len(all_models), -1)  # [bs, 8 * n_models, top_n, 1]
                 pooled_atts = pooled_atts.mean(1).cpu().numpy()[:]  # [bs, top_n]
                 batch_idx = 0
-                for image_id, cur_atts, pad_top, pad_left, nrow, ncol in \
-                        zip(image_ids, pooled_atts, pad_tops, pad_lefts, nrows, ncols):
+                for image_id, cur_atts in zip(image_ids, pooled_atts):
                     att_results["atts"][str(image_id)] = cur_atts
-                    att_results["tile_ids"][str(image_id)] = tile_ids[batch_idx].cpu().numpy()[:]
-                    att_results["tile_pads"][str(image_id)] = (int(pad_top), int(pad_left), int(nrow), int(ncol))
+                    att_results["sub_tile_locs"][str(image_id)] = sub_tile_locs[batch_idx].cpu().numpy()
                     batch_idx += 1
             del tiles
             del pooled_atts
@@ -189,32 +188,28 @@ def test_helper(all_models, loader, device, w_atts):
     return predicted, att_results
 
 
-def selection(test_df, slides_dir, all_atts,  att_level, att_tile_size_lowest, att_n,
-              select_sub_size_lowest, n_sub):
+def selection(test_df, all_atts, att_n):
     all_selected = dict()
-    select_sub_size = RATE_MAP[att_level] * select_sub_size_lowest
+    # select_sub_size = RATE_MAP[att_level] * select_sub_size_lowest
     for i in range(len(test_df)):
         slide_id = test_df.iloc[i].image_id
-        tile_ids = all_atts["tile_ids"][slide_id]
         cur_atts = all_atts["atts"][slide_id]
-        pad_top, pad_left, n_row, n_col = all_atts['tile_pads'][slide_id]
+        cur_sub_locs = all_atts['sub_tile_locs'][slide_id]
+
         max_atts_ids = np.argsort(cur_atts)[::-1]
-        cur_tile_ids = tile_ids[max_atts_ids]
-        cur_tile_ids_fix = []
-        for tile_id in cur_tile_ids:
-            if tile_id == "-1":
-                continue
-            cur_tile_ids_fix.append(int(tile_id))
-        cur_tile_ids_fix = cur_tile_ids_fix[:att_n]
-        orig = skimage.io.MultiImage(f"{slides_dir}/{slide_id}.tiff")
-        results = gen_selected_tiles.get_highres_tiles(orig, cur_tile_ids_fix, pad_top, pad_left,
-                                                       att_tile_size_lowest, None, att_level,
-                                                       top_n=-1, n_row=n_row, n_col=n_col)
-        cur_selected_locs = get_selected_locs.select_sub_simple_4x4(cur_tile_ids_fix, att_tile_size_lowest, None,
-                                                                    pad_top, pad_left, select_sub_size_lowest,
-                                                                    select_sub_size, results['tiles'], n_sub,
-                                                                    n_row=n_row, n_col=n_col)
+        max_atts_ids = max_atts_ids[:att_n]
+
+        cur_selected_locs = []
+        counter = 0
+        for idx in max_atts_ids:
+            for sub_idx in range(len(cur_sub_locs[idx])):
+                loc_i, loc_j = cur_sub_locs[idx][sub_idx]
+                if loc_i < 0:
+                    continue
+                cur_selected_locs.append((int(loc_i), int(loc_j)))
+                counter += 1
         all_selected[slide_id] = cur_selected_locs
+
     return all_selected
 
 
@@ -263,7 +258,7 @@ if __name__ == "__main__":
                         default='/data/storage_slides/PANDA_challenge/trimmed_weights/resnext50_3e-4_bce_256/')
 
     parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--top_n', type=int, default=36)
     parser.add_argument('--lowest_im_size', type=int, default=64)
     parser.add_argument('--level', type=int, default=-2)
@@ -277,7 +272,7 @@ if __name__ == "__main__":
         os.mkdir(options.att_dir)
 
     get_cv_attentions(options)
-    # opts = load_opts(options.model_dir, options.data_dir, options.cuda, 0, 2)
+    # opts = load_opts(options.model_dir, options.data_dir, options.cuda, 0, 1)
     # device = "cpu" if not options.cuda else "cuda"
     #
     # test_params = TestParams(opts.data_dir, opts.im_size, opts.input_size, opts.loss_type,
@@ -293,13 +288,12 @@ if __name__ == "__main__":
     #     T.Normalize(mean=meanstd['mean'], std=meanstd['std'])])
     # dataset = test_slides.BiopsySlideSelected(test_params, cur_df, normalize, phase='w_atts')
     # loader = \
-    #     torch.utils.data.DataLoader(dataset=dataset, batch_size=2, shuffle=False, drop_last=False,
+    #     torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False, drop_last=False,
     #                                 num_workers=0, pin_memory=False)
     # cur_predicted_probs, att_results = test_helper([predictor], loader, device, True)
     # np.save("../../cache/debug_atts.npy", att_results)
     # # att_results = dict(np.load("../../cache/debug_atts.npy", allow_pickle=True).tolist())
-    # selected_locs = selection(cur_df, opts.data_dir, att_results, options.level, options.lowest_im_size, options.top_n // 2,
-    #                           select_sub_size_lowest=16, n_sub=2)
+    # selected_locs = selection(cur_df, att_results,  options.top_n // 2)
     # np.save("../../cache/debug_atts_locs.npy", selected_locs)
 
 

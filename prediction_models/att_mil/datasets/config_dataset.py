@@ -80,6 +80,9 @@ def get_meanstd(dataset_name, dataset_params=None, all_selected=None, num_worker
     elif dataset_name == "selected_10x":
         meanstd = {"mean": [0.772427, 0.539656, 0.693181],
                    "std": [0.147167, 0.187551, 0.136804]}
+    elif dataset_name == "selected_10x_5x":
+        meanstd = {"mean": [0.772427, 0.539656, 0.693181],
+                   "std": [0.147167, 0.187551, 0.136804]}
         # cur_transform = T.Compose([
         #     T.ToTensor()
         # ])
@@ -141,6 +144,9 @@ def build_dataset_loader(batch_size, num_workers, dataset_params, split, phase, 
     # Multi-scale input dataset
     if dataset_params.dataset in {'multi'}:
         dataset = trainval_slides_multi.BiopsySlidesBatchMulti(dataset_params, transform, fold, split, phase=phase)
+    elif dataset_params.dataset in {'selected_10x_5x'}:
+        dataset = trainval_slides_multi.BiopsySlidesBatchMultiSelect(dataset_params, all_selected, transform, fold,
+                                                                     split, phase=phase)
     elif dataset_params.dataset in {"dw_sample_16", "dw_sample_16v2"}:
         dataset = trainval_slides.BiopsySlidesBatch(dataset_params, transform, fold, split, phase=phase)
     elif dataset_params.dataset in {"16_128_128"}:
