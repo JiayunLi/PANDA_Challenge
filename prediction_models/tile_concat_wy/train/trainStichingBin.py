@@ -123,7 +123,7 @@ if __name__ == "__main__":
     epochs = 30
     GLS = False
     Pre_Train = True
-    csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
+    csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
 
     ## image transformation
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in range(nfolds):
-    for fold in [1,2,3]:
+    for fold in [2,3]:
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
