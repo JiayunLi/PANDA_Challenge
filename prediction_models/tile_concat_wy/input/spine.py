@@ -246,7 +246,8 @@ def tile(img, mask, location, iou, sz=256, N=36, scale = 8, mode = "random"):
             warped_img = np.pad(warped_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant', constant_values=255)
         shape = warped_img.shape
         top, left = int((shape[0] - sz) / 2), int((shape[1] - sz) / 2)
-        result.append({'img': warped_img[top:top+sz,left:left+sz,:], 'mask': warped_mask[top:top+sz,left:left+sz,:], 'location': cnt})
+        result.append({'img': warped_img[top:top+sz,left:left+sz,:], 'mask': warped_mask[top:top+sz,left:left+sz,:],
+                       'location': location[idx] * scale})
     if len(idxsort) < N:
         if mode == "random":
             complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
@@ -287,7 +288,8 @@ def tile_img(img, location, iou, sz=256, N=36, scale = 8, mode = "random"):
             pad0, pad1 = (sz - shape[0] % sz) % sz, (sz - shape[1] % sz) % sz
             warped_img = np.pad(warped_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant', constant_values=255)
 
-        result.append({'img': warped_img[:sz,:sz,:], 'location': cnt})
+        result.append({'img': warped_img[:sz,:sz,:],
+                       'location': location[idx] * scale})
     if len(idxsort) < N:
         if mode == "random":
             complete_idx = np.random.choice(len(idxsort), size=N - len(idxsort))
@@ -296,7 +298,7 @@ def tile_img(img, location, iou, sz=256, N=36, scale = 8, mode = "random"):
         elif mode == "blank":
             for i in range(N - len(idxsort)):
                 result.append({'img': 255 * np.ones((sz, sz, 3)).astype(np.uint8),
-                               'location': None})
+                               'location':None})
     return result
 
 def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="random", **kwargs):
@@ -338,7 +340,7 @@ def tile_rect(img, mask, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode
             tile = img[x:x + sz, y:y + sz, :]
             tile_mask = mask[x:x + sz, y:y + sz]
             cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
-            cnt = np.expand_dims(cnt, 1)
+            # cnt = np.expand_dims(cnt, 1)
             result.append({'img': tile, 'mask': tile_mask, 'location': cnt})
             count += 1
     if count < N:
@@ -390,7 +392,7 @@ def tile_rect_img(img, bn_mask, sz=256, N=36, scale=8, overlap_ratio=0.2, mode="
         if x >= 0 and x < img_shape[0] - sz and y >= 0 and y < img_shape[1] - sz:
             tile = img[x:x + sz, y:y + sz, :]
             cnt = np.array([[y, x], [y, x + sz], [y + sz, x], [y + sz, x + sz]])
-            cnt = np.expand_dims(cnt, 1)
+            # cnt = np.expand_dims(cnt, 1)
             result.append({'img': tile, 'location': cnt})
             count += 1
     if count < N:
