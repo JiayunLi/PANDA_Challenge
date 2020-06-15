@@ -117,13 +117,13 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_36patch_adam_cos_pretrain_spine_kar"
+    fname = "Resnext50_36patch_adam_cos_pretrain_spine"
     nfolds = 4
     bs = 6
     epochs = 30
     GLS = False
     Pre_Train = True
-    csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
+    csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
 
     ## image transformation
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in range(nfolds):
-    for fold in [1,2,3]:
+    for fold in [2,3]:
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
             writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            # writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
             writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
