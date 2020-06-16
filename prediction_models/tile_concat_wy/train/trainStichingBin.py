@@ -189,7 +189,7 @@ if __name__ == "__main__":
             Training = Train(model, optimizer, scheduler, GLS = GLS)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
-        for epoch in trange(range(start_epoch,epochs), desc='epoch'):
+        for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             val = Training.val_epoch(valloader, criterion)
