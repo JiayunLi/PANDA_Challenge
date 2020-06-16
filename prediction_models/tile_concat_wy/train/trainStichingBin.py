@@ -174,8 +174,8 @@ if __name__ == "__main__":
             # pretrained_dict = torch.load(model_path)['state_dict']
             state = torch.load(model_path)
             pretrained_dict = state['state_dict']
-            start_epoch = state['epoch']
-            optimizer = optimizer.load_state_dict(state['optimizer'])
+            start_epoch = state['epoch'] + 1
+            optimizer.load_state_dict(state['optimizer'])
             model_dict = model.state_dict()
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
