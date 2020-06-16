@@ -12,6 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 from collections import OrderedDict
+import argparse
 ## custom package
 from input.inputPipeline_stiching import *
 from model.resnext_ssl_stiching import *
@@ -117,14 +118,29 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_36patch_adam_cos_pretrain_spine_rad"
+    """Define Your Input"""
+    parser = argparse.ArgumentParser(description='Optional arguments')
+    parser.add_argument('--fold', type=str, default="0,1,2,3", help='which fold to train.')
+    parser.add_argument('--provider', type=str, default="rad", help='which dataset to train.')
+    args = parser.parse_args()
+    folds = args.fold
+    folds = folds.split(',')
+    folds = [int(i) for i in folds]
+    provider = args.provider
     nfolds = 4
+    fname = f'Resnext50_36patch_adam_cos_spine_col_{provider}'
+    if provider == "rad":
+        csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
+    else:
+        csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
+    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
     bs = 6
     epochs = 30
     GLS = False
-    Pre_Train = True
-    csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    Pre_Train = False
+
+    print(fname, folds, csv_file)
+    exit()
 
     ## image transformation
     tsfm = data_transform()
@@ -145,7 +161,7 @@ if __name__ == "__main__":
     weightsDir = './weights/{}'.format(fname)
     check_folder_exists(weightsDir)
     # for fold in range(nfolds):
-    for fold in [2,3]:
+    for fold in folds:
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
@@ -176,8 +192,10 @@ if __name__ == "__main__":
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
             writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            # writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-            writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+            if provider == "rad":
+                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            else:
+                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train['train_loss'],
