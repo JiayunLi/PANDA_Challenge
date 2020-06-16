@@ -180,7 +180,7 @@ if __name__ == "__main__":
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             model.load_state_dict(pretrained_dict)
-            print("Load pre-trained weights for model!")
+            print(f"Load pre-trained weights for model, start epoch {start_epoch}.")
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
             mltLoss = None
@@ -189,7 +189,7 @@ if __name__ == "__main__":
             Training = Train(model, optimizer, scheduler, GLS = GLS)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
-        for epoch in trange((start_epoch,epochs), desc='epoch'):
+        for epoch in trange(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             val = Training.val_epoch(valloader, criterion)
