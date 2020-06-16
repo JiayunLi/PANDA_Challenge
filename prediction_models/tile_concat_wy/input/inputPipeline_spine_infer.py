@@ -13,6 +13,7 @@ from collections import OrderedDict
 import skimage.io
 import cv2
 from spine import spine, tile, tile_rect, tile_img, tile_rect_img
+import time
 
 class PandaPatchDatasetInfer(Dataset):
     """
@@ -66,8 +67,9 @@ class PandaPatchDatasetInfer(Dataset):
         for i in range(self.N):
             img = tiles[i]['img']
             img = cv2.imencode('.png', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))[1]
-            byte_im = img.tobytes()
-            img = Image.frombytes('RGB', (self.image_size,self.image_size), byte_im)
+            cv2.imwrite("infer.png",img)
+            time.sleep(0.003)
+            img = Image.open("infer.png").convert('RGB')
             img = np.asarray(img)
             imgs.append({'img': img, 'idx': i})
 
