@@ -84,7 +84,7 @@ class PandaPatchDataset(Dataset):
 
         n_row_tiles = int(np.sqrt(self.N))
 
-        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3))
+        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3)).astype(np.uint8)
         for h in range(n_row_tiles):
             for w in range(n_row_tiles):
                 i = h * n_row_tiles + w
@@ -226,8 +226,8 @@ def data_transform():
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
         albumentations.HorizontalFlip(p=0.5),
-        albumentations.RGBShift(r_shift_limit=20, g_shift_limit=20, b_shift_limit=20),
-        albumentations.RandomBrightnessContrast()
+        albumentations.RGBShift(r_shift_limit=20, g_shift_limit=20, b_shift_limit=20)
+        # albumentations.RandomBrightnessContrast()
     ])
     return tsfm
 
