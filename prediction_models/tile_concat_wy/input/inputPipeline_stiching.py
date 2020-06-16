@@ -32,10 +32,10 @@ class crossValDataloader(object):
         train_idx, val_idx = self.inx(fold)
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=1,
                                                   sampler=RandomSampler(train),collate_fn=None, pin_memory=True,
                                                   drop_last=True)
-        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
+        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=1,
                                                 collate_fn=None, pin_memory=True, sampler=SequentialSampler(val),
                                                 drop_last=True)
         return trainloader, valloader
