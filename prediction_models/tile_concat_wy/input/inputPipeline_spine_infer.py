@@ -65,8 +65,9 @@ class PandaPatchDatasetInfer(Dataset):
         imgs = []
         for i in range(self.N):
             img = tiles[i]['img']
-            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            img = Image.fromarray(img).convert('RGB')
+            img = cv2.imencode('.png', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))[1]
+            cv2.imrite("infer.png", img)
+            img = Image.open("infer.png").convert('RGB')
             img = np.asarray(img)
             imgs.append({'img': img, 'idx': i})
 
