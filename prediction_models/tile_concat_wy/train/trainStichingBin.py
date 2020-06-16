@@ -164,7 +164,8 @@ if __name__ == "__main__":
         model = Model(GleasonScore=GLS).cuda()
         if Pre_Train:
             model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
-            pretrained_dict = torch.load(model_path)['state_dict']
+            # pretrained_dict = torch.load(model_path)['state_dict']
+            pretrained_dict = torch.load(model_path)
             model_dict = model.state_dict()
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
