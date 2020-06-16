@@ -65,6 +65,8 @@ class PandaPatchDatasetInfer(Dataset):
         imgs = []
         for i in range(self.N):
             img = tiles[i]['img']
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img = Image.fromarray(img).convert('RGB')
             imgs.append({'img': img, 'idx': i})
 
         if self.rand:  ## random shuffle the order of tiles
