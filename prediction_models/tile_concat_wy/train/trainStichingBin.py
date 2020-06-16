@@ -168,6 +168,7 @@ if __name__ == "__main__":
         #                                           pct_start = 0.3, div_factor = 100)
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+        best_kappa = 0
         if Pre_Train:
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
             model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
@@ -180,6 +181,7 @@ if __name__ == "__main__":
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             model.load_state_dict(pretrained_dict)
+            best_kappa = state['kappa']
             print(f"Load pre-trained weights for model, start epoch {start_epoch}.")
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
@@ -187,7 +189,6 @@ if __name__ == "__main__":
             Training = Train(model, optimizer, scheduler, GLS = GLS, mltLoss = mltLoss)
         else:
             Training = Train(model, optimizer, scheduler, GLS = GLS)
-        best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
