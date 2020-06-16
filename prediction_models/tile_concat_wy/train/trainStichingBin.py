@@ -139,9 +139,6 @@ if __name__ == "__main__":
     GLS = False
     Pre_Train = False
 
-    print(fname, folds, csv_file)
-    exit()
-
     ## image transformation
     tsfm = data_transform()
     # tsfm = None
