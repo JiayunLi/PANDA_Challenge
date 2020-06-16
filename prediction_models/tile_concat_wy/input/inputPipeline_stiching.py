@@ -89,7 +89,7 @@ class PandaPatchDataset(Dataset):
             for w in range(n_row_tiles):
                 i = h * n_row_tiles + w
                 if len(imgs) > idxes[i]:
-                    this_img = imgs[idxes[i]]['img']
+                    this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
                 this_img = 255 - this_img ## todo: see how this trik plays out
@@ -227,7 +227,7 @@ def data_transform():
         albumentations.VerticalFlip(p=0.5),
         albumentations.HorizontalFlip(p=0.5),
         albumentations.RGBShift(r_shift_limit=20, g_shift_limit=20, b_shift_limit=20)
-        # albumentations.RandomBrightnessContrast()
+        albumentations.RandomBrightnessContrast()
     ])
     return tsfm
 
