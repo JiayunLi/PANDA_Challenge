@@ -138,6 +138,7 @@ if __name__ == "__main__":
     epochs = 30
     GLS = False
     Pre_Train = True
+    start_epoch = 0
 
     ## image transformation
     tsfm = data_transform()
@@ -162,20 +163,24 @@ if __name__ == "__main__":
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
+        # optimizer = Over9000(model.parameters(), lr = 0.00003)
+        # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
+        #                                           pct_start = 0.3, div_factor = 100)
+        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if Pre_Train:
-            model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
+            # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
+            model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
             # pretrained_dict = torch.load(model_path)['state_dict']
-            pretrained_dict = torch.load(model_path)
+            state = torch.load(model_path)
+            pretrained_dict = state['state_dict']
+            start_epoch = state['epoch']
+            optimizer = optimizer.load_state_dict(state['optimizer'])
             model_dict = model.state_dict()
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             model.load_state_dict(pretrained_dict)
             print("Load pre-trained weights for model!")
-        # optimizer = Over9000(model.parameters(), lr = 0.00003)
-        # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-        #                                           pct_start = 0.3, div_factor = 100)
-        optimizer = optim.Adam(model.parameters(), lr=0.00003) # current best 0.00003
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
             mltLoss = None
@@ -184,7 +189,7 @@ if __name__ == "__main__":
             Training = Train(model, optimizer, scheduler, GLS = GLS)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
-        for epoch in trange(epochs, desc='epoch'):
+        for epoch in trange((start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             val = Training.val_epoch(valloader, criterion)
