@@ -128,7 +128,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_adam_cos_spine_col5_{provider}'
+    fname = f'Resnext50_36patch_adam_cos_spine_col10_{provider}'
     if provider == "rad":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
     else:
