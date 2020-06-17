@@ -226,7 +226,7 @@ def data_transform():
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
         albumentations.HorizontalFlip(p=0.5),
-        albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5)
+        albumentations.RGBShift(r_shift_limit=10, g_shift_limit=10, b_shift_limit=10)
         # albumentations.RandomBrightnessContrast()
     ])
     return tsfm
