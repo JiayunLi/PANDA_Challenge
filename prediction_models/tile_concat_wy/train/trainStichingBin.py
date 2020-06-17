@@ -137,7 +137,7 @@ if __name__ == "__main__":
     bs = 6
     epochs = 30
     GLS = False
-    Pre_Train = True
+    Pre_Train = False
     start_epoch = 0
 
     ## image transformation
