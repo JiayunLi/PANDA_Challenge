@@ -128,16 +128,16 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_adam_cos_spine_gls_{provider}'
+    fname = f'Resnext50_36patch_adam_cos_spine_loc_pre_{provider}'
     if provider == "rad":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
     else:
         csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    image_dir = '../input/panda-36x256x256-tiles-data-spine-loc/train/'
     # image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
     epochs = 60
-    GLS = True
+    GLS = False
     Pre_Train = True
     start_epoch = 0
 
@@ -172,7 +172,8 @@ if __name__ == "__main__":
         best_kappa = 0
         if Pre_Train:
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
-            model_path = './weights/Resnext50_36patch_adam_cos_spine_col10_gls_{}/Resnext50_36patch_adam_cos_spine_col10_gls_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
+            # model_path = './weights/Resnext50_36patch_adam_cos_spine_col10_gls_{}/Resnext50_36patch_adam_cos_spine_col10_gls_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
+            model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
             # pretrained_dict = torch.load(model_path)['state_dict']
             state = torch.load(model_path)
             pretrained_dict = state['state_dict']
