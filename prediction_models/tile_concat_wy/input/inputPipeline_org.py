@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import albumentations
 import skimage.io
+from collections import OrderedDict
 
 class crossValInx(object):
     def __init__(self, csv_file):
@@ -119,8 +120,10 @@ class PandaPatchDatasetInfer(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
+        result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
+        provider = self.train_csv.data_provider[idx]
         fname = os.path.join(self.image_dir, img_id + '.tiff')
         image = skimage.io.MultiImage(fname)[1]
         imgs, OK = get_tiles(image, self.image_size, self.N, mode = self.mode)
@@ -152,7 +155,10 @@ class PandaPatchDatasetInfer(Dataset):
         images = images.astype(np.float32)
         images /= 255
         images = images.transpose(2, 0, 1)
-        return torch.tensor(images), name
+        result["img"] = torch.tensor(images)
+        result["name"] = name
+        result["datacenter"] = provider
+        return result
 
 def get_tiles(img, tile_size, n_tiles, mode=0):
     result = []
