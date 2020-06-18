@@ -133,8 +133,8 @@ if __name__ == "__main__":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
     else:
         csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
-    # image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
-    image_dir = '../input/panda-36x256x256-tiles-data/train/'
+    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    # image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
     epochs = 60
     GLS = True
