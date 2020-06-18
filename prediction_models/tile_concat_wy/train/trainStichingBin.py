@@ -128,7 +128,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_adam_cos_spine_loc_pre_{provider}'
+    fname = f'Resnext50_36patch_overlook_cos_spine_loc_pre_{provider}'
     if provider == "rad":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
     else:
@@ -164,10 +164,10 @@ if __name__ == "__main__":
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS).cuda()
-        # optimizer = Over9000(model.parameters(), lr = 0.00003)
+        optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
-        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         best_kappa = 0
         if Pre_Train:
