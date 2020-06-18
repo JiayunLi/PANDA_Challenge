@@ -137,7 +137,7 @@ if __name__ == "__main__":
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
     epochs = 60
-    GLS = False
+    GLS = True
     Pre_Train = True
     start_epoch = 0
 
