@@ -128,15 +128,16 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_adam_cos_spine_col10_gls_{provider}'
+    fname = f'Resnext50_36patch_adam_cos_{provider}'
     if provider == "rad":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
     else:
         csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    # image_dir = '../input/panda-36x256x256-tiles-data-spine/train/'
+    image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
     epochs = 30
-    GLS = True
+    GLS = False
     Pre_Train = False
     start_epoch = 0
 
