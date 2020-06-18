@@ -174,7 +174,7 @@ if __name__ == "__main__":
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col10_gls_{}/Resnext50_36patch_adam_cos_spine_col10_gls_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
             model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_best.pth.tar'.format(provider,provider,fold)
-            pretrained_dict = torch.load(model_path)['state_dict']
+            pretrained_dict = torch.load(model_path)
             # state = torch.load(model_path)
             # pretrained_dict = state['state_dict']
             # start_epoch = state['epoch'] + 1
