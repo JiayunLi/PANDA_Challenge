@@ -85,7 +85,7 @@ def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     print('mean:', img_avr, ', std:', img_std, ', ratio:', np.mean(ratio), ', tile_number:', np.mean(tile_number))
     return (img_avr, img_std, ratio, tile_number, tile_location)
 
-def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
+def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     """
     Extract patches from orginal images and save them to des file.
     :param Source_Folder: list, contains the original image and mask folder
@@ -109,47 +109,43 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     ratio = []
     tile_number = []
     tile_location = {}
-    with zipfile.ZipFile(Des_File, 'w') as img_out:
-        for name in tqdm(names):
-            if os.path.exists(os.path.join(os.path.dirname(Des_File), "train/{0:s}_0.png".format(name))):
-                print("Skip {}.".format(name))
-                continue
-            ## read the image and label with the lowest res by [-1]
-            try:
-                biopsy = skimage.io.MultiImage(os.path.join(Source_Folder, name + '.tiff'))
-            except:
-                continue
+    for name in tqdm(names):
+        if os.path.exists(os.path.join(os.path.dirname(Des_File), "train/{0:s}_0.png".format(name))):
+            print("Skip {}.".format(name))
+            continue
+        ## read the image and label with the lowest res by [-1]
+        try:
+            biopsy = skimage.io.MultiImage(os.path.join(Source_Folder, name + '.tiff'))
+        except:
+            continue
 
-            img0 = cv2.resize(biopsy[-1], (int(biopsy[-1].shape[1] / 2), int(biopsy[-1].shape[0] / 2)))
-            if name in markers:
-                img0, _, _ = remove_pen_marks(img0, scale=8)
-            result = spine(img0, **kwargs)
-            ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
+        img0 = cv2.resize(biopsy[-1], (int(biopsy[-1].shape[1] / 2), int(biopsy[-1].shape[0] / 2)))
+        if name in markers:
+            img0, _, _ = remove_pen_marks(img0, scale=8)
+        result = spine(img0, **kwargs)
+        ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
 
-            img = biopsy[1]
+        img = biopsy[1]
 
-            ## tile the img and mask to N patches with size (sz,sz,3)
-            if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
-                tiles, ra, _ = tile_rect_img(img,result['mask'], sz=sz,
-                                         N=N, scale = 8, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
-            else:
-                tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
+        ## tile the img and mask to N patches with size (sz,sz,3)
+        if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
+            tiles, ra, _ = tile_rect_img(img,result['mask'], sz=sz,
+                                     N=N, scale = 8, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
+        else:
+            tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
 
-            ratio.append(ra)
-            tile_number.append(len(result['tile_location']))
-            loc = []
-            for idx, t in enumerate(tiles):
-                img, t_loc = t['img'], t['location']
-                x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
-                x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
-                # if read with PIL RGB turns into BGR
-                img = cv2.imencode('.png', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))[1]
-                img_out.writestr('{0:s}_{1:d}.png'.format(name, idx), img)
-                loc.append(t_loc)
-            tile_location[name] = loc
-    # save tile locations:
-    with open(f'{Des_File}_tile_loc.pkl', 'wb') as f:
-        pickle.dump(tile_location, f)
+        ratio.append(ra)
+        tile_number.append(len(result['tile_location']))
+        loc = []
+        for idx, t in enumerate(tiles):
+            img, t_loc = t['img'], t['location']
+            x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
+            x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
+            # if read with PIL RGB turns into BGR
+            PILIMG = Image.fromarray(img)
+            PILIMG.save(os.path.join(Source_Folder, '{0:s}_{1:d}.png'.format(name, idx)))
+            loc.append(t_loc)
+        tile_location[name] = loc
     # image stats
     # print(np.array(x_tot).shape) ## (168256, 3)
     img_avr = np.array(x_tot).mean(0)
@@ -157,7 +153,7 @@ def write_2_zip_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     img_std = np.sqrt(np.array(x2_tot).mean(0) - img_avr ** 2)  ## variance = sqrt(E(X^2) - E(X)^2)
     img_std = np.sqrt(img_std)
     print('mean:', img_avr, ', std:', img_std, ', ratio:', np.mean(ratio), ', tile_number:', np.mean(tile_number))
-    return (img_avr, img_std, ratio, tile_number)
+    return (img_avr, img_std, ratio, tile_number, tile_location)
 
 if __name__ == "__main__":
     """Define Your Input"""
