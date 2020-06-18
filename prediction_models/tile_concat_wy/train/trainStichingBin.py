@@ -173,17 +173,18 @@ if __name__ == "__main__":
         if Pre_Train:
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col10_gls_{}/Resnext50_36patch_adam_cos_spine_col10_gls_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
-            model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
-            # pretrained_dict = torch.load(model_path)['state_dict']
-            state = torch.load(model_path)
-            pretrained_dict = state['state_dict']
-            start_epoch = state['epoch'] + 1
-            optimizer.load_state_dict(state['optimizer'])
+            model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_best.pth.tar'.format(provider,provider,fold)
+            pretrained_dict = torch.load(model_path)['state_dict']
+            # state = torch.load(model_path)
+            # pretrained_dict = state['state_dict']
+            # start_epoch = state['epoch'] + 1
+            start_epoch = 30
+            # optimizer.load_state_dict(state['optimizer'])
             model_dict = model.state_dict()
             pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
             model_dict.update(pretrained_dict)
             model.load_state_dict(pretrained_dict)
-            best_kappa = state['kappa']
+            # best_kappa = state['kappa']
             print(f"Load pre-trained weights for model, start epoch {start_epoch}.")
         if GLS:
             # mltLoss = MultiTaskLoss(3).cuda()
