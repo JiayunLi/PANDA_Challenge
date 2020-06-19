@@ -8,6 +8,7 @@ warnings.filterwarnings("ignore")
 ## general package
 import torch
 import torch.nn as nn
+from collections import OrderedDict
 from fastai.vision import *
 ## custom package
 from utiles.mishactivation import Mish
@@ -15,7 +16,7 @@ from utiles.hubconf import *
 
 
 class Model(nn.Module):
-    def __init__(self, arch='resnext50_32x4d_ssl', n=6, pre=True):
+    def __init__(self, arch='resnext50_32x4d_ssl', n=5):
         super().__init__()
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         self.enc = nn.Sequential(*list(m.children())[:-2])
@@ -28,6 +29,7 @@ class Model(nn.Module):
         x: [bs, N, 3, h, w]
         x_out: [bs, N]
         """
+        result = OrderedDict()
         bs, n, c, h, w = x.shape
         x = x.view(-1, c, h, w)  # x: bs*N x 3 x 128 x 128
         x = self.enc(x)  # x: bs*N x C x 4 x 4
@@ -37,10 +39,11 @@ class Model(nn.Module):
         x = x.view(bs, n, c, h, w).permute(0, 2, 1, 3, 4).contiguous() \
             .view(-1, c, h * n, w)  # x: bs x C x N*4 x 4
         x = self.head(x)  # x: bs x n
-        return x
+        result['out'] = x
+        return result
 
 class Model_Infer(nn.Module):
-    def __init__(self, arch='resnext50_32x4d', n=6, pre=True):
+    def __init__(self, arch='resnext50_32x4d', n=5, pre=True):
         super().__init__()
         # m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
         m = self._resnext(semi_supervised_model_urls[arch], Bottleneck, [3, 4, 6, 3], False,
@@ -72,7 +75,7 @@ class Model_Infer(nn.Module):
         return x
 
 if __name__ == "__main__":
-    img = torch.rand([4, 12, 3, 128, 128])
-    model = Model_Infer()
-    output = model(img)
+    img = torch.rand([4, 36, 3, 256, 256])
+    model = Model()
+    output = model(img)['out']
     print(output.shape)
