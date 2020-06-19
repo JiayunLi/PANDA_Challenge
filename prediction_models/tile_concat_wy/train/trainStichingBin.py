@@ -131,8 +131,10 @@ if __name__ == "__main__":
     fname = f'Resnext50_36patch_overlook_cos_spine_loc_{provider}'
     if provider == "rad":
         csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
-    else:
+    elif provider == 'kar':
         csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
+    else:
+        csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data-spine-loc/train/'
     # image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
@@ -201,7 +203,10 @@ if __name__ == "__main__":
             writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
             if provider == "rad":
                 writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            elif provider == "kar":
+                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             else:
+                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
                 writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
