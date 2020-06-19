@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import math
+import warnings
 
 def _mask_tissue(image, kernel_size=(7, 7), gray_threshold=220):
     """Masks tissue in image. Uses gray-scaled image, as well as
