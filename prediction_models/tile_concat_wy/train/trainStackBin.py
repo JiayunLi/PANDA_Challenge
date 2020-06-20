@@ -134,7 +134,7 @@ if __name__ == "__main__":
     elif provider == 'kar':
         csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
     else:
-        csv_file = '../input/csv_pkl_files/{}_fold_train.csv'.format(nfolds)
+        csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
     image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
     # image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
