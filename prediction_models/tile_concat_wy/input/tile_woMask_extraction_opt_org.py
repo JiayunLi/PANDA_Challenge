@@ -18,6 +18,6 @@ if __name__ == "__main__":
     utils.check_folder_exists(os.path.dirname(OUT_TRAIN))
     Source_Folder = TRAIN
     Des_File = OUT_TRAIN
-    mean, std, ratio, tile_number, tile_location = write_2_file_img(Source_Folder, Des_File, names, pen_marked_images, sz, N)
+    mean, std, tile_number, tile_location = write_2_file_img(Source_Folder, Des_File, names, pen_marked_images, sz)
     with open(os.path.join(os.path.dirname(OUT_TRAIN), 'tile_loc_{}.pkl'.format("val")), 'wb') as f:
         pickle.dump(tile_location, f)
