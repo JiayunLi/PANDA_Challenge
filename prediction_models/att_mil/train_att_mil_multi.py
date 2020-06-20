@@ -87,11 +87,17 @@ def val(epoch, fold, model, val_loader, slide_criterion, alpha, loss_type, logge
                 normalized_probs = torch.nn.Sigmoid(probs)
                 predicted = torch.ge(normalized_probs, 0.5).cpu().numpy()
             elif loss_type == "mse":
+                # elif (loss_type == "mse") and (not tile_loss_only):
                 predicted = np.squeeze(probs.cpu().round().numpy()[:], axis=1)
+            elif loss_type == "bce":
+                predicted = probs.sigmoid().sum(1).detach().round().cpu().numpy()
             else:
                 _, predicted = torch.max(probs.data, 1)
                 predicted = predicted.cpu().numpy()
-            all_labels.append(labels.cpu().numpy())
+            if loss_type == 'bce':
+                all_labels.append(labels.sum(1).cpu().numpy())
+            else:
+                all_labels.append(labels.cpu().numpy())
             all_preds.append(predicted)
             del tiles_low
             del tiles_high

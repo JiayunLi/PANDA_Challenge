@@ -145,6 +145,7 @@ class BiopsySlideSelected(data.Dataset):
                                                         pad_top, pad_left, lowest_sub_size=16, sub_size=64,
                                                         tiles=results['tiles'], max_per_tile=2, n_row=results['nrow'],
                                                         n_col=results['ncol'])
+            sub_tile_locs = sub_tile_locs['high_res']
             sub_tile_locs = torch.FloatTensor(sub_tile_locs)
             if len(tile_idxs) < len(instances):
                 pad_n = len(instances) - len(tile_idxs)

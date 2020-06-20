@@ -90,7 +90,7 @@ def trainval(opts):
 
     if opts.dataset in {'selected_10x', "selected_10x_5x"}:
         select_att_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
-        select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs.npy"
+        select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs_update.npy"
         if not os.path.isfile(select_att_file_loc):
             raise FileNotFoundError(f"Plase use test_model.py to generate attention values first for model "
                                     f"{opts.select_model}!")

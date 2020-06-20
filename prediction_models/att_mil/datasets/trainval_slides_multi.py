@@ -96,14 +96,18 @@ class BiopsySlidesBatchMultiSelect(data.Dataset):
         cur_im_shape = (cur_slide.level_dimensions[level + 3][1],
                         cur_slide.level_dimensions[level + 3][0])
 
-        if self.phase == "meanstd":
+        if self.phase == "meanstd" or self.params.top_n < 0:
             n = len(lowest_locs)
         else:
             n = self.params.top_n
         instances = torch.FloatTensor(n, self.params.num_channels,
                                       self.params.input_size, self.params.input_size, )
         counter = 0
-        for low_i, low_j in lowest_locs:
+        for low_ij in lowest_locs:
+            if len(low_ij) == 1:
+                low_i, low_j = low_ij[0][0], low_ij[0][1]
+            else:
+                low_i, low_j = low_ij[0], low_ij[1]
             high_i = max(low_i * rate, 0)
             high_j = max(low_j * rate, 0)
             # print(f"{high_i}_{high_j}")
@@ -132,6 +136,10 @@ class BiopsySlidesBatchMultiSelect(data.Dataset):
         tiles_low = self._get_tiles(cur_slide, self.low_level, lowest_locs_low, self.lowest_tile_size_low)
         lowest_locs_high = self.selected_locs[slide_id]["high_res"]  # For high resolution
         tiles_high = self._get_tiles(cur_slide, self.high_level, lowest_locs_high, self.lowest_tile_size_high)
+        if self.params.loss_type == "bce":
+            isup_grade = slide_label
+            slide_label = np.zeros(5).astype(np.float32)
+            slide_label[:isup_grade] = 1.
         return tiles_low, tiles_high, slide_label
 
 
