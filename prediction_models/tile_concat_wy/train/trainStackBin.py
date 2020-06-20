@@ -128,14 +128,14 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_overlook_cos_spine_loc_{provider}'
+    fname = f'Resnext50_36patch_overlook_cos_opt_stack_{provider}'
     if provider == "rad":
-        csv_file = '../input/panda-36x256x256-tiles-data-spine/radboud_{}_fold_train.csv'.format(nfolds)
+        csv_file = '../input/cvs_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
-        csv_file = '../input/panda-36x256x256-tiles-data-spine/karolinska_{}_fold_train.csv'.format(nfolds)
+        csv_file = '../input/cvs_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
     else:
-        csv_file = '../input/panda-36x256x256-tiles-data-spine/{}_fold_train.csv'.format(nfolds)
-    image_dir = '../input/panda-36x256x256-tiles-data-spine-loc/train/'
+        csv_file = '../input/cvs_pkl_files/{}_fold_train.csv'.format(nfolds)
+    image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
     # image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 6
     epochs = 60
