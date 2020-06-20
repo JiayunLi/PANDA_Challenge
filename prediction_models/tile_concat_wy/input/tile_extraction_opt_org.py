@@ -7,10 +7,10 @@ import zipfile
 import pickle
 import numpy as np
 from utiles import utils
-from spine import spine, tile, tile_rect, remove_pen_marks, tile_img, tile_rect_img
 import argparse
 from PIL import Image
-from new_tile import compute_coords, tile
+from new_tile import compute_coords, tile, tile_img
+from spine import remove_pen_marks
 
 def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     """
@@ -27,7 +27,6 @@ def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     ## x_tot: [np.array(r_mean,g_mean,b_mean), np.array(r_mean,g_mean,b_mean),....]
     ## x2_tot: [np.array(r^2_mean,g^2_mean,b_mean), np.array(r^2_mean,g^2_mean,b^2_mean),....]
     x_tot, x2_tot = [], []
-    ratio = []
     tile_number = []
     tile_location = {}
 
@@ -76,7 +75,7 @@ def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     print('mean:', img_avr, ', std:', img_std, 'tile_number:', np.mean(tile_number))
     return (img_avr, img_std, tile_number, tile_location)
 
-def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
+def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 256):
     """
     Extract patches from orginal images and save them to des file.
     :param Source_Folder: list, contains the original image and mask folder
@@ -89,15 +88,7 @@ def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     ## x_tot: [np.array(r_mean,g_mean,b_mean), np.array(r_mean,g_mean,b_mean),....]
     ## x2_tot: [np.array(r^2_mean,g^2_mean,b_mean), np.array(r^2_mean,g^2_mean,b^2_mean),....]
     x_tot, x2_tot = [], []
-    kwargs = {'step_size': 5,
-              'h_step_size': 0.15,
-              'patch_size': 33,
-              'slide_thresh': 0.1,
-              'overlap_thresh': 0.5,
-              'min_size': 1,
-              'iou_cover_thresh': 0.84,
-              'low_tile_mode': 'random'}
-    ratio = []
+
     tile_number = []
     tile_location = {}
     for name in tqdm(names):
@@ -111,40 +102,36 @@ def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
             continue
 
         img0 = cv2.resize(biopsy[-1], (int(biopsy[-1].shape[1] / 2), int(biopsy[-1].shape[0] / 2)))
+        img = biopsy[1]
         if name in markers:
             img0, _, _ = remove_pen_marks(img0, scale=8)
-        result = spine(img0, **kwargs)
-        ra = np.sum(np.multiply((result['patch_mask'] > 0).astype('int'), result['mask'])) / np.sum(result['mask'])
+            img, _, _ = remove_pen_marks(img, scale=1)
 
-        img = biopsy[1]
-
-        ## tile the img and mask to N patches with size (sz,sz,3)
-        if ra < kwargs['iou_cover_thresh'] or len(result['tile_location']) < N:
-            tiles, ra, _ = tile_rect_img(img,result['mask'], sz=sz,
-                                     N=N, scale = 8, overlap_ratio=0.6, mode=kwargs['low_tile_mode'])
-        else:
-            tiles = tile_img(img, result['tile_location'], result['IOU'], sz=sz, N=N)
-
-        ratio.append(ra)
-        tile_number.append(len(result['tile_location']))
+        coords = compute_coords(img0,
+                                patch_size=sz // 8,
+                                precompute=True,
+                                min_patch_info=0.35,
+                                min_axis_info=0.35,
+                                min_consec_axis_info=0.35,
+                                min_decimal_keep=0.7)
+        coords = coords * 8
+        tiles = tile_img(img, coords, sz=sz)
+        tile_number.append(len(coords))
         loc = []
         for idx, t in enumerate(tiles):
-            img, t_loc = t['img'], t['location']
+            img, t_loc = t['img'],t['location']
             x_tot.append((img / 255.0).reshape(-1, 3).mean(0))  ## append channel mean
             x2_tot.append(((img / 255.0) ** 2).reshape(-1, 3).mean(0))
-            # if read with PIL RGB turns into BGR
             PILIMG = Image.fromarray(img)
-            PILIMG.save(os.path.join(Source_Folder, '{0:s}_{1:d}.png'.format(name, idx)))
+            PILIMG.save(os.path.join(Des_File, '{0:s}_{1:d}.png'.format(name, idx)))
             loc.append(t_loc)
         tile_location[name] = loc
     # image stats
-    # print(np.array(x_tot).shape) ## (168256, 3)
     img_avr = np.array(x_tot).mean(0)
-    # print(np.array(x_tot).shape) ## (168256, 3)
     img_std = np.sqrt(np.array(x2_tot).mean(0) - img_avr ** 2)  ## variance = sqrt(E(X^2) - E(X)^2)
     img_std = np.sqrt(img_std)
-    print('mean:', img_avr, ', std:', img_std, ', ratio:', np.mean(ratio), ', tile_number:', np.mean(tile_number))
-    return (img_avr, img_std, ratio, tile_number, tile_location)
+    print('mean:', img_avr, ', std:', img_std, 'tile_number:', np.mean(tile_number))
+    return (img_avr, img_std, tile_number, tile_location)
 
 if __name__ == "__main__":
     """Define Your Input"""

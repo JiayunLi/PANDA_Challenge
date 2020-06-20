@@ -268,3 +268,25 @@ def tile(img, mask, coords, sz=256):
                        'mask': this_mask,
                        'location': [x0,y0,x1,y1]})
     return result
+
+def tile_img(img, coords, sz=256):
+    result = []
+    coords = sorted(coords, key=lambda x: x[0], reverse=False)
+    h, w, _ = img.shape
+    for i in range(len(coords)):
+        v, x, y = coords[i]
+        x0, y0 = max(0, x), max(0, y)
+        x1, y1 = min(h, x0+sz), min(w, y0+sz)
+        this_img = img[x0:x1,y0:y1,:]
+
+        ## if need padding:
+        shape = this_img.shape
+        if shape[0] < sz or shape[1] < sz:
+            pad0, pad1 = (sz - shape[0]) % sz, (sz - shape[1]) % sz
+            ## pad image and msk
+            this_img = np.pad(this_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant',
+                         constant_values=255)  # img (h',w',3)
+
+        result.append({'img': this_img,
+                       'location': [x0,y0,x1,y1]})
+    return result
