@@ -57,7 +57,7 @@ def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
                                 min_decimal_keep=0.7)
         coords = coords * 8
         tiles = tile(img, mask, coords, sz=sz)
-
+        tile_number.append(len(coords))
         loc = []
         for idx, t in enumerate(tiles):
             img, mask, t_loc = t['img'], t['mask'], t['location']
@@ -73,8 +73,8 @@ def write_2_file(Source_Folder, Des_File, names, markers, sz = 256, N = 36):
     img_avr = np.array(x_tot).mean(0)
     img_std = np.sqrt(np.array(x2_tot).mean(0) - img_avr ** 2)  ## variance = sqrt(E(X^2) - E(X)^2)
     img_std = np.sqrt(img_std)
-    print('mean:', img_avr, ', std:', img_std, ', ratio:', np.mean(ratio), ', tile_number:', np.mean(tile_number))
-    return (img_avr, img_std, ratio, tile_number, tile_location)
+    print('mean:', img_avr, ', std:', img_std, 'tile_number:', np.mean(tile_number))
+    return (img_avr, img_std, tile_number, tile_location)
 
 def write_2_file_img(Source_Folder, Des_File, names, markers, sz = 128, N = 16):
     """
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     Des_File = [OUT_TRAIN, OUT_MASKS]
     # Source_Folder = TRAIN
     # Des_File = OUT_TRAIN
-    mean, std, ratio, tile_number, tile_location = write_2_file(Source_Folder, Des_File, img_ids, pen_marked_images, sz, N)
+    mean, std, tile_number, tile_location = write_2_file(Source_Folder, Des_File, img_ids, pen_marked_images, sz, N)
     # save tile locations:
     with open(os.path.join(os.path.dirname(OUT_MASKS), 'tile_loc_{}.pkl'.format(process_num)), 'wb') as f:
         pickle.dump(tile_location, f)
