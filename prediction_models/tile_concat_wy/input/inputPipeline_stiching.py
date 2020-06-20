@@ -70,8 +70,20 @@ class PandaPatchDataset(Dataset):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
-        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                  for i in range(self.N)]
+        tile_number = self.train_csv.tile_number[idx]
+        if tile_number == self.N:
+            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+                      for i in range(self.N)]
+        elif tile_number > self.N:
+            idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+                      for i in idxes]
+        else:
+            idxes = list(range(tile_number))
+            idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+                      for i in idxes]
+
         imgs = []
         for i, fname in enumerate(fnames):
             img = self.open_image(fname)
