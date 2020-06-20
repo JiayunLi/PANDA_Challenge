@@ -74,7 +74,7 @@ def trainval(opts):
 
     # Generate tile-level labels
     if not os.path.isfile(f"{opts.data_dir}/tile_labels_{opts.dataset}.json") and opts.dataset \
-            not in {"16_128_128", 'br_256_2x', 'selected_10x'} and not opts.multi:
+            not in {"16_128_128", 'br_256_2x', 'selected_10x', 'selected_10x_5x'} and not opts.multi:
         from prediction_models.att_mil.utils import dataset_utils
         masks_ldmb_dir = f"{opts.data_dir}/label_masks/"
         dataset_utils.generate_tile_label_json(masks_ldmb_dir, opts.data_dir, mask_size=opts.im_size,
