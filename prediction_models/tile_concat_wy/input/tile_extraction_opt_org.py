@@ -161,7 +161,7 @@ if __name__ == "__main__":
     utils.check_folder_exists(os.path.dirname(OUT_MASKS))
     sz = 256 ## image patch size
     N = 36 ## how many patches selected from each slide
-    step_size = 10
+    step_size = 20000
     img_ids = [name[:-10] for name in os.listdir(MASKS)]
     img_ids = img_ids[step_size*process_num:min(len(img_ids), step_size*(process_num + 1))]
     # img_ids = img_ids[1020:]
