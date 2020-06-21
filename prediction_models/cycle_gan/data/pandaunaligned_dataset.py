@@ -40,7 +40,7 @@ class PANDAUnalignedDataset(BaseDataset):
         # self.B_size = np.sum(self.df_kar["tile_number"].tolist())
         self.A_size = len(self.df_rad)
         self.B_size = len(self.df_kar)
-        print(self.A_size, self.B_size)
+        # print(self.A_size, self.B_size)
         # exit()
 
         btoA = self.opt.direction == 'BtoA'
@@ -63,7 +63,7 @@ class PANDAUnalignedDataset(BaseDataset):
         """
         A_num = self.df_rad.loc[index % self.A_size, "tile_number"]
         A_num = np.random.choice(A_num, 1)[0]
-        A_path = os.path.join(self.data_dir, self.df_rad.loc[index, "image_id"] + f"_{A_num}.png")
+        A_path = os.path.join(self.data_dir, self.df_rad.loc[index% self.A_size, "image_id"] + f"_{A_num}.png")
         # A_path = self.A_paths[index % self.A_size]  # make sure index is within then range
         if self.opt.serial_batches:   # make sure index is within then range
             index_B = index % self.B_size
