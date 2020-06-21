@@ -41,6 +41,8 @@ class PANDAUnalignedDataset(BaseDataset):
         # self.B_size = np.sum(self.df_kar["tile_number"].tolist())
         self.A_size = len(self.df_rad)
         self.B_size = len(self.df_kar)
+        print(self.A_size, self.B_size)
+        exit()
 
         btoA = self.opt.direction == 'BtoA'
         input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
