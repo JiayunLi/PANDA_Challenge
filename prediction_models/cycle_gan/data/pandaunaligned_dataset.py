@@ -71,7 +71,7 @@ class PANDAUnalignedDataset(BaseDataset):
             index_B = random.randint(0, self.B_size - 1)
         B_num = self.df_kar.loc[index_B % self.B_size, "tile_number"]
         B_num = np.random.choice(B_num, 1)[0]
-        B_path = os.path.join(self.data_dir, self.df_kar.loc[index, "image_id"] + f"_{B_num}.png")
+        B_path = os.path.join(self.data_dir, self.df_kar.loc[index_B, "image_id"] + f"_{B_num}.png")
         A_img = Image.open(A_path).convert('RGB')
         B_img = Image.open(B_path).convert('RGB')
         # apply image transformation
