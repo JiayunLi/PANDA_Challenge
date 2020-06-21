@@ -26,10 +26,9 @@ class PANDAUnalignedDataset(BaseDataset):
         """
         BaseDataset.__init__(self, opt)
         self.data_dir = opt.dataroot
-        self.csv_file = opt.csvfile
-        self.df = pd.read_csv(self.csv_file)
-        self.df_rad = self.df.loc[self.df['data_provider'] == 'radboud']
-        self.df_kar = self.df.loc[self.df['data_provider'] == 'karolinska']
+        self.csv_folder = opt.csvfolder
+        self.df_rad = pd.read_csv(os.path.join(self.csv_folder, "radboud_4_fold_train.csv"))
+        self.df_kar = pd.read_csv(os.path.join(self.csv_folder, "karolinska_4_fold_train.csv"))
         # self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')  # create a path '/path/to/data/trainA'
         # self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')  # create a path '/path/to/data/trainB'
 
@@ -41,8 +40,8 @@ class PANDAUnalignedDataset(BaseDataset):
         # self.B_size = np.sum(self.df_kar["tile_number"].tolist())
         self.A_size = len(self.df_rad)
         self.B_size = len(self.df_kar)
-        print(self.A_size, self.B_size)
-        exit()
+        # print(self.A_size, self.B_size)
+        # exit()
 
         btoA = self.opt.direction == 'BtoA'
         input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
