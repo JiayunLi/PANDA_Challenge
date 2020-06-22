@@ -41,7 +41,7 @@ class Train(object):
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
-            outputs = model(inputs.cuda())
+            outputs = model(inputs.cuda().float())
             outputs_main = outputs['out'] # for regression
             loss1 = criterion(outputs_main, labels.float().cuda())
             if self.GLS:
