@@ -244,7 +244,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
                         cur_slide.level_dimensions[self.params.level + 3][0])
         lowest_locs = self.selected_locs[slide_id]['high_res']
-        print(lowest_locs)
+        print(len(lowest_locs))
 
         if self.phase == "meanstd":
             n = len(lowest_locs)
@@ -253,7 +253,11 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         instances = torch.FloatTensor(n, self.params.num_channels,
                                       self.params.input_size, self.params.input_size,)
         counter = 0
-        for low_i, low_j in lowest_locs:
+        for low_ij in lowest_locs:
+            if len(low_ij) == 1:
+                low_i, low_j = low_ij[0][0], low_ij[0][1]
+            else:
+                low_i, low_j = low_ij[0], low_ij[1]
             high_i = max(low_i * rate, 0)
             high_j = max(low_j * rate, 0)
             # print(f"{high_i}_{high_j}")
