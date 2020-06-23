@@ -105,7 +105,7 @@ def generate_tile_label_json(lmdb_dir, tile_info_dir, mask_size, trainval_file, 
 
 def convert_cv_split(trainval_file, out_dir, n_folds):
     trainval_df = pd.read_csv(trainval_file)
-    for fold in n_folds:
+    for fold in range(n_folds):
         train_data = []
         val_data = []
         for i in range(len(trainval_file)):
