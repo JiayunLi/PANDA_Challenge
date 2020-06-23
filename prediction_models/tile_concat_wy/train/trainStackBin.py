@@ -128,7 +128,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_overlook_cos_opt_stack_{provider}'
+    fname = f'Resnext50_32patch_overlook_cos_opt_stack_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     tsfm = data_transform()
     # tsfm = None
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N =36, rand=True)
+    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N =32, rand=True)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     # criterion = nn.CrossEntropyLoss()

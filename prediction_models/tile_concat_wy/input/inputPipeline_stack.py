@@ -104,6 +104,9 @@ class PandaPatchDataset(Dataset):
                 this_img = self.transform(image=this_img)['image']
             this_img = this_img.astype(np.float32)
             this_img /= 255
+            mean = [0.82625018, 0.63841069, 0.76088338]
+            std = [0.39606442, 0.5129944, 0.41479104]
+            this_img = (this_img - mean) / (std)  ## normalize the image
             this_img = this_img.transpose(2,0,1)
             images.append(torch.tensor(this_img))
         images = torch.stack(images)
@@ -239,9 +242,9 @@ def data_transform():
     tsfm = albumentations.Compose([
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.HorizontalFlip(p=0.5),
-        albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
-        albumentations.RandomBrightnessContrast()
+        albumentations.HorizontalFlip(p=0.5)
+        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
+        # albumentations.RandomBrightnessContrast()
     ])
     return tsfm
 
