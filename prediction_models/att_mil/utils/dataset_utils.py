@@ -111,7 +111,7 @@ def convert_cv_split(trainval_file, out_dir, n_folds, old_trainval_file=None):
         old_slide_ids = set()
         old_df = pd.read_csv(old_trainval_file)
         for i in range(len(old_df)):
-            cur_slide_id = old_df.iloc['image_id']
+            cur_slide_id = old_df.iloc[i]['image_id']
             old_slide_ids.add(cur_slide_id)
 
     for fold in range(n_folds):
