@@ -115,7 +115,9 @@ class PandaPatchDataset(Dataset):
             images = self.transform(image=images)['image']
         images = images.astype(np.float32)
         images /= 255.0
-        images = (images - [0.5,0.5,0.5])/([0.5,0.5,0.5]) ## normalize the image
+        mean = [0.82625018, 0.63841069, 0.76088338]
+        std = [0.39606442, 0.5129944, 0.41479104]
+        images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
@@ -238,9 +240,9 @@ def data_transform():
     tsfm = albumentations.Compose([
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.HorizontalFlip(p=0.5),
-        albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
-        albumentations.RandomBrightnessContrast(),
+        albumentations.HorizontalFlip(p=0.5)
+        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
+        # albumentations.RandomBrightnessContrast(),
         # albumentations.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0,)
     ])
     return tsfm
