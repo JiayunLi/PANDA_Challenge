@@ -103,6 +103,23 @@ def generate_tile_label_json(lmdb_dir, tile_info_dir, mask_size, trainval_file, 
     return
 
 
+def convert_cv_split(trainval_file, out_dir, n_folds):
+    trainval_df = pd.read_csv(trainval_file)
+    for fold in n_folds:
+        train_data = []
+        val_data = []
+        for i in range(len(trainval_file)):
+            cur = trainval_df.iloc[i].to_dict()
+            if int(cur['split']) == i:
+                val_data.append(cur)
+            else:
+                train_data.append(cur)
+        train_df = pd.DataFrame(data=train_data)
+        val_df = pd.DataFrame(data=val_data)
+        train_df.to_csv(f"{out_dir}/train_{fold}.csv")
+        val_df.to_csv(f"{out_dir}/val_{fold}.csv")
+
+
 # Generate n files for n fold cross validation
 def generate_cv_split(trainval_file, out_dir, n_fold, seed, delete_dir=False):
     if not delete_dir and os.path.isdir(out_dir) and os.path.isfile(f"{out_dir}/train_{n_fold-1}.csv"):
