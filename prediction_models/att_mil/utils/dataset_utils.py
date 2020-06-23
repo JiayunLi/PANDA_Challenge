@@ -108,9 +108,9 @@ def convert_cv_split(trainval_file, out_dir, n_folds):
     for fold in range(n_folds):
         train_data = []
         val_data = []
-        for i in range(n_folds):
+        for i in range(len(trainval_file)):
             cur = trainval_df.iloc[i].to_dict()
-            if int(cur['split']) == i:
+            if int(cur['split']) == fold:
                 val_data.append(cur)
             else:
                 train_data.append(cur)
