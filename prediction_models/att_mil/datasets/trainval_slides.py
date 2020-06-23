@@ -243,7 +243,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         cur_slide = openslide.OpenSlide(f"{self.params.data_dir}/{slide_id}.tiff")
         cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
                         cur_slide.level_dimensions[self.params.level + 3][0])
-        lowest_locs = self.selected_locs[slide_id]
+        lowest_locs = self.selected_locs[slide_id]['high_res']
 
         if self.phase == "meanstd":
             n = len(lowest_locs)

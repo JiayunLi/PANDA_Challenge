@@ -47,7 +47,7 @@ def get_tissue_roi(dw_sample):
 
 def get_padded(img, sz, mode=0):
     shape = img.shape
-    pad0, pad1 = (sz - shape[0] % sz) % sz + ((sz * mode) // 2), (sz - shape[1] % sz) % sz + ((sz * mode) // 2)
+    pad0, pad1 = (sz - shape[0] % sz) % sz + ((sz * mode) // 2), (sz - shape[1] % sz) % sz + ((sz * mode) - (sz * mode) // 2)
     img = np.pad(img, [[pad0//2, pad0-pad0//2], [pad1//2, pad1-pad1//2], [0, 0]], constant_values=255)
     return img, pad0 // 2, pad1 // 2
 
