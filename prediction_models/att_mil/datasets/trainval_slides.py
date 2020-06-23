@@ -244,6 +244,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
                         cur_slide.level_dimensions[self.params.level + 3][0])
         lowest_locs = self.selected_locs[slide_id]['high_res']
+        print(lowest_locs)
 
         if self.phase == "meanstd":
             n = len(lowest_locs)
