@@ -103,13 +103,24 @@ def generate_tile_label_json(lmdb_dir, tile_info_dir, mask_size, trainval_file, 
     return
 
 
-def convert_cv_split(trainval_file, out_dir, n_folds):
+# TODO: regenerate tiles with more data!!!!
+def convert_cv_split(trainval_file, out_dir, n_folds, old_trainval_file=None):
     trainval_df = pd.read_csv(trainval_file)
+    old_slide_ids = None
+    if old_trainval_file:
+        old_slide_ids = set()
+        old_df = pd.read_csv(old_trainval_file)
+        for i in range(len(old_df)):
+            cur_slide_id = old_df.iloc['image_id']
+            old_slide_ids.add(cur_slide_id)
+
     for fold in range(n_folds):
         train_data = []
         val_data = []
         for i in range(len(trainval_df)):
             cur = trainval_df.iloc[i].to_dict()
+            if old_slide_ids and cur['image_id'] not in old_slide_ids:
+                continue
             if int(cur['split']) == fold:
                 val_data.append(cur)
             else:

@@ -86,7 +86,8 @@ def trainval(opts):
     if not os.path.isfile(f"{opts.info_dir}/train_{opts.start_fold}.csv"):
         from prediction_models.att_mil.utils import dataset_utils
         if not os.path.isfile(f"{opts.info_dir}/train_{opts.start_fold}.csv"):
-            dataset_utils.convert_cv_split(f"{opts.info_dir}/4_fold_train.csv", opts.info_dir, opts.n_folds)
+            dataset_utils.convert_cv_split(f"{opts.info_dir}/4_fold_train.csv", opts.info_dir, opts.n_folds,
+                                           "./info/16_128_128/4_fold_train.csv")
         else:
             dataset_utils.generate_cv_split(
                 f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
