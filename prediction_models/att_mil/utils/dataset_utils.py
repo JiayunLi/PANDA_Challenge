@@ -115,7 +115,9 @@ def convert_cv_split(trainval_file, out_dir, n_folds):
             else:
                 train_data.append(cur)
         train_df = pd.DataFrame(data=train_data)
+        print(len(train_df))
         val_df = pd.DataFrame(data=val_data)
+        print(len(val_df))
         train_df.to_csv(f"{out_dir}/train_{fold}.csv")
         val_df.to_csv(f"{out_dir}/val_{fold}.csv")
 
