@@ -183,10 +183,10 @@ if __name__ == "__main__":
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS)
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = convert_syncbn_model(model)
+        model = convert_syncbn_model(model).cuda()
         optimizer = Over9000(model.parameters(), lr=0.00003)
         modle, optimizer = amp.initialize(model, optimizer, opt_level='O1')
-        model = DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
+        model = DistributedDataParallel(model, device_ids=[args.local_rank])
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
