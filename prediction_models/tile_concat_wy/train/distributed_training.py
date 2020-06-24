@@ -158,12 +158,13 @@ if __name__ == "__main__":
     criterion = nn.BCEWithLogitsLoss()
     ## tensorboard writer
     writerDir = './runs'
-    check_folder_exists(writerDir)
-    timeStamp = datetime.now(timezone('US/Pacific')).strftime("%m_%d_%H_%M_%S")
-    writer = SummaryWriter('{}/{}_{}'.format(writerDir,fname,timeStamp))
     ## weight saving
     weightsDir = './weights/{}'.format(fname)
-    check_folder_exists(weightsDir)
+    if args.local_rank == 0:
+        timeStamp = datetime.now(timezone('US/Pacific')).strftime("%m_%d_%H_%M_%S")
+        writer = SummaryWriter('{}/{}_{}'.format(writerDir, fname, timeStamp))
+        check_folder_exists(weightsDir)
+        check_folder_exists(writerDir)
     # for fold in range(nfolds):
     for fold in folds:
         print(f"training fold {fold}!")
