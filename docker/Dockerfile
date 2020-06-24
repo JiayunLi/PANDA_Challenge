@@ -13,6 +13,7 @@ conda install -c conda-forge ipywidgets && \
 conda install opencv pixman=0.36.0 && \
 conda install -c pytorch -c fastai fastai && \
 conda install -c conda-forge albumentations && \
+conda install -c conda-forge nvidia-apex && \
 pip install h5py lmdb openslide-python tensorboardX Pillow tensorboard && \
 pip install --upgrade jupyter_client && \
 pip install imagecodecs && \
