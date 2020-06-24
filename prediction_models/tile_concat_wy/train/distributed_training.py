@@ -133,7 +133,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_overlook_cos_opt_mstd_{provider}'
+    fname = f'Resnext50_36patch_overlook_cos_opt_mstd_dist_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
@@ -202,31 +202,33 @@ if __name__ == "__main__":
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
-            writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             val = Training.val_epoch(valloader, criterion)
-            writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
-            writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            if provider == "rad":
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-            elif provider == "kar":
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            else:
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            writer.flush()
+            if args.local_rank == 0:
+                writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
+                writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
+                writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
+                if provider == "rad":
+                    writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+                elif provider == "kar":
+                    writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+                else:
+                    writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+                    writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+                writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train['train_loss'],
                                                                                                val['val_loss'],
                                                                                                val['kappa']))
             ## save the checkpoints and best model
-            is_best = val['kappa'] > best_kappa
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath)
-            best_kappa = val['kappa'] if is_best else best_kappa
+            if args.local_rank == 0:
+                is_best = val['kappa'] > best_kappa
+                save_checkpoint({
+                    'epoch': epoch,
+                    'state_dict': model.state_dict(),
+                    'kappa': val['kappa'],
+                    'optimizer': optimizer.state_dict(),
+                }, is_best, weightsPath)
+                best_kappa = val['kappa'] if is_best else best_kappa
         del model
         del optimizer
         del Training
