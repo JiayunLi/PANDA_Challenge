@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
-# from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data.distributed import DistributedSampler
 from collections import OrderedDict
 import albumentations
 import skimage.io
@@ -33,9 +33,9 @@ class crossValDataloader(object):
         train_idx, val_idx = self.inx(fold)
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
-        # train_sampler = DistributedSampler(train)
+        train_sampler = DistributedSampler(train)
         trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                  sampler=RandomSampler(train),collate_fn=None, pin_memory=True,
+                                                  sampler=train_sampler,collate_fn=None, pin_memory=True,
                                                   drop_last=True)
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=SequentialSampler(val),
@@ -270,10 +270,10 @@ def dataloader_collte_fn(batch):
 
 if __name__ == "__main__":
     ## input files and folders
-    nfolds = 5
+    nfolds = 4
     bs = 4
     sz = 256
-    csv_file = './panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
+    csv_file = './csv_pkl_files/{}_fold_train.csv'.format(nfolds)
     image_dir = './panda-32x256x256-tiles-data/train/'
     ## image transformation
     tsfm = data_transform()
