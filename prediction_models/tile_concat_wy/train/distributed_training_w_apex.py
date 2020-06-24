@@ -154,7 +154,7 @@ if __name__ == "__main__":
         csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
     image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
-    bs = 6
+    bs = 8
     epochs = 60
     GLS = False
     Pre_Train = False
