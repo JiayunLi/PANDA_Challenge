@@ -122,7 +122,7 @@ if __name__ == "__main__":
     """Define Your Input"""
     parser = argparse.ArgumentParser(description='Optional arguments')
     parser.add_argument('--fold', type=str, default="0,1,2,3", help='which fold to train.')
-    parser.add_argument('--provider', type=str, default="rad", help='which dataset to train.')
+    parser.add_argument('--provider', type=str, default="whole", help='which dataset to train.')
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='node rank for distributed training')
     args = parser.parse_args()
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         trainloader, valloader = crossValData(fold)
         model = Model(GleasonScore=GLS)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
+        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
