@@ -242,9 +242,9 @@ def data_transform():
     tsfm = albumentations.Compose([
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.HorizontalFlip(p=0.5)
-        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
-        # albumentations.RandomBrightnessContrast(),
+        albumentations.HorizontalFlip(p=0.5),
+        albumentations.RGBShift(r_shift_limit=10, g_shift_limit=10, b_shift_limit=10),
+        albumentations.RandomBrightnessContrast(),
         # albumentations.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0,)
     ])
     return tsfm
