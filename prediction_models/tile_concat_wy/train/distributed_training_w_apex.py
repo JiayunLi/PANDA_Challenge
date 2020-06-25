@@ -18,7 +18,7 @@ from apex.parallel import convert_syncbn_model
 from apex.parallel import DistributedDataParallel
 from apex import amp
 ## custom package
-from input.inputPipeline_stiching import *
+from input.inputPipeline_stiching_dist import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
@@ -145,14 +145,15 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_overlook_cos_opt_mstd_dist_col_apex_{provider}'
+    fname = f'Resnext50_36patch_mstd_dist_col_apex_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
         csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
     else:
-        csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
-    # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
+        # csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
+        csv_file = '../input/panda-36x256x256-tiles-data/{}_fold_train.csv'.format(nfolds)
+    # image_dir = '../input/panda-36x256x256-tiles-data/train_norm/'
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 10
     epochs = 60
