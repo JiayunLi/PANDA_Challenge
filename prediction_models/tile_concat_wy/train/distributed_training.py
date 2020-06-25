@@ -15,7 +15,7 @@ from collections import OrderedDict
 import argparse
 import torch.distributed as dist
 ## custom package
-from input.inputPipeline_stiching import *
+from input.inputPipeline_stiching_dist import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
