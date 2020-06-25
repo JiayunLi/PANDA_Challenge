@@ -145,7 +145,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext101_36patch_overlook_cos_opt_mstd_dist_col_apex_{provider}'
+    fname = f'Resnext50_36patch_overlook_cos_opt_mstd_dist_col_apex_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     else:
         csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
-    image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
-    bs = 7
+    image_dir = '../input/panda-36x256x256-tiles-data/train/'
+    bs = 10
     epochs = 60
     GLS = False
     Pre_Train = False
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     for fold in folds:
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
-        model = Model(arch='resnext101_32x4d_ssl', GleasonScore=GLS)
+        model = Model(arch='resnext50_32x4d_ssl', GleasonScore=GLS)
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = convert_syncbn_model(model).cuda()
         optimizer = Over9000(model.parameters(), lr=0.00003)
