@@ -80,7 +80,7 @@ def test_w_atts(all_models, meanstd, test_slides_df, test_params, num_workers, b
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize(mean=meanstd['mean'], std=meanstd['std'])])
-    dataset = test_slides.BiopsySlideSelected(test_params, test_slides_df, normalize, phase='w_atts')
+    dataset = test_slides.BiopsySlideSelected(test_params, test_slides_df, normalize, phase='w_atts_cv')
     loader = \
         torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, drop_last=False,
                                     num_workers=num_workers, pin_memory=False)

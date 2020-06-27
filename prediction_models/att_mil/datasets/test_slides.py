@@ -138,7 +138,7 @@ class BiopsySlideSelected(data.Dataset):
             if self.transform:
                 instances[i, :, :, :] = self.transform(tile)
 
-        if self.phase == "w_atts":
+        if self.phase == "w_atts" or self.phase == "w_atts_cv":
             padded_low_shape = pad_img.shape
             sub_tile_locs = \
                 get_selected_locs.select_sub_simple_4x4(tile_idxs, self.lowest_im_size, None,
@@ -149,11 +149,13 @@ class BiopsySlideSelected(data.Dataset):
             sub_tile_locs = torch.FloatTensor(sub_tile_locs)
             if len(tile_idxs) < len(instances):
                 pad_n = len(instances) - len(tile_idxs)
-                # tile_idxs = torch.cat([tile_idxs, torch.zeros(pad_n) - 1], dim=0)
+                tile_idxs = torch.cat([tile_idxs, torch.zeros(pad_n) - 1], dim=0)
                 # n_tiles, n_sub_tiles, xy
                 sub_tile_locs = torch.cat([sub_tile_locs, torch.zeros(pad_n, 2, 2) - 1], dim=0)
-            # return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
-            return instances, slide_info.image_id, sub_tile_locs
+            if self.phase == "w_atts_cv":
+                return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
+            else:
+                return instances, slide_info.image_id, sub_tile_locs
         return instances, slide_info.image_id
 
 
