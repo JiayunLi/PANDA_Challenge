@@ -107,10 +107,18 @@ if __name__ == "__main__":
                         help="Use which model to generate attention map")
     parser.add_argument('--att_dir', type=str, default='./info/att_selected/',
                         help='Directory for cross validation information')
+    parser.add_argument('--n_low_res_tiles', type=int, default=36)
+    parser.add_argument('--low_res_fov', type=int, default=64, help='Field of view at lowest magnification')
+    parser.add_argument('--high_res_fov', type=int, default=32, help='Filed of view at lowest magnification')
+    parser.add_argument('--select_per', type=float, default=0.25)
     opts = parser.parse_args()
 
-    select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
+    low_res_tile_size = 4 * opts.low_res_fov
+    select_tot_n = int(opts.select_per * opts.n_low_res_tiles)
+    select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_{opts.n_low_res_tiles}_sz_{low_res_tile_size}.npy"
+
     all_selected = att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
-                                   select_locs_file_loc, att_low_tile_size=64, att_level=-2,
-                                   select_n=18, select_sub_size=64, select_per_tile=1, method='4x4')
-    np.save(f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs_update.npy", all_selected)
+                                   select_locs_file_loc, att_low_tile_size=opts.low_res_fov, att_level=-2,
+                                   select_n=select_tot_n, select_sub_size=opts.high_res_fov, select_per_tile=1, method='4x4')
+    np.save(f"{opts.att_dir}/{opts.select_model}_n_{opts.n_low_res_tiles}_sz_{low_res_tile_size}_locs_update.npy",
+            all_selected)
