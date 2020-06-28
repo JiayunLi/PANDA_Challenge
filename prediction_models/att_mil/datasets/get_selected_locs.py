@@ -62,7 +62,7 @@ def att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_til
     orig = skimage.io.MultiImage(f"{slides_dir}/{slide_id}.tiff")
     lowest = orig[-1]
     select_sub_size_lowest = select_sub_size // gen_selected_tiles.RATE_MAP[att_level]
-    cur_pad_top, cur_pad_left = attention_selected['pad_infos'][slide_id]
+    cur_pad_top, cur_pad_left, _, _ = attention_selected['pad_infos'][slide_id]
     pad0, pad1 = (att_low_tile_size - lowest.shape[0] % att_low_tile_size) % att_low_tile_size, (
                   att_low_tile_size - lowest.shape[1] % att_low_tile_size) % att_low_tile_size
     padded_low_shape = (lowest.shape[0] + pad0, lowest.shape[1] + pad1)
