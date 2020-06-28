@@ -81,11 +81,25 @@ def att_select_locs(slides_dir, slides_df_loc, attention_selected_loc, att_low_t
                     select_sub_size, select_per_tile, method='4x4'):
     attention_selected = np.load(attention_selected_loc, allow_pickle=True)
     attention_selected = dict(attention_selected.tolist())
-    slides_df = pd.read_csv(slides_df_loc)
+    all_slides = []
+    for i in range(4):
+        train_df = f"{slides_df_loc}/train_{i}.csv"
+        train_df = pd.read_csv(train_df)
+        for ii in range(len(train_df)):
+            cur = train_df.iloc[ii].to_dict()
+            all_slides.append(cur)
+        val_df = f"{slides_df_loc}/val_{i}.csv"
+        val_df = pd.read_csv(val_df)
+        for ii in range(len(val_df)):
+            cur = val_df.iloc[ii].to_dict()
+            all_slides.append(cur)
+    all_slides = pd.DataFrame(data=all_slides, columns=list(all_slides[0].keys()))
+
     all_selected_locs = dict()
     print("Generate selected tile locations")
-    for i in tqdm.tqdm(range(len(slides_df))):
-        slide_id = str(slides_df.iloc[i].image_id)
+
+    for i in tqdm.tqdm(range(len(all_slides))):
+        slide_id = str(all_slides.iloc[i].image_id)
         selected_locs = att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_tile_size, att_level,
                                                select_n, select_sub_size, select_per_tile, method)
         all_selected_locs[slide_id] = selected_locs
@@ -117,7 +131,7 @@ if __name__ == "__main__":
     select_tot_n = int(opts.select_per * opts.n_low_res_tiles)
     select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_{opts.n_low_res_tiles}_sz_{low_res_tile_size}.npy"
 
-    all_selected = att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
+    all_selected = att_select_locs(opts.data_dir, opts.info_dir,
                                    select_locs_file_loc, att_low_tile_size=opts.low_res_fov, att_level=-2,
                                    select_n=select_tot_n, select_sub_size=opts.high_res_fov, select_per_tile=1, method='4x4')
     np.save(f"{opts.att_dir}/{opts.select_model}_n_{select_tot_n}_sz_{opts.high_res_fov}_locs.npy",
