@@ -120,5 +120,5 @@ if __name__ == "__main__":
     all_selected = att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
                                    select_locs_file_loc, att_low_tile_size=opts.low_res_fov, att_level=-2,
                                    select_n=select_tot_n, select_sub_size=opts.high_res_fov, select_per_tile=1, method='4x4')
-    np.save(f"{opts.att_dir}/{opts.select_model}_n_{opts.n_low_res_tiles}_sz_{low_res_tile_size}_locs_update.npy",
+    np.save(f"{opts.att_dir}/{opts.select_model}_n_{opts.low_res_fov}_sz_{opts.high_res_fov}_locs.npy",
             all_selected)
