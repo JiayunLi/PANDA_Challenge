@@ -83,11 +83,6 @@ def att_select_locs(slides_dir, slides_df_loc, attention_selected_loc, att_low_t
     attention_selected = dict(attention_selected.tolist())
     all_slides = []
     for i in range(4):
-        train_df = f"{slides_df_loc}/train_{i}.csv"
-        train_df = pd.read_csv(train_df)
-        for ii in range(len(train_df)):
-            cur = train_df.iloc[ii].to_dict()
-            all_slides.append(cur)
         val_df = f"{slides_df_loc}/val_{i}.csv"
         val_df = pd.read_csv(val_df)
         for ii in range(len(val_df)):
