@@ -93,22 +93,23 @@ def trainval(opts):
                 f"{opts.data_dir}/train.csv", opts.info_dir, opts.n_folds, opts.manual_seed, opts.re_split)
 
     if opts.dataset in {'selected_10x', "selected_10x_5x"}:
-        select_att_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
-        select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs_update.npy"
-        if not os.path.isfile(select_att_file_loc):
-            raise FileNotFoundError(f"Plase use test_model.py to generate attention values first for model "
+        # select_att_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256.npy"
+        # select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_36_sz_256_locs_update.npy"
+        if not os.path.isfile(opts.select_locs_file_loc):
+            raise FileNotFoundError(f"Plase use test_model.py and get_selected_locs.py "
+                                    f"to generate attention values first for model "
                                     f"{opts.select_model}!")
-        if not os.path.isfile(select_locs_file_loc):
-            from prediction_models.att_mil.datasets import get_selected_locs
+        # if not os.path.isfile(select_locs_file_loc):
+        #     from prediction_models.att_mil.datasets import get_selected_locs
+        #
+        #     all_selected = get_selected_locs.att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
+        #                                                      select_att_file_loc, att_low_tile_size=64, att_level=-2,
+        #                                                      select_n=18, select_sub_size=64,  select_per_tile=2,
+        #                                                      method='4x4')
+        #     np.save(select_locs_file_loc, all_selected)
 
-            all_selected = get_selected_locs.att_select_locs(opts.data_dir, f"{opts.info_dir}/4_fold_train.csv",
-                                                             select_att_file_loc, att_low_tile_size=64, att_level=-2,
-                                                             select_n=18, select_sub_size=64,  select_per_tile=2,
-                                                             method='4x4')
-            np.save(select_locs_file_loc, all_selected)
-        else:
-            all_selected = np.load(select_locs_file_loc, allow_pickle=True)
-            all_selected = dict(all_selected.tolist())
+        all_selected = np.load(opts.select_locs_file_loc, allow_pickle=True)
+        all_selected = dict(all_selected.tolist())
     else:
         all_selected = None
 
@@ -245,6 +246,7 @@ if __name__ == "__main__":
                         help='Directory for cross validation information')
     parser.add_argument('--select_model', default="resnext50_3e-4_bce_256",
                         help="Use which model to generate attention map")
+    parser.add_argument('--select_locs_file_loc', default="./info/att_selected/resenet50_bce_newsplit_n_9_sz_32_locs.npy")
     parser.add_argument('--lowest_im_size', default=32, type=int)
     parser.add_argument('--at_level', default=-3, type=int)
 
