@@ -120,7 +120,7 @@ def att_select_locs(slides_dir, slides_df_loc, attention_selected_loc, att_low_t
     all_selected_locs['low_level'] = att_level
     all_selected_locs['high_level'] = att_level - 1
     all_selected_locs['lowest_tile_size_low'] = att_low_tile_size
-    all_selected_locs['lowest_tile_size_high'] = att_low_tile_size // 2
+    all_selected_locs['lowest_tile_size_high'] = select_sub_size
     return all_selected_locs
 
 

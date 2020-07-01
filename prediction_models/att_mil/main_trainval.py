@@ -128,7 +128,7 @@ def trainval(opts):
 
     elif opts.dataset in {'selected_10x'}:
         dataset_params = \
-            config_params.SelectedDatasetParams(opts.at_level, opts.lowest_im_size, opts.input_size, opts.info_dir,
+            config_params.SelectedDatasetParams(opts.at_level, opts.input_size, opts.info_dir,
                                                 opts.data_dir, opts.cache_dir, opts.exp_dir, opts.dataset,
                                                 opts.normalized, opts.loss_type, opts.num_channels, top_n=opts.top_n)
     else:

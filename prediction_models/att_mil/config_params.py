@@ -16,10 +16,10 @@ class DatasetParams:
 
 
 class SelectedDatasetParams:
-    def __init__(self, level, lowest_im_size, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
+    def __init__(self, level, input_size, info_dir, data_dir, cache_dir, exp_dir, dataset, normalized,
                  loss_type, num_channels=3, top_n=-1):
         self.level = level
-        self.lowest_im_size = lowest_im_size
+       #  self.lowest_im_size = lowest_im_size
         self.input_size = input_size
         self.num_channels = num_channels
         self.info_dir = info_dir
