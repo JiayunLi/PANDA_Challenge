@@ -252,8 +252,8 @@ if __name__ == "__main__":
     import os
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", default="/data/storage_slides/PANDA_challenge/16_128_128/")
-    parser.add_argument('--info_dir', default='./info/new_splits/')
+    parser.add_argument("--data_dir", default="/slides_data/train_images/")
+    parser.add_argument('--info_dir', default='./info/new_split/')
     parser.add_argument('--model_dir',
                         default='/data/storage_slides/PANDA_challenge/trimmed_weights/resnext50_3e-4_bce_256/')
 
