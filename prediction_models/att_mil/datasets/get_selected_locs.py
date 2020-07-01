@@ -48,6 +48,22 @@ def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pa
     return locs
 
 
+def select_sub_orig(lowest_ids, low_im_size, padded_low_shape, pad_top, pad_left, n_row=None, n_col=None):
+    if not n_row or not n_col:
+        n_row, n_col = padded_low_shape[0] // low_im_size, padded_low_shape[1] // low_im_size
+    locs = {"high_res": [], "low_res": []}
+    for idx, tile_id in enumerate(lowest_ids):
+        if tile_id == "-1":
+            continue
+        i, j = tile_id // n_col, tile_id % n_col
+        i = max(i * low_im_size - pad_top, 0)
+        j = max(j * low_im_size - pad_left, 0)
+        sub_locs = [(i, j)]
+        locs['high_res'].append(sub_locs)
+        locs['loc_res'].append(sub_locs)
+    return locs
+
+
 def att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_tile_size, att_level, select_n,
                            select_sub_size, select_per_tile, method='4x4'):
     cur_atts = attention_selected['atts'][slide_id]
@@ -72,6 +88,9 @@ def att_select_locs_helper(slides_dir, slide_id, attention_selected, att_low_til
         selected_locs = select_sub_simple_4x4(cur_tile_ids_fix[:select_n], att_low_tile_size, padded_low_shape, cur_pad_top,
                                               cur_pad_left, select_sub_size_lowest, select_sub_size,
                                               results['tiles'], select_per_tile)
+    elif method == 'orig':
+        selected_locs = select_sub_orig(cur_tile_ids_fix[:select_n], att_low_tile_size, padded_low_shape, cur_pad_top,
+                                        cur_pad_left)
     else:
         raise NotImplementedError(f"{method} hasn't been implemented!")
     return selected_locs
