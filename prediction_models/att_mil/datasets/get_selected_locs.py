@@ -60,7 +60,7 @@ def select_sub_orig(lowest_ids, low_im_size, padded_low_shape, pad_top, pad_left
         j = max(j * low_im_size - pad_left, 0)
         sub_locs = [(i, j)]
         locs['high_res'].append(sub_locs)
-        locs['loc_res'].append(sub_locs)
+        locs['low_res'].append(sub_locs)
     return locs
 
 
