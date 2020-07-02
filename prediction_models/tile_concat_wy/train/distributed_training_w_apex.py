@@ -18,8 +18,8 @@ from apex.parallel import convert_syncbn_model
 from apex.parallel import DistributedDataParallel
 from apex import amp
 ## custom package
-# from input.inputPipeline_stiching_dist import *
-from input.inputPipeline_stiching import *
+from input.inputPipeline_stiching_dist import *
+# from input.inputPipeline_stiching import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
