@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data.sampler import SequentialSampler
 from collections import OrderedDict
 import albumentations
 import skimage.io
@@ -33,7 +34,7 @@ class crossValDataloader(object):
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
         train_sampler = DistributedSampler(train)
-        val_sampler = DistributedSampler(val)
+        val_sampler = SequentialSampler(val)
         trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
                                                   sampler=train_sampler,collate_fn=None, pin_memory=True,
                                                   drop_last=True)
