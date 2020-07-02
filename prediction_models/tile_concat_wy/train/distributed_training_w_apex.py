@@ -146,7 +146,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_mstd_dist_apex_{provider}'
+    fname = f'Resnext50_36patch_mstd_dist_adam_cos_apex_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
@@ -184,14 +184,15 @@ if __name__ == "__main__":
         print(f"training fold {fold}!")
         trainloader, valloader = crossValData(fold)
         model = Model(arch='resnext50_32x4d_ssl', GleasonScore=GLS)
-        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = convert_syncbn_model(model).cuda()
-        optimizer = Over9000(model.parameters(), lr=0.00003)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
+        # model = convert_syncbn_model(model).cuda()
+        # optimizer = Over9000(model.parameters(), lr=0.00003)
+        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         modle, optimizer = amp.initialize(model, optimizer, opt_level='O1')
         model = DistributedDataParallel(model, device_ids=[args.local_rank])
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-        #                                           pct_start = 0.3, div_factor = 100)
-        # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        #                                          pct_start = 0.3, div_factor = 100)
+
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         best_kappa = 0
         if Pre_Train:
