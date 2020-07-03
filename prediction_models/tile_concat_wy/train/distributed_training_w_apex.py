@@ -146,14 +146,14 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_mstd_dist_adam_cos_apex_{provider}'
+    fname = f'Resnext50_36patch_mstd_dist_adam_cos_apex_{provider}_replicate'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
         csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
     else:
-        csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
-        # csv_file = '../input/panda-36x256x256-tiles-data/{}_fold_train.csv'.format(nfolds)
+        # csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
+        csv_file = '../input/panda-36x256x256-tiles-data/{}_fold_train.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
     image_dir = '../input/panda-36x256x256-tiles-data/train/'
     bs = 10
@@ -220,8 +220,8 @@ if __name__ == "__main__":
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
-            val = Training.val_epoch(valloader, criterion)
             if args.local_rank == 0:
+                val = Training.val_epoch(valloader, criterion)
                 writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
                 writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
                 writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
