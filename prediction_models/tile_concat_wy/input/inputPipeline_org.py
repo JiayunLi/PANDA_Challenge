@@ -154,6 +154,9 @@ class PandaPatchDatasetInfer(Dataset):
             images = self.transform(image=images)['image']
         images = images.astype(np.float32)
         images /= 255
+        mean = [0.82625018, 0.63841069, 0.76088338]
+        std = [0.39606442, 0.5129944, 0.41479104]
+        images = (images - mean) / (std)  ## normalize the image
         images = images.transpose(2, 0, 1)
         result["img"] = torch.tensor(images)
         result["name"] = name
@@ -190,7 +193,7 @@ def data_transform():
     tsfm = albumentations.Compose([
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
-        albumentations.HorizontalFlip(p=0.5),
+        albumentations.HorizontalFlip(p=0.5)
     ])
     return tsfm
 

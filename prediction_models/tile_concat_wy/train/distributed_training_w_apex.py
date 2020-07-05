@@ -146,7 +146,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_mstd_dist_adam_cos_apex_{provider}_replicate'
+    fname = f'Resnext50_36patch_dist_adam_cos_col_apex_{provider}_replicate'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
