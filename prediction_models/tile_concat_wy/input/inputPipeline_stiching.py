@@ -118,9 +118,9 @@ class PandaPatchDataset(Dataset):
             images = self.transform(image=images)['image']
         images = images.astype(np.float32)
         images /= 255.0
-        mean = [0.82625018, 0.63841069, 0.76088338]
-        std = [0.39606442, 0.5129944, 0.41479104]
-        images = (images - mean)/(std) ## normalize the image
+        # mean = [0.82625018, 0.63841069, 0.76088338]
+        # std = [0.39606442, 0.5129944, 0.41479104]
+        # images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
