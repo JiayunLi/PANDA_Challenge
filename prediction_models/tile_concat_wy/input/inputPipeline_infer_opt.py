@@ -108,8 +108,8 @@ class PandaPatchDatasetInfer(Dataset):
             images = self.transform(image=images)['image']
         images = images.astype(np.float32)
         images /= 255.0
-        mean = [0.82625018, 0.63841069, 0.76088338]
-        std = [0.39606442, 0.5129944, 0.41479104]
+        mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
+        std = np.asarray([0.07021654, 0.13918451, 0.08442586])
         images = (images - mean) / (std)  ## normalize the image
         images = images.transpose(2, 0, 1)
         datacenter = self.train_csv.loc[idx, 'data_provider']

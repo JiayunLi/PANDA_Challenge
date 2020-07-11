@@ -136,9 +136,9 @@ if __name__ == "__main__":
     nfolds = 4
     fname = f'Resnext50_36patch_{provider}'
     if provider == "rad":
-        csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
+        csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
-        csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
+        csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train_wo_sus.csv'.format(nfolds)
     else:
         csv_file = '../input/csv_pkl_files/{}_fold_whole_train_wo_sus.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'

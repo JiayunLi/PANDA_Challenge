@@ -286,7 +286,9 @@ def tile_img(img, coords, sz=256):
             ## pad image and msk
             this_img = np.pad(this_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant',
                          constant_values=255)  # img (h',w',3)
+        mean_pix = np.mean(this_img)
 
         result.append({'img': this_img,
-                       'location': [x0,y0,x1,y1]})
+                       'location': [x0,y0,x1,y1],
+                       'mean_pix':mean_pix})
     return result
