@@ -35,10 +35,11 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            # if i >= 5:
-            #     break
+            if i >= 2:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
+            print(labels)
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
@@ -133,17 +134,17 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_overlook_cos_opt_mstd_dist_col_{provider}'
+    fname = f'Resnext50_36patch_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train.csv'.format(nfolds)
     elif provider == 'kar':
         csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train.csv'.format(nfolds)
     else:
-        csv_file = '../input/csv_pkl_files/{}_fold_whole_train.csv'.format(nfolds)
+        csv_file = '../input/csv_pkl_files/{}_fold_whole_train_wo_sus.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
     image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
-    bs = 6
-    epochs = 60
+    bs = 8
+    epochs = 30
     GLS = False
     Pre_Train = False
     start_epoch = 0
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     # for fold in range(nfolds):
     for fold in folds:
         print(f"training fold {fold}!")
-        trainloader, valloader = crossValData(fold)
+        trainloader, valloader, trainSampler = crossValData(fold)
         model = Model(GleasonScore=GLS)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
@@ -202,6 +203,7 @@ if __name__ == "__main__":
             Training = Train(model, optimizer, scheduler, GLS = GLS)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
+            trainSampler.set_epoch(epoch)
             train = Training.train_epoch(trainloader,criterion)
             if args.local_rank == 0:
                 val = Training.val_epoch(valloader, criterion)

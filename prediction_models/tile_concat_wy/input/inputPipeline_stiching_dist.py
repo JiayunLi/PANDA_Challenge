@@ -41,7 +41,7 @@ class crossValDataloader(object):
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=val_sampler,
                                                 drop_last=True)
-        return trainloader, valloader
+        return trainloader, valloader, train_sampler
 
 class PandaPatchDataset(Dataset):
     """
@@ -73,18 +73,22 @@ class PandaPatchDataset(Dataset):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
-        # tile_number = self.train_csv.tile_number[idx]
-        tile_number = self.N
+        tile_pix = str(self.train_csv.tile_pixel[idx])
+        tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
+        tile_number = self.train_csv.tile_number[idx]
+        # tile_number = self.N
         if tile_number == self.N:
             fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                       for i in range(self.N)]
         elif tile_number > self.N:
-            idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+            # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+            idxes = list(np.argsort(tile_pix)[::-1][:self.N])
             fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                       for i in idxes]
         else:
             idxes = list(range(tile_number))
-            idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+            # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+            idxes += list(np.argsort(tile_pix)[::-1][:self.N - tile_number])
             fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                       for i in idxes]
 
@@ -121,7 +125,9 @@ class PandaPatchDataset(Dataset):
         images /= 255.0
         # mean = [0.82625018, 0.63841069, 0.76088338]
         # std = [0.39606442, 0.5129944, 0.41479104]
-        # images = (images - mean)/(std) ## normalize the image
+        mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
+        std = np.asarray([0.07021654, 0.13918451, 0.08442586])
+        images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
@@ -245,8 +251,9 @@ def data_transform():
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
         albumentations.HorizontalFlip(p=0.5),
-        albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
-        albumentations.RandomBrightnessContrast(),
+        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
+        albumentations.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1),
+        albumentations.HueSaturationValue(hue_shift_limit=7, sat_shift_limit=20)
         # albumentations.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0,)
     ])
     return tsfm
