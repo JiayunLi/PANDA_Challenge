@@ -70,16 +70,24 @@ class PandaPatchDatasetInfer(Dataset):
         if tile_number == self.N:
             idxes = [i for i in range(self.N)]
         elif tile_number > self.N:
-            idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+            pix_intensity = []
+            for i in range(tile_number):
+                pix_intensity.append(tiles[i]['mean_pix'])
+            idxes = list(np.argsort(pix_intensity)[:self.N])
+            # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
         else:
             idxes = list(range(tile_number))
-            idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+            pix_intensity = []
+            for i in range(tile_number):
+                pix_intensity.append(tiles[i]['mean_pix'])
+            idxes += list(np.argsort(pix_intensity)[:self.N - tile_number])
+            # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
 
         imgs = []
         for i in idxes:
             img = tiles[i]['img']
-            img = Image.fromarray(img).convert('RGB')
-            img = np.asarray(img)
+            # img = Image.fromarray(img).convert('RGB')
+            # img = np.asarray(img)
             imgs.append({'img': img, 'idx': i})
 
         if self.rand:  ## random shuffle the order of tiles
