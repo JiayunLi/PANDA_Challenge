@@ -39,7 +39,7 @@ class Train(object):
             #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
-            print(labels)
+            # print(labels)
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
