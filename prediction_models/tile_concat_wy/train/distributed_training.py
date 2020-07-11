@@ -143,7 +143,7 @@ if __name__ == "__main__":
         csv_file = '../input/csv_pkl_files/{}_fold_whole_train_wo_sus.csv'.format(nfolds)
     # image_dir = '../input/panda-36x256x256-tiles-data-opt/train_norm/'
     image_dir = '../input/panda-36x256x256-tiles-data-opt/train/'
-    bs = 8
+    bs = 6
     epochs = 30
     GLS = False
     Pre_Train = False
@@ -173,10 +173,10 @@ if __name__ == "__main__":
         model = Model(GleasonScore=GLS)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
-        optimizer = Over9000(model.parameters(), lr = 0.00003)
+        # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.3, div_factor = 100)
-        # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         best_kappa = 0
         if Pre_Train:
