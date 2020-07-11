@@ -72,8 +72,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 50:
-                #     break
+                if i > 2:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider = data['img'], data['isup_grade'], data['datacenter']
                 # zero the parameter gradients
