@@ -102,7 +102,7 @@ class PandaPatchDatasetInfer(Dataset):
             for w in range(n_row_tiles):
                 i = h * n_row_tiles + w
                 if len(imgs) > idxes[i]:
-                    this_img = imgs[idxes[i]]['img']
+                    this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
                 this_img = 255 - this_img  ## todo: see how this trik plays out

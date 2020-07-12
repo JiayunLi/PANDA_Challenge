@@ -112,7 +112,7 @@ class PandaPatchDataset(Dataset):
                     this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                this_img = 255 - this_img ## todo: see how this trik plays out
+                # this_img = 255 - this_img ## todo: see how this trik plays out
                 if self.transform is not None:
                     this_img = self.transform(image=this_img)['image']
                 h1 = h * self.image_size
