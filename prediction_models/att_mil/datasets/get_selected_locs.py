@@ -6,7 +6,7 @@ from prediction_models.att_mil.datasets import gen_selected_tiles
 
 
 def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pad_left, lowest_sub_size,
-                          sub_size, tiles, max_per_tile, n_row=None, n_col=None):
+                          sub_size, tiles, max_per_tile, n_row=None, n_col=None, use_orig=False):
     """
     Select lowest_ids with top attention value (50%). Divide the mid-resolution tile into 4 * 4 sub-grid and select
     two sub-tiles. Around each sub-tile, select a low_im_size // 2 region as the region to be zoomed in.
@@ -38,10 +38,13 @@ def select_sub_simple_4x4(lowest_ids, low_im_size, padded_low_shape, pad_top, pa
         ss_tiles = ss_tiles.transpose(0, 2, 1, 3, 4).reshape(-1, sub_size, sub_size, 3)
         sub_ids = np.argsort(ss_tiles.reshape(ss_tiles.shape[0], -1).sum(-1))[:max_per_tile]
         sub_locs = []
-        for sub_id in sub_ids:
-            sub_i = i + (sub_id // n_sub_col) * lowest_sub_size - shift_size
-            sub_j = j + (sub_id % n_sub_col) * lowest_sub_size - shift_size
-            sub_locs.append((sub_i, sub_j))
+        if use_orig:
+            sub_locs.append((i, j))
+        else:
+            for sub_id in sub_ids:
+                sub_i = i + (sub_id // n_sub_col) * lowest_sub_size - shift_size
+                sub_j = j + (sub_id % n_sub_col) * lowest_sub_size - shift_size
+                sub_locs.append((sub_i, sub_j))
         # locs.append([sub_i, sub_j])
         locs['high_res'].append(sub_locs)
         locs['low_res'].append((i, j))
@@ -55,10 +58,11 @@ def select_sub_orig(lowest_ids, low_im_size, padded_low_shape, pad_top, pad_left
     for idx, tile_id in enumerate(lowest_ids):
         if tile_id == "-1":
             continue
+        sub_locs = []
         i, j = tile_id // n_col, tile_id % n_col
         i = max(i * low_im_size - pad_top, 0)
         j = max(j * low_im_size - pad_left, 0)
-        sub_locs = [(i, j)]
+        sub_locs.append((i, j))
         locs['high_res'].append(sub_locs)
         locs['low_res'].append(sub_locs)
     return locs

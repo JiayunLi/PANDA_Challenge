@@ -103,7 +103,7 @@ class BiopsySlideSelected(data.Dataset):
     # slides_df, slides_dir,
     # lowest_im_size, input_size, num_channels, level, top_n, transform
 
-    def __init__(self, params, test_df, transform, mode=0, phase='test', select_method='orig'):
+    def __init__(self, params, test_df, transform, mode=0, phase='test', select_method='orig', max_per_tile=2):
         self.params = params
         self.lowest_im_size = params.lowest_im_size
         self.slides_dir = params.test_slides_dir
@@ -114,6 +114,7 @@ class BiopsySlideSelected(data.Dataset):
         self.slides_df = test_df
         self.input_size, self.num_channels = params.input_size, params.num_channels
         self.transform = transform
+        self.max_per_tile = max_per_tile
         self.phase = phase
         self.mode = mode
         self.select_method = select_method
@@ -140,16 +141,23 @@ class BiopsySlideSelected(data.Dataset):
                 instances[i, :, :, :] = self.transform(tile)
 
         if self.phase == "w_atts" or self.phase == "w_atts_cv":
-            padded_low_shape = pad_img.shape
             if self.select_method == "orig":
+                print("Use original method to select tiles")
                 sub_tile_locs = \
-                    get_selected_locs.select_sub_orig(tile_idxs, self.lowest_im_size, padded_low_shape, pad_top,
-                                                      pad_left, n_row=results['nrow'], n_col=results['ncol'])
+                    get_selected_locs.select_sub_simple_4x4(tile_idxs, self.lowest_im_size, None,
+                                                            pad_top, pad_left, lowest_sub_size=16, sub_size=64,
+                                                            tiles=results['tiles'], max_per_tile=2,
+                                                            n_row=results['nrow'],
+                                                            n_col=results['ncol'], use_orig=True)
+                # sub_tile_locs = \
+                #     get_selected_locs.select_sub_orig(tile_idxs, self.lowest_im_size, None, pad_top,
+                #                                       pad_left, n_row=results['nrow'], n_col=results['ncol'])
             else:
                 sub_tile_locs = \
                     get_selected_locs.select_sub_simple_4x4(tile_idxs, self.lowest_im_size, None,
                                                             pad_top, pad_left, lowest_sub_size=16, sub_size=64,
-                                                            tiles=results['tiles'], max_per_tile=2, n_row=results['nrow'],
+                                                            tiles=results['tiles'], max_per_tile=self.max_per_tile,
+                                                            n_row=results['nrow'],
                                                             n_col=results['ncol'])
             sub_tile_locs = sub_tile_locs['high_res']
             sub_tile_locs = torch.FloatTensor(sub_tile_locs)
@@ -157,7 +165,7 @@ class BiopsySlideSelected(data.Dataset):
                 pad_n = len(instances) - len(tile_idxs)
                 tile_idxs = torch.cat([tile_idxs, torch.zeros(pad_n) - 1], dim=0)
                 # n_tiles, n_sub_tiles, xy
-                sub_tile_locs = torch.cat([sub_tile_locs, torch.zeros(pad_n, 2, 2) - 1], dim=0)
+                sub_tile_locs = torch.cat([sub_tile_locs, torch.zeros(pad_n, self.max_per_tile, 2) - 1], dim=0)
             if self.phase == "w_atts_cv":
                 return instances, slide_info.image_id, tile_idxs, pad_top, pad_left, results['nrow'], results['ncol']
             else:
