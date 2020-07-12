@@ -134,7 +134,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_{provider}'
+    fname = f'Resnext50_36patch_nonimgrevers_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
@@ -179,6 +179,8 @@ if __name__ == "__main__":
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         best_kappa = 0
+        best_kappa_k = 0
+        best_kappa_r = 0
         if Pre_Train:
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col_{}/Resnext50_36patch_adam_cos_spine_col_{}_{}_best.pth.tar'.format(provider,provider,fold)
             # model_path = './weights/Resnext50_36patch_adam_cos_spine_col10_gls_{}/Resnext50_36patch_adam_cos_spine_col10_gls_{}_{}_ckpt.pth.tar'.format(provider,provider,fold)
@@ -232,6 +234,25 @@ if __name__ == "__main__":
                     'optimizer': optimizer.state_dict(),
                 }, is_best, weightsPath)
                 best_kappa = val['kappa'] if is_best else best_kappa
+
+                is_best = val['kappa_r'] > best_kappa_r
+                save_checkpoint({
+                    'epoch': epoch,
+                    'state_dict': model.state_dict(),
+                    'kappa': val['kappa'],
+                    'optimizer': optimizer.state_dict(),
+                }, is_best, weightsPath + "_rad")
+                best_kappa_r = val['kappa_r'] if is_best else best_kappa_r
+
+                is_best = val['kappa_k'] > best_kappa_k
+                save_checkpoint({
+                    'epoch': epoch,
+                    'state_dict': model.state_dict(),
+                    'kappa': val['kappa'],
+                    'optimizer': optimizer.state_dict(),
+                }, is_best, weightsPath + "_kar")
+                best_kappa_k = val['kappa_k'] if is_best else best_kappa_k
+
         del model
         del optimizer
         del Training
