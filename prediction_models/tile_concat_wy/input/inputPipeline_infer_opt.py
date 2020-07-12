@@ -97,7 +97,7 @@ class PandaPatchDatasetInfer(Dataset):
 
         n_row_tiles = int(np.sqrt(self.N))
 
-        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3))
+        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3)).astype(np.uint8)
         for h in range(n_row_tiles):
             for w in range(n_row_tiles):
                 i = h * n_row_tiles + w
