@@ -62,6 +62,7 @@ class Train(object):
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
+            self.scheduler.step()
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.item(), smooth_loss))
         result['train_loss'] = np.mean(train_loss)
@@ -99,7 +100,6 @@ class Train(object):
         val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0)
         # print(val_label.shape, val_preds.shape)
-        self.scheduler.step()
         index_r = [i for i, x in enumerate(val_provider) if x == "radboud"]
         index_k = [i for i, x in enumerate(val_provider) if x == "karolinska"]
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_nonimgrevers_ranger_cosannel_{provider}'
+    fname = f'Resnext50_36patch_nonimgrevers_adam_ocl_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
@@ -177,10 +177,13 @@ if __name__ == "__main__":
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.03, div_factor = 100)
-        # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 3e-3, total_steps = epochs * len(trainloader),
+                                                  pct_start = 0.3, div_factor = 100)
+
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, )
-        optimizer = Ranger(model.parameters(), lr = 0.00003)
-        scheduler = FlatplusAnneal(optimizer, max_iter=epochs, step_size=0.7)
+        # optimizer = Ranger(model.parameters(), lr = 0.00003)
+        # scheduler = FlatplusAnneal(optimizer, max_iter=epochs, step_size=0.7)
 
         best_kappa = 0
         best_kappa_k = 0
