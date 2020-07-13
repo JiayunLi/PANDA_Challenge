@@ -178,8 +178,8 @@ if __name__ == "__main__":
         # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
         #                                           pct_start = 0.03, div_factor = 100)
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
-        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 3e-3, total_steps = epochs * len(trainloader),
-                                                  pct_start = 0.3, div_factor = 100)
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 3e-4, total_steps = epochs * len(trainloader),
+                                                  pct_start = 0.3, div_factor = 10)
 
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, )
         # optimizer = Ranger(model.parameters(), lr = 0.00003)
