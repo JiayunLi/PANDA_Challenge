@@ -175,7 +175,7 @@ if __name__ == "__main__":
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = Over9000(model.parameters(), lr = 0.00003)
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-                                                  pct_start = 0, div_factor = 100)
+                                                  pct_start = 0.03, div_factor = 100)
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
         best_kappa = 0
