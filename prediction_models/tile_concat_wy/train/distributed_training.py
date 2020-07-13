@@ -124,6 +124,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Optional arguments')
     parser.add_argument('--fold', type=str, default="0,1,2,3", help='which fold to train.')
     parser.add_argument('--provider', type=str, default="whole", help='which dataset to train.')
+    parser.add_argument('--patch', default=36, type=int,
+                        help='number of patches used for training')
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='node rank for distributed training')
     args = parser.parse_args()
@@ -134,7 +136,8 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_nonimgrevers_4gpu_{provider}'
+    N = args.patch ## number of patches
+    fname = f'Resnext50_{N}patch_nonimgrevers_4gpu_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
@@ -153,7 +156,7 @@ if __name__ == "__main__":
     tsfm = data_transform()
     # tsfm = None
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N =36, rand=True)
+    dataset = PandaPatchDataset(csv_file, image_dir, 256, transform=tsfm, N = N, rand=True)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     criterion = nn.BCEWithLogitsLoss()
