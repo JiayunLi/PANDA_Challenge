@@ -19,6 +19,7 @@ from input.inputPipeline_stiching_dist import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
+from utiles.flatten_cosanneal import *
 
 class Train(object):
     def __init__(self, model, optimizer, scheduler, GLS = False, mltLoss = None):
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     folds = [int(i) for i in folds]
     provider = args.provider
     nfolds = 4
-    fname = f'Resnext50_36patch_nonimgrevers_ovl_cycle{provider}'
+    fname = f'Resnext50_36patch_nonimgrevers_ranger_cosannel_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
@@ -173,11 +174,14 @@ if __name__ == "__main__":
         model = Model(GleasonScore=GLS)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
-        optimizer = Over9000(model.parameters(), lr = 0.00003)
-        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-                                                  pct_start = 0.03, div_factor = 100)
+        # optimizer = Over9000(model.parameters(), lr = 0.00003)
+        # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
+        #                                           pct_start = 0.03, div_factor = 100)
         # optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, )
+        optimizer = Ranger(model.parameters(), lr = 0.00003)
+        scheduler = FlatplusAnneal(optimizer, max_iter=epochs, step_size=0.7)
+
         best_kappa = 0
         best_kappa_k = 0
         best_kappa_r = 0
