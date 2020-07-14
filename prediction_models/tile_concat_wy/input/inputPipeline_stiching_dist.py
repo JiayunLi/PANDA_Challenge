@@ -13,6 +13,7 @@ from torch.utils.data.sampler import SequentialSampler
 from collections import OrderedDict
 import albumentations
 import skimage.io
+from scipy.special import softmax
 
 class crossValInx(object):
     def __init__(self, csv_file):
@@ -73,24 +74,28 @@ class PandaPatchDataset(Dataset):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
-        tile_pix = str(self.train_csv.tile_pixel[idx])
+        # tile_pix = str(self.train_csv.tile_pixel[idx])
+        tile_pix = str(self.train_csv.tile_blueratio[idx])
         tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
         tile_number = self.train_csv.tile_number[idx]
         # tile_number = self.N
-        if tile_number == self.N:
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in range(self.N)]
-        elif tile_number > self.N:
-            # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
-            idxes = list(np.argsort(tile_pix)[::-1][:self.N])
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in idxes]
-        else:
-            idxes = list(range(tile_number))
-            # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
-            idxes += list(np.argsort(tile_pix)[::-1][:self.N - tile_number])
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in idxes]
+        # if tile_number == self.N:
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in range(self.N)]
+        # elif tile_number > self.N:
+        #     # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+        #     idxes = list(np.argsort(tile_pix)[::-1][:self.N])
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in idxes]
+        # else:
+        #     idxes = list(range(tile_number))
+        #     # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+        #     idxes += list(np.argsort(tile_pix)[::-1][:self.N - tile_number])
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in idxes]
+        idxes = idx_selection(tile_pix, self.N, "random")
+        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+                                for i in idxes]
 
         imgs = []
         for i, fname in enumerate(fnames):
@@ -154,6 +159,26 @@ class PandaPatchDataset(Dataset):
         if after_open:
             x = after_open(x)
         return x
+
+
+def idx_selection(logit_list, N = 36, mode = "deterministic"):
+    """
+
+    :param logit_list: numpy array, the larger, the more probability to select
+    :param mode:
+    :return:
+    """
+    if mode == "deterministic":
+        if len(logit_list) >= N
+            idx = list(np.argsort(logit_list)[::-1][:N])
+        else:
+            idx = list(range(len(logit_list)))
+            idx += list(np.argsort(logit_list)[::-1][:N - len(logit_list)])
+    else: ## random mode
+        logit_list = (logit_list - np.min(logit_list)) / (np.max(logit_list) - np.min(logit_list))
+        prob = softmax(logit_list)
+        idx = np.random.choice(len(logit_list), N, p=prob, replace=True)
+    return idx
 
 
 
