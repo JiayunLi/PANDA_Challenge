@@ -144,6 +144,7 @@ if __name__ == "__main__":
     parser.add_argument('--select_method', default='4x4')
     parser.add_argument('--high_res_fov', type=int, default=32, help='Filed of view at lowest magnification')
     parser.add_argument('--select_per', type=float, default=0.25)
+    parser.add_argument('--select_per_tile', type=int, default=1)
     opts = parser.parse_args()
 
     low_res_tile_size = 4 * opts.low_res_fov
@@ -152,7 +153,8 @@ if __name__ == "__main__":
 
     all_selected = att_select_locs(opts.data_dir, opts.info_dir,
                                    select_locs_file_loc, att_low_tile_size=opts.low_res_fov, att_level=-2,
-                                   select_n=select_tot_n, select_sub_size=opts.high_res_fov, select_per_tile=1,
+                                   select_n=select_tot_n, select_sub_size=opts.high_res_fov,
+                                   select_per_tile=opts.select_per_tile,
                                    method=opts.select_method)
     np.save(f"{opts.att_dir}/{opts.select_model}_n_{select_tot_n}_sz_{opts.high_res_fov}_locs.npy",
             all_selected)
