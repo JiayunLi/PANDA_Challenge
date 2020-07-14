@@ -57,9 +57,8 @@ class Model_Infer(nn.Module):
         m = self._resnext(semi_supervised_model_urls[arch], Bottleneck, [3, 4, 6, 3], False,
                      progress=False, groups=32, width_per_group=4)
         self.enc = nn.Sequential(*list(m.children())[:-2])
-        # nc = list(m.children())[-1].in_features
-        # self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(), nn.Linear(2 * nc, 512),
-        #                           Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, n))
+        nc = list(m.children())[-1].in_features
+        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten())
 
     def _resnext(self, url, block, layers, pretrained, progress, **kwargs):
         model = ResNet(block, layers, **kwargs)
@@ -76,9 +75,9 @@ class Model_Infer(nn.Module):
         x = self.enc(x)  # x: bs*N x C x 4 x 4
         # _, c, h, w = x.shape
         # print("1", x.shape)
-        # x = self.head(x)  # x: bs x n
+        x = self.head(x)  # x: bs x n
         # print("2", x.shape)
-        result['enc'] = x
+        result['out'] = x
         return result
 
 class MultiTaskLoss(nn.Module):
