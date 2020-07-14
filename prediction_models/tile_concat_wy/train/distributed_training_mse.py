@@ -177,7 +177,7 @@ if __name__ == "__main__":
     for fold in folds:
         print(f"training fold {fold}!")
         trainloader, valloader, trainSampler = crossValData(fold)
-        model = Model(GleasonScore=GLS)
+        model = Model(n = 1, GleasonScore=GLS)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         # optimizer = Over9000(model.parameters(), lr = 0.00003)
