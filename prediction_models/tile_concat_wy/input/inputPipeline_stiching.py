@@ -72,20 +72,28 @@ class PandaPatchDataset(Dataset):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
-        # tile_number = self.train_csv.tile_number[idx]
-        tile_number = self.N
-        if tile_number == self.N:
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in range(self.N)]
-        elif tile_number > self.N:
-            idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in idxes]
-        else:
-            idxes = list(range(tile_number))
-            idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
-            fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                      for i in idxes]
+        # tile_pix = str(self.train_csv.tile_pixel[idx])
+        tile_pix = str(self.train_csv.tile_blueratio[idx])
+        tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
+        tile_number = self.train_csv.tile_number[idx]
+        # tile_number = self.N
+        # if tile_number == self.N:
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in range(self.N)]
+        # elif tile_number > self.N:
+        #     # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
+        #     idxes = list(np.argsort(tile_pix)[::-1][:self.N])
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in idxes]
+        # else:
+        #     idxes = list(range(tile_number))
+        #     # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
+        #     idxes += list(np.argsort(tile_pix)[::-1][:self.N - tile_number])
+        #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        #               for i in idxes]
+        idxes = idx_selection(tile_pix, self.N, "deterministic")
+        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+                                for i in idxes]
 
         imgs = []
         for i, fname in enumerate(fnames):
@@ -107,7 +115,7 @@ class PandaPatchDataset(Dataset):
                     this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                this_img = 255 - this_img ## todo: see how this trik plays out
+                # this_img = 255 - this_img ## todo: see how this trik plays out
                 if self.transform is not None:
                     this_img = self.transform(image=this_img)['image']
                 h1 = h * self.image_size
@@ -120,7 +128,9 @@ class PandaPatchDataset(Dataset):
         images /= 255.0
         # mean = [0.82625018, 0.63841069, 0.76088338]
         # std = [0.39606442, 0.5129944, 0.41479104]
-        # images = (images - mean)/(std) ## normalize the image
+        mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
+        std = np.asarray([0.07021654, 0.13918451, 0.08442586])
+        images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
@@ -147,6 +157,40 @@ class PandaPatchDataset(Dataset):
         if after_open:
             x = after_open(x)
         return x
+
+
+def idx_selection(logit_list, N = 36, mode = "deterministic"):
+    """
+
+    :param logit_list: numpy array, the larger, the more probability to select
+    :param mode:
+    :return:
+    """
+    if mode == "deterministic":
+        if len(logit_list) >= N:
+            idx = list(np.argsort(logit_list)[::-1][:N])
+        else:
+            idx = list(range(len(logit_list)))
+            idx += list(np.argsort(logit_list)[::-1][:N - len(logit_list)])
+    else: ## random mode
+        logit_list = (logit_list - np.min(logit_list)) / (np.max(logit_list) - np.min(logit_list) + 1e-12)
+        prob = softmax(logit_list)
+        idx = np.random.choice(len(logit_list), N, p=prob, replace=True)
+    return idx
+
+
+
+def data_transform():
+    tsfm = albumentations.Compose([
+        albumentations.Transpose(p=0.5),
+        albumentations.VerticalFlip(p=0.5),
+        albumentations.HorizontalFlip(p=0.5),
+        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
+        albumentations.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1),
+        albumentations.HueSaturationValue(hue_shift_limit=7, sat_shift_limit=20)
+        # albumentations.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0,)
+    ])
+    return tsfm
 
 class PandaPatchDatasetInfer(Dataset):
     """
@@ -201,7 +245,7 @@ class PandaPatchDatasetInfer(Dataset):
                     this_img = imgs[idxes[i]]['img']
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                this_img = 255 - this_img  ## todo: see how this trik plays out
+                # this_img = 255 - this_img  ## todo: see how this trik plays out
                 if self.transform is not None:
                     this_img = self.transform(image=this_img)['image']
                 h1 = h * self.image_size
