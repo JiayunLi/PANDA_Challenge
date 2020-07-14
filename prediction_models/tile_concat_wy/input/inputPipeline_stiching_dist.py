@@ -175,7 +175,7 @@ def idx_selection(logit_list, N = 36, mode = "deterministic"):
             idx = list(range(len(logit_list)))
             idx += list(np.argsort(logit_list)[::-1][:N - len(logit_list)])
     else: ## random mode
-        logit_list = (logit_list - np.min(logit_list)) / (np.max(logit_list) - np.min(logit_list))
+        logit_list = (logit_list - np.min(logit_list)) / (np.max(logit_list) - np.min(logit_list) + 1e-12)
         prob = softmax(logit_list)
         idx = np.random.choice(len(logit_list), N, p=prob, replace=True)
     return idx
