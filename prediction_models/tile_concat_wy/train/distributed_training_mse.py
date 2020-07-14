@@ -15,7 +15,7 @@ from collections import OrderedDict
 import argparse
 import torch.distributed as dist
 ## custom package
-from input.inputPipeline_stiching_dist import *
+from input.inputPipeline_stiching_dist_mse import *
 from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
@@ -36,8 +36,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            # if i >= 5:
-            #     break
+            if i >= 10:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data['img'], data['isup_grade']
             # zero the parameter gradients
@@ -75,8 +75,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 50:
-                #     break
+                if i > 10:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider = data['img'], data['isup_grade'], data['datacenter']
                 # zero the parameter gradients
