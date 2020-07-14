@@ -93,7 +93,7 @@ class PandaPatchDataset(Dataset):
         #     idxes += list(np.argsort(tile_pix)[::-1][:self.N - tile_number])
         #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
         #               for i in idxes]
-        idxes = idx_selection(tile_pix, self.N, "random")
+        idxes = idx_selection(tile_pix, self.N, "deterministic")
         fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                                 for i in idxes]
 
