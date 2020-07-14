@@ -169,7 +169,7 @@ def idx_selection(logit_list, N = 36, mode = "deterministic"):
     :return:
     """
     if mode == "deterministic":
-        if len(logit_list) >= N
+        if len(logit_list) >= N:
             idx = list(np.argsort(logit_list)[::-1][:N])
         else:
             idx = list(range(len(logit_list)))
