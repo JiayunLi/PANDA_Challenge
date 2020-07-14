@@ -140,7 +140,7 @@ if __name__ == "__main__":
     provider = args.provider
     nfolds = 4
     N = args.patch ## number of patches
-    fname = f'Resnext50_{N}patch_br_random_{provider}'
+    fname = f'Resnext50_{N}patch_br_deter_mse_{provider}'
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
     elif provider == 'kar':
