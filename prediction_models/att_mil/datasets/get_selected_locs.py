@@ -148,7 +148,7 @@ if __name__ == "__main__":
     opts = parser.parse_args()
 
     low_res_tile_size = 4 * opts.low_res_fov
-    select_tot_n = int(opts.select_per * opts.n_low_res_tiles)
+    select_tot_n = int(opts.select_per * opts.n_low_res_tiles) * opts.select_per_tile
     select_locs_file_loc = f"{opts.att_dir}/{opts.select_model}_n_{opts.n_low_res_tiles}_sz_{low_res_tile_size}.npy"
 
     all_selected = att_select_locs(opts.data_dir, opts.info_dir,
