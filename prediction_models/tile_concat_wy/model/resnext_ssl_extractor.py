@@ -57,8 +57,8 @@ class Model_Infer(nn.Module):
         m = self._resnext(semi_supervised_model_urls[arch], Bottleneck, [3, 4, 6, 3], False,
                      progress=False, groups=32, width_per_group=4)
         self.enc = nn.Sequential(*list(m.children())[:-2])
-        # nc = list(m.children())[-1].in_features
-        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten())
+        nc = list(m.children())[-1].in_features
+        self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(),nn.Linear(2 * nc, 512))
 
     def _resnext(self, url, block, layers, pretrained, progress, **kwargs):
         model = ResNet(block, layers, **kwargs)
