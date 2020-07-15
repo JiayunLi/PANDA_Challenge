@@ -287,8 +287,15 @@ def tile_img(img, coords, sz=256):
             this_img = np.pad(this_img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant',
                          constant_values=255)  # img (h',w',3)
         mean_pix = np.mean(this_img)
-
+        br  = np.mean(compute_blue_ratio(this_img))
         result.append({'img': this_img,
                        'location': [x0,y0,x1,y1],
-                       'mean_pix':mean_pix})
+                       'mean_pix':mean_pix,
+                       'br':br})
     return result
+
+def compute_blue_ratio(dw_sample):
+    tempt1 = (100.0 * dw_sample[:, :, 2]) / (1.0 + dw_sample[:, :, 0] + dw_sample[:, :, 1])
+    tempt2 = 256.0 / (1.0 + dw_sample[:, :, 0] + dw_sample[:, :, 1] + dw_sample[:, :, 2])
+    br = tempt1 * tempt2
+    return br

@@ -42,7 +42,7 @@ class PandaPatchDatasetInfer(Dataset):
     def __len__(self):
         return len(self.train_csv)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx, mode = 'br'):
         result = OrderedDict()
         kwargs = {'step_size': 5,
                   'h_step_size': 0.15,
@@ -72,15 +72,21 @@ class PandaPatchDatasetInfer(Dataset):
         elif tile_number > self.N:
             pix_intensity = []
             for i in range(tile_number):
-                pix_intensity.append(tiles[i]['mean_pix'])
-            idxes = list(np.argsort(pix_intensity)[:self.N])
+                pix_intensity.append(tiles[i][mode])
+            if mode == "pixel_intensity":
+                idxes = list(np.argsort(pix_intensity)[:self.N])
+            else:
+                idxes = list(np.argsort(pix_intensity)[::-1][:self.N])
             # idxes = np.random.choice(list(range(tile_number)), self.N, replace=False)
         else:
             idxes = list(range(tile_number))
             pix_intensity = []
             for i in range(tile_number):
-                pix_intensity.append(tiles[i]['mean_pix'])
-            idxes += list(np.argsort(pix_intensity)[:self.N - tile_number])
+                pix_intensity.append(tiles[i][mode])
+            if mode == "pixel_intensity":
+                idxes += list(np.argsort(pix_intensity)[:self.N - tile_number])
+            else:
+                idxes += list(np.argsort(pix_intensity)[::-1][:self.N - tile_number])
             # idxes += list(np.random.choice(list(range(tile_number)), self.N - tile_number, replace=True))
 
         imgs = []
@@ -105,7 +111,7 @@ class PandaPatchDatasetInfer(Dataset):
                     this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                this_img = 255 - this_img  ## todo: see how this trik plays out
+                # this_img = 255 - this_img  ## todo: see how this trik plays out
                 if self.transform is not None:
                     this_img = self.transform(image=this_img)['image']
                 h1 = h * self.image_size
