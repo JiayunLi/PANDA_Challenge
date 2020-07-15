@@ -59,7 +59,7 @@ class Model_Infer(nn.Module):
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten(),nn.Linear(2 * nc, 512),
-                                  Mish(), nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 5))
+                                  Mish())
 
     def _resnext(self, url, block, layers, pretrained, progress, **kwargs):
         model = ResNet(block, layers, **kwargs)
