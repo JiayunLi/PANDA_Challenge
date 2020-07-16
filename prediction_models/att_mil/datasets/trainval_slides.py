@@ -236,6 +236,22 @@ class BiopsySlidesSelectedOTF(data.Dataset):
             slide_label[:isup_grade] = 1.
         return tiles, [-1] * len(tiles), slide_label, list(range(len(tiles)))
 
+    def _get_high_tiles(self, low_i, low_j, rate, cur_slide, high_im_size, cur_im_shape):
+        high_i = max(low_i * rate, 0)
+        high_j = max(low_j * rate, 0)
+        # print(f"{high_i}_{high_j}")
+        if high_i + high_im_size > cur_im_shape[0]:
+            high_i = cur_im_shape[0] - high_im_size
+        if high_j + high_im_size > cur_im_shape[1]:
+            high_j = cur_im_shape[1] - high_im_size
+        high_tile = cur_slide.read_region((high_j, high_i), self.params.level + 3,
+                                          (high_im_size, high_im_size)).convert("RGB")
+        if high_im_size > self.params.input_size:
+            high_tile = high_tile.resize((self.params.input_size, self.params.input_size), Image.ANTIALIAS)
+        if self.transform:
+            high_tile = self.transform(high_tile)
+        return high_tile
+
     def _get_tiles(self, slide_id):
         rate = RATE_MAP[-3]
         # high_im_size = self.params.lowest_im_size * rate
@@ -257,23 +273,15 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         for low_ij in lowest_locs:
             if len(low_ij) == 1:
                 low_i, low_j = low_ij[0][0], low_ij[0][1]
+                high_tile = self._get_high_tiles(low_i, low_j, rate, cur_slide, high_im_size, cur_im_shape)
+                instances[counter, :, :, :] = high_tile
+                counter += 1
             else:
-                low_i, low_j = low_ij[0], low_ij[1]
-            high_i = max(low_i * rate, 0)
-            high_j = max(low_j * rate, 0)
-            # print(f"{high_i}_{high_j}")
-            if high_i + high_im_size > cur_im_shape[0]:
-                high_i = cur_im_shape[0] - high_im_size
-            if high_j + high_im_size > cur_im_shape[1]:
-                high_j = cur_im_shape[1] - high_im_size
-            high_tile = cur_slide.read_region((high_j, high_i), self.params.level + 3,
-                                              (high_im_size, high_im_size)).convert("RGB")
-            if high_im_size > self.params.input_size:
-                high_tile = high_tile.resize((self.params.input_size, self.params.input_size), Image.ANTIALIAS)
-            if self.transform:
-                high_tile = self.transform(high_tile)
-            instances[counter, :, :, :] = high_tile
-            counter += 1
+                for cur_lowij in low_ij:
+                    low_i, low_j = cur_lowij[0][0], cur_lowij[0][1]
+                    high_tile = self._get_high_tiles(low_i, low_j, rate, cur_slide, high_im_size, cur_im_shape)
+                    instances[counter, :, :, :] = high_tile
+                    counter += 1
             if counter >= len(instances):
                 break
         return instances
