@@ -278,7 +278,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
                 counter += 1
             else:
                 for cur_lowij in low_ij:
-                    low_i, low_j = cur_lowij[0][0], cur_lowij[0][1]
+                    low_i, low_j = cur_lowij[0], cur_lowij[0]
                     high_tile = self._get_high_tiles(low_i, low_j, rate, cur_slide, high_im_size, cur_im_shape)
                     instances[counter, :, :, :] = high_tile
                     counter += 1
