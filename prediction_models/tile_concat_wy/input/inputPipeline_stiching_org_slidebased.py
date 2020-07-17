@@ -121,7 +121,7 @@ class PandaPatchDataset(Dataset):
         images /= 255.0
         # mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
         # std = np.asarray([0.07021654, 0.13918451, 0.08442586])
-        images = (images - mean)/(std) ## normalize the image
+        # images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
