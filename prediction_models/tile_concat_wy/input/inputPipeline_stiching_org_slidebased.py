@@ -108,7 +108,7 @@ class PandaPatchDataset(Dataset):
                     this_img = imgs[idxes[i]]['img'].astype(np.uint8)
                 else:
                     this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                # this_img = 255 - this_img ## todo: see how this trik plays out
+                this_img = 255 - this_img ## todo: see how this trik plays out
                 if self.transform is not None:
                     this_img = self.transform(image=this_img)['image']
                 h1 = h * self.image_size
@@ -119,8 +119,8 @@ class PandaPatchDataset(Dataset):
             images = self.transform(image=images)['image']
         images = images.astype(np.float32)
         images /= 255.0
-        mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
-        std = np.asarray([0.07021654, 0.13918451, 0.08442586])
+        # mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
+        # std = np.asarray([0.07021654, 0.13918451, 0.08442586])
         images = (images - mean)/(std) ## normalize the image
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
