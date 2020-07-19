@@ -169,7 +169,7 @@ def test_helper(all_models, loader, device, w_atts):
             pooled_probs = torch.stack(pooled_probs, 1)  # [bs * 8, 4, 6]
             pooled_probs = pooled_probs.view(bs, 8 * len(all_models), -1)  # [bs, 8(augmentation) * 4 (model), 6]
             pooled_probs = torch.squeeze(pooled_probs.mean(1).cpu(), dim=1)
-            
+
             predicted.append(pooled_probs)
 
             if w_atts:

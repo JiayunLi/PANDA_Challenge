@@ -93,7 +93,7 @@ if __name__ == "__main__":
         high_res_predictor = load_model(high_res_ckp_path, device)
         high_res_raw_probs = run_high_res([high_res_predictor], model_dir, model_name_high, slides_dir,
                                           cur_df, all_selected)
-        high_res_raw_probs = high_res_raw_probs.sigmoid().sum(1).detach().cpu().numpy()
+        high_res_raw_probs = torch.cat(high_res_raw_probs).sigmoid().sum(1).detach().cpu().numpy()
 
         for i in range(len(cur_df)):
             slide_info = cur_df.iloc[i]
