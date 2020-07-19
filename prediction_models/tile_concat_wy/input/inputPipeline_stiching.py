@@ -72,10 +72,10 @@ class PandaPatchDataset(Dataset):
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
-        tile_pix = str(self.train_csv.tile_pixel[idx])
-        # tile_pix = str(self.train_csv.tile_blueratio[idx])
+        # tile_pix = str(self.train_csv.tile_pixel[idx])
+        tile_pix = str(self.train_csv.tile_blueratio[idx])
         tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
-        tile_number = self.train_csv.tile_number[idx]
+        # tile_number = self.train_csv.tile_number[idx]
         # tile_number = self.N
         # if tile_number == self.N:
         #     fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
