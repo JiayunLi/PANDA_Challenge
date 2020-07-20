@@ -256,7 +256,7 @@ class BiopsySlidesSelectedOTF(data.Dataset):
         rate = RATE_MAP[-3]
         # high_im_size = self.params.lowest_im_size * rate
         # TODO:high_im_size = self.selected_locs[slide_id]['lowest_tile_size_high'] * rate
-        high_im_size = 64 * rate
+        high_im_size = 32 * rate
         cur_slide = openslide.OpenSlide(f"{self.params.data_dir}/{slide_id}.tiff")
         cur_im_shape = (cur_slide.level_dimensions[self.params.level + 3][1],
                         cur_slide.level_dimensions[self.params.level + 3][0])
