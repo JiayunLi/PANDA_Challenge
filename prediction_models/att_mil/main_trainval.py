@@ -176,12 +176,12 @@ def trainval(opts):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Attention MIL PANDA challenge')
     # File location
-    parser.add_argument('--data_dir', type=str, default='/data/', help='Root directory for processed data')
-    parser.add_argument('--info_dir', type=str, default='./info/16_128_128',
+    parser.add_argument('--data_dir', type=str, default='/slides_data/train_images',
+                        help='Root directory for processed data')
+    parser.add_argument('--info_dir', type=str, default='./info/new_split/',
                         help='Directory for cross validation information')
-    parser.add_argument('--cache_dir', type=str, default='./cache/br_128_128/', help='Directory to save trained models')
-    parser.add_argument('--dataset', type=str, default="br_128_128", help='Different types of processed tiles')
-
+    parser.add_argument('--cache_dir', type=str, default='./cache/cache/selected_10x/', help='Directory to save trained models')
+    parser.add_argument('--dataset', type=str, default="selected_10x", help='Different types of processed tiles')
     # Cross validation
     parser.add_argument('--start_fold', type=int, default=0)
     parser.add_argument('--end_fold', type=int, default=-1)
@@ -194,8 +194,8 @@ if __name__ == "__main__":
     parser.add_argument('--manual_seed', type=int, default=2020)
 
     # Input data options
-    parser.add_argument('--im_size', default=128, type=int, help="original extracted tile size")
-    parser.add_argument('--input_size', default=128, type=int, help="input size to the network")
+    parser.add_argument('--im_size', default=256, type=int, help="original extracted tile size")
+    parser.add_argument('--input_size', default=256, type=int, help="input size to the network")
     parser.add_argument('--num_channels', default=3, type=int, help="# of input image channels")
     parser.add_argument('--normalized', action='store_true', help='Use normalized tiles')
 
@@ -215,38 +215,39 @@ if __name__ == "__main__":
     parser.add_argument('--bag_hidden', default=256, type=int, help="Bag hidden size")
     parser.add_argument('--slide_classes', default=6, type=int, help="Number of prediction classes for slides")
     parser.add_argument('--mil_arch', default='att_batch', type=str, )
-    parser.add_argument('--has_drop_rate', type=float, default=0.0)
+    parser.add_argument('--has_drop_rate', type=float, default=0.2)
     # parser.add_argument('--aug_mil', default='t', type=str, help='Use augmented Att MIL')
 
     # Training options
-    parser.add_argument('--lr', default=5e-4, type=float, help='learning rate for classifier')
+    parser.add_argument('--lr', default=0.0003, type=float, help='learning rate for classifier')
     parser.add_argument('--feat_lr', default=5e-4, type=float, help='learning rate for features')
     parser.add_argument('--wd', type=float, default=10e-5, metavar='R', help='weight decay')
     parser.add_argument('--train_blocks', default=4, type=int, help='Train How many blocks')
     parser.add_argument('--optim', default='aug_adam', help="Optimizer used for model training")
-    parser.add_argument('--schedule_type', default='cycle', help="options: plateau | cycle")
+    parser.add_argument('--schedule_type', default='cosine', help="options: plateau | cycle")
     parser.add_argument('--epochs', default=30, type=int)
     parser.add_argument('--feat_ft', default=0, type=int, help="Start finetune features, -1: start from epoch 0")
     parser.add_argument('--log_every', default=50, type=int, help='Log every n steps')
     parser.add_argument('--alpha', default=0, type=float, help='weighted factor for tile loss')
-    parser.add_argument('--loss_type', default='mse', type=str,
+    parser.add_argument('--loss_type', default='bce', type=str,
                         help="Different types of loss functions; cross entropy, MSE")
     parser.add_argument('--cls_weighted', default='f', type=str, help='Whether to use weighted  loss')
     parser.add_argument('--slide_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                       'classification')
     # parser.add_argument('--smooth_alpha', default='f', type=str, help='Whether to reduce tile loss contribution')
     parser.add_argument('--tile_ft', default=0, type=int, help="Train tile features for couple epochs")
-    parser.add_argument('--top_n', type=int, default=-1, help="Set to > 0 to limit the number of tiles")
+    parser.add_argument('--top_n', type=int, default=36, help="Set to > 0 to limit the number of tiles")
     parser.add_argument('--tile_binary', default='f', type=str, help='Only predict cancer versus noon cancer for slide'
                                                                      'classification')
-    parser.add_argument('--batch_size', default=16, type=int, help='Use batch training')
+    parser.add_argument('--batch_size', default=6, type=int, help='Use batch training')
 
     # Attention selection options
     parser.add_argument('--att_dir', type=str, default='./info/att_selected/',
                         help='Directory for cross validation information')
-    parser.add_argument('--select_model', default="resnext50_3e-4_bce_256",
+    parser.add_argument('--select_model', default="resenet50_bce_newsplit_has02",
                         help="Use which model to generate attention map")
-    parser.add_argument('--select_locs_file_loc', default="./info/att_selected/resenet50_bce_newsplit_n_9_sz_32_locs.npy")
+    parser.add_argument('--select_locs_file_loc',
+                        default="./info/att_selected/resenet50_bce_newsplit_has02_n_36_sz_32_locs.npy")
     parser.add_argument('--lowest_im_size', default=32, type=int)
     parser.add_argument('--at_level', default=-3, type=int)
 
