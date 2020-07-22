@@ -79,8 +79,8 @@ if __name__ == "__main__":
     model_dir = "/weights/"
     info_dir = "/PANDA_Challenge/info/"
     start_time = time.time()
-    prob_data = []
-
+    high_prob_data = []
+    mid_prob_data = []
     for fold in range(4):
         cur_df = pd.read_csv(f"{info_dir}/val_{fold}.csv")
         mid_res_ckp_path = f"{model_dir}/{model_name_mid}/checkpoint_best_{fold}.pth"
@@ -88,6 +88,8 @@ if __name__ == "__main__":
         mid_res_predictor = load_model(mid_res_ckp_path, device)
         mid_res_raw_probs, all_selected = run_mid_res([mid_res_predictor],
                                                       model_dir, model_name_mid, slides_dir, cur_df, mode=0)
+        mid_res_raw_probs = torch.cat(mid_res_raw_probs).sigmoid().sum(1).detach().cpu().numpy()
+
         high_res_ckp_path = f"{model_dir}/{model_name_high}/checkpoint_best_{fold}.pth"
         print(f"start loading high resolution model from {fold}, {high_res_ckp_path}")
         high_res_predictor = load_model(high_res_ckp_path, device)
@@ -98,8 +100,16 @@ if __name__ == "__main__":
         for i in range(len(cur_df)):
             slide_info = cur_df.iloc[i]
             slide_id = slide_info.image_id
-            cur_high_res_prob = high_res_raw_probs[i]
-            prob_data.append({"image_id": slide_id,
+            isup_grade = slide_info.isup_grade
+            # cur_high_res_prob = high_res_raw_probs[i]
+            # cur_mid_res_prob = mid_res_raw_probs[i]
+            high_prob_data.append({"image_id": slide_id,
                               "prob": float(high_res_raw_probs[i])})
-    prob_data_df = pd.DataFrame(data=prob_data, columns=["image_id", "prob"])
-    prob_data_df.to_csv('/PANDA_Challenge/cache/cv_probs_jiayun.csv', index=False)
+            mid_prob_data.append({"image_id": slide_id,
+                              "prob": float(mid_res_raw_probs[i])})
+
+    high_prob_data_df = pd.DataFrame(data=high_prob_data, columns=["image_id", "prob", "isup_grade"])
+    high_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_high_probs_jiayun.csv', index=False)
+
+    mid_prob_data_df = pd.DataFrame(data=mid_prob_data, columns=["image_id", "prob", "isup_grade"])
+    mid_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_mid_probs_jiayun.csv', index=False)
