@@ -90,12 +90,12 @@ if __name__ == "__main__":
                                                       model_dir, model_name_mid, slides_dir, cur_df, mode=0)
         mid_res_raw_probs = torch.cat(mid_res_raw_probs).sigmoid().sum(1).detach().cpu().numpy()
 
-        high_res_ckp_path = f"{model_dir}/{model_name_high}/checkpoint_best_{fold}.pth"
-        print(f"start loading high resolution model from {fold}, {high_res_ckp_path}")
-        high_res_predictor = load_model(high_res_ckp_path, device)
-        high_res_raw_probs = run_high_res([high_res_predictor], model_dir, model_name_high, slides_dir,
-                                          cur_df, all_selected)
-        high_res_raw_probs = torch.cat(high_res_raw_probs).sigmoid().sum(1).detach().cpu().numpy()
+        # high_res_ckp_path = f"{model_dir}/{model_name_high}/checkpoint_best_{fold}.pth"
+        # print(f"start loading high resolution model from {fold}, {high_res_ckp_path}")
+        # high_res_predictor = load_model(high_res_ckp_path, device)
+        # high_res_raw_probs = run_high_res([high_res_predictor], model_dir, model_name_high, slides_dir,
+        #                                   cur_df, all_selected)
+        # high_res_raw_probs = torch.cat(high_res_raw_probs).sigmoid().sum(1).detach().cpu().numpy()
 
         for i in range(len(cur_df)):
             slide_info = cur_df.iloc[i]
@@ -103,13 +103,13 @@ if __name__ == "__main__":
             isup_grade = slide_info.isup_grade
             # cur_high_res_prob = high_res_raw_probs[i]
             # cur_mid_res_prob = mid_res_raw_probs[i]
-            high_prob_data.append({"image_id": slide_id,
-                              "prob": float(high_res_raw_probs[i])})
+            # high_prob_data.append({"image_id": slide_id,
+            #                   "prob": float(high_res_raw_probs[i])})
             mid_prob_data.append({"image_id": slide_id,
                               "prob": float(mid_res_raw_probs[i])})
 
-    high_prob_data_df = pd.DataFrame(data=high_prob_data, columns=["image_id", "prob", "isup_grade"])
-    high_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_high_probs_jiayun.csv', index=False)
+    # high_prob_data_df = pd.DataFrame(data=high_prob_data, columns=["image_id", "prob", "isup_grade"])
+    # high_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_high_probs_jiayun.csv', index=False)
 
     mid_prob_data_df = pd.DataFrame(data=mid_prob_data, columns=["image_id", "prob", "isup_grade"])
-    mid_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_mid_probs_jiayun.csv', index=False)
+    mid_prob_data_df.to_csv('/PANDA_Challenge/cache/cv_mid_probs_jiayun_2.csv', index=False)
