@@ -124,7 +124,6 @@ class MBConvBlock(nn.Module):
         """
         self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
 
-
 class EfficientNet(nn.Module):
     """EfficientNet model.
        Most easily loaded with the .from_name or .from_pretrained methods.
