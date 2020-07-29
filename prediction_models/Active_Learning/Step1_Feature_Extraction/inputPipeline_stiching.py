@@ -78,7 +78,7 @@ class PandaPatchDataset(Dataset):
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:
-        tile_pix = str(self.train_csv.tile_pixel[idx])
+            tile_pix = str(self.train_csv.tile_pixel[idx])
 
         tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
         idxes = idx_selection(tile_pix, self.N, "deterministic")
