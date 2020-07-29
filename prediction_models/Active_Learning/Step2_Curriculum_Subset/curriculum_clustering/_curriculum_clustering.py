@@ -269,7 +269,7 @@ class CurriculumClustering(BaseEstimator, ClusterMixin):
         """
         X = check_array(X, accept_sparse='csr')
         check_consistent_length(X, y)
-        self.output_labels, _ = cluster_curriculum_subsets(X, y, **self.get_params())
+        self.output_labels, self.auxiliary_info = cluster_curriculum_subsets(X, y, **self.get_params())
         return self
 
     def fit_predict(self, X, y=None):
