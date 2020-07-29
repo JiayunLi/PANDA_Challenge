@@ -185,8 +185,8 @@ def cluster_curriculum_subsets(X, y, n_subsets=3, method='default', density_t=0.
                             all_clustered_labels[batch_dist_list[i]] = len(bound) - j - 1
 
         if verbose:
-            print "Clustering {} of {} categories into {} curriculum subsets ({:.2f} secs).".format(
-                cluster_idx + 1, len(unique_categories), n_subsets, time.time() - t0)
+            print("Clustering {} of {} categories into {} curriculum subsets ({:.2f} secs).".format(
+                cluster_idx + 1, len(unique_categories), n_subsets, time.time() - t0))
 
     if (all_clustered_labels > 0).all():
         raise ValueError("A clustering error occurred: incomplete labels detected.")
