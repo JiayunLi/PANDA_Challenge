@@ -17,7 +17,7 @@ class Model(nn.Module):
     def __init__(self, arch='resnext50_32x4d_ssl'):
         super().__init__()
         m = torch.hub.load('facebookresearch/semi-supervised-ImageNet1K-models', arch)
-        self.enc = nn.Sequential(*list(m.children())[:-1])
+        self.enc = nn.Sequential(*list(m.children())[:-2])
         self.head = nn.Sequential(AdaptiveConcatPool2d(), Flatten())
 
     def forward(self, x):
