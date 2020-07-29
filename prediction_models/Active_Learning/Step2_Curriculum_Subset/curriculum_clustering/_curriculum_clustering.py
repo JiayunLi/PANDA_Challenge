@@ -132,13 +132,13 @@ def cluster_curriculum_subsets(X, y, n_subsets=3, method='default', density_t=0.
             if method == 'gaussian':
                 densities = np.zeros((len(subset_vectors)), dtype=np.float32)
                 distance = distance / np.max(distance)
-                for i in xrange(len(subset_vectors)):
+                for i in range(len(subset_vectors)):
                     densities[i] = np.sum(1 / np.sqrt(2 * np.pi) * np.exp((-1) * np.power(distance[i], 2) / 2.0))
             else:
                 densities = np.zeros((len(subset_vectors)), dtype=np.float32)
                 flat_distance = distance.reshape(distance.shape[0] * distance.shape[1])
                 dist_cutoff = np.sort(flat_distance)[int(distance.shape[0] * distance.shape[1] * density_t)]
-                for i in xrange(len(batch_dist_list)):
+                for i in range(len(batch_dist_list)):
                     densities[i] = len(np.where(distance[i] < dist_cutoff)[0]) - 1  # remove itself
             if len(densities) < n_subsets:
                 raise ValueError("Cannot cluster into {} subsets due to lack of density diversification,"
@@ -149,7 +149,7 @@ def cluster_curriculum_subsets(X, y, n_subsets=3, method='default', density_t=0.
                 # Calculate deltas
                 deltas = np.zeros((len(subset_vectors)), dtype=np.float32)
                 densities_sort_idx = np.argsort(densities)
-                for i in xrange(len(densities_sort_idx) - 1):
+                for i in range(len(densities_sort_idx) - 1):
                     larger = densities_sort_idx[i + 1:]
                     larger = larger[np.where(larger != densities_sort_idx[i])]  # remove itself
                     deltas[i] = np.min(distance[densities_sort_idx[i], larger])
@@ -162,7 +162,7 @@ def cluster_curriculum_subsets(X, y, n_subsets=3, method='default', density_t=0.
 
             model = KMeans(n_clusters=n_subsets, random_state=random_state)
             model.fit(densities.reshape(len(densities), 1))
-            clusters = [densities[np.where(model.labels_ == i)] for i in xrange(n_subsets)]
+            clusters = [densities[np.where(model.labels_ == i)] for i in range(n_subsets)]
             n_clusters_made = len(set([k for j in clusters for k in j]))
             if n_clusters_made < n_subsets:
                 raise ValueError("Cannot cluster into {} subsets, please try a smaller n_subset number, such as {}.".
@@ -172,8 +172,8 @@ def cluster_curriculum_subsets(X, y, n_subsets=3, method='default', density_t=0.
             bound = np.sort(np.array(cluster_mins))
 
             # Distribute into curriculum subsets, and package into global adjusted returnable array, optionally aux too
-            other_bounds = xrange(n_subsets - 1)
-            for i in xrange(len(densities)):
+            other_bounds = range(n_subsets - 1)
+            for i in range(len(densities)):
 
                 # Check if the most 'clean'
                 if densities[i] >= bound[n_subsets - 1]:
