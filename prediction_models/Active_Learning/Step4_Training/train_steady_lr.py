@@ -171,8 +171,8 @@ if __name__ == "__main__":
         val_idx = df.index[df['split'] == fold].tolist()
         trainloader, valloader = crossValData(train_idx, val_idx)
         model = Model.from_pretrained('efficientnet-b0', num_classes = 5)
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
+        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
 
