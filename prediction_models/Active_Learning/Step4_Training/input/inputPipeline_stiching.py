@@ -8,8 +8,9 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-from torch.utils.data.distributed import DistributedSampler
+# from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import SequentialSampler
+from torch.utils.data.sampler import RandomSampler
 from collections import OrderedDict
 import albumentations
 from scipy.special import softmax
@@ -22,7 +23,7 @@ class crossValDataloader(object):
     def __call__(self, train_idx, val_idx):
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
-        train_sampler = DistributedSampler(train)
+        train_sampler = RandomSampler(train)
         val_sampler = SequentialSampler(val)
         trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
                                                   sampler=train_sampler,collate_fn=None, pin_memory=True,
@@ -30,7 +31,7 @@ class crossValDataloader(object):
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=val_sampler,
                                                 drop_last=True)
-        return trainloader, valloader, train_sampler
+        return trainloader, valloader
 
 class PandaPatchDataset(Dataset):
     """
@@ -115,6 +116,7 @@ class PandaPatchDataset(Dataset):
         secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
+        result['idx'] = self.train_csv.loc[idx, 'image_idx']
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
@@ -158,10 +160,8 @@ def data_transform():
         albumentations.Transpose(p=0.5),
         albumentations.VerticalFlip(p=0.5),
         albumentations.HorizontalFlip(p=0.5),
-        # albumentations.RGBShift(r_shift_limit=5, g_shift_limit=5, b_shift_limit=5),
         albumentations.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1),
         albumentations.HueSaturationValue(hue_shift_limit=7, sat_shift_limit=20)
-        # albumentations.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0,)
     ])
     return tsfm
 
@@ -174,6 +174,7 @@ def dataloader_collte_fn(batch):
     datacenter = [item['datacenter'] for item in batch]
     primary_gls = [item['primary_gls'] for item in batch]
     secondary_gls = [item['secondary_gls'] for item in batch]
+    idx = [item['idx'] for item in batch]
     name = [item['name'] for item in batch]
     result['img'] = imgs
     result['isup_grade'] = target
@@ -181,6 +182,7 @@ def dataloader_collte_fn(batch):
     result['primary_gls'] = primary_gls
     result['secondary_gls'] = secondary_gls
     result['name'] = name
+    result['idx'] = idx
     return result
 
 
