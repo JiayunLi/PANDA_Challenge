@@ -169,7 +169,7 @@ if __name__ == "__main__":
         print(f"training fold {fold}!")
         train_idx = list(np.load(f"../Idxs/{mode}_{fold}.npy"))
         val_idx = df.index[df['split'] == fold].tolist()
-        trainloader, valloader, trainSampler = crossValData(train_idx, val_idx)
+        trainloader, valloader = crossValData(train_idx, val_idx)
         model = Model.from_pretrained('efficientnet-b0', num_classes = 5)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
