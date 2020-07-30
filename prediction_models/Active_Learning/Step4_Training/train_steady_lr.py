@@ -16,7 +16,6 @@ import argparse
 import torch.distributed as dist
 ## custom package
 from input.inputPipeline_stiching import data_transform, PandaPatchDataset, crossValDataloader
-from model.resnext_ssl_stiching import *
 from utiles.radam import *
 from utiles.utils import *
 from utiles.flatten_cosanneal import *
