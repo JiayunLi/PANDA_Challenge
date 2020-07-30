@@ -196,7 +196,7 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
-            trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
+            # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
             np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"))
             ## TODO: unlabeled data monitoring
