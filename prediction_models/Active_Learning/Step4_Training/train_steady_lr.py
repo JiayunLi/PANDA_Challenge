@@ -36,7 +36,7 @@ class Train(object):
         for i, data in enumerate(bar, start=0):
             if i >= 20:
                 break
-            get the inputs; data is a list of [inputs, labels]
+            # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
             # print(labels)
             # zero the parameter gradients
