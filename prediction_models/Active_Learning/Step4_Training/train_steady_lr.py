@@ -44,7 +44,7 @@ class Train(object):
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
-            train_loss.append(loss.item().cpu().numpy())
+            train_loss.append(loss.item().numpy())
             train_idx.append(img_idx)
             loss.backward()
             self.optimizer.step()
@@ -73,7 +73,7 @@ class Train(object):
                 loss = criterion(outputs_main, labels.float().cuda())
                 # print("output_main", outputs_main.shape)
                 # print("labels", labels.shape)
-                val_loss.append(loss.item())
+                val_loss.append(loss.item().numpy())
                 val_idx.append(img_idx)
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
