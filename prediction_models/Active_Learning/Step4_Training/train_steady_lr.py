@@ -42,8 +42,7 @@ class Train(object):
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
-            outputs = model(inputs.cuda().float())
-            outputs_main = outputs['out'] # for regression
+            outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
             train_loss.append(loss.item())
             train_idx.append(img_idx)
@@ -69,8 +68,7 @@ class Train(object):
                 # zero the parameter gradients
                 optimizer.zero_grad()
                 # forward + backward + optimize
-                outputs = model(inputs.cuda().float())
-                outputs_main = outputs['out']
+                outputs_main = model(inputs.cuda().float())
                 # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss = criterion(outputs_main, labels.float().cuda())
                 # print("output_main", outputs_main.shape)

@@ -85,7 +85,7 @@ class MBConvBlock(nn.Module):
         """
 
         # Expansion and Depthwise Convolution
-        result = OrderedDict()
+        # result = OrderedDict()
         x = inputs
         if self._block_args.expand_ratio != 1:
             x = self._expand_conv(inputs)
@@ -115,8 +115,8 @@ class MBConvBlock(nn.Module):
             if drop_connect_rate:
                 x = drop_connect(x, p=drop_connect_rate, training=self.training)
             x = x + inputs  # skip connection
-        result['out'] = x
-        return result
+        # result['out'] = x
+        return x
 
     def set_swish(self, memory_efficient=True):
         """Sets swish function as memory efficient (for training) or standard (for export).
