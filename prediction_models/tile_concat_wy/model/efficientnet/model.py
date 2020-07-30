@@ -5,7 +5,7 @@
 # Author: lukemelas (github username)
 # Github repo: https://github.com/lukemelas/EfficientNet-PyTorch
 # With adjustments and added comments by workingcoder (github username).
-
+from collections import OrderedDict
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -86,6 +86,7 @@ class MBConvBlock(nn.Module):
         """
 
         # Expansion and Depthwise Convolution
+        result = OrderedDict()
         x = inputs
         if self._block_args.expand_ratio != 1:
             x = self._expand_conv(inputs)
@@ -115,7 +116,8 @@ class MBConvBlock(nn.Module):
             if drop_connect_rate:
                 x = drop_connect(x, p=drop_connect_rate, training=self.training)
             x = x + inputs  # skip connection
-        return x
+        result['out'] = x
+        return result
 
     def set_swish(self, memory_efficient=True):
         """Sets swish function as memory efficient (for training) or standard (for export).
