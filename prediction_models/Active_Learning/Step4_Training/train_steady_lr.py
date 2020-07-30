@@ -34,9 +34,9 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            # if i >= 2:
-            #     break
-            # get the inputs; data is a list of [inputs, labels]
+            if i >= 20:
+                break
+            get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
             # print(labels)
             # zero the parameter gradients
@@ -44,12 +44,14 @@ class Train(object):
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
-            train_loss.append(loss.item().numpy())
+            train_loss.append(loss.detach().cpu().numpy())
             train_idx.append(img_idx)
+            loss = torch.mean(loss)
             loss.backward()
             self.optimizer.step()
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.item(), smooth_loss))
+        train_loss = np.concatenate(train_loss, 0)
         result['train_loss'] = np.mean(train_loss)
         result['train_sample_loss'] = np.stack(np.asarray(train_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
                                                1)
@@ -73,7 +75,7 @@ class Train(object):
                 loss = criterion(outputs_main, labels.float().cuda())
                 # print("output_main", outputs_main.shape)
                 # print("labels", labels.shape)
-                val_loss.append(loss.item().numpy())
+                val_loss.append(loss.detach().cup().numpy())
                 val_idx.append(img_idx)
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
@@ -90,6 +92,7 @@ class Train(object):
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
         kappa_r = cohen_kappa_score(val_label[index_r], val_preds[index_r], weights='quadratic')
         kappa_k = cohen_kappa_score(val_label[index_k], val_preds[index_k], weights='quadratic')
+        val_loss = np.concatenate(val_loss, 0)
         result['val_loss'] = np.mean(val_loss)
         result['val_sample_loss'] = np.stack(np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1),
                                              1)
@@ -152,7 +155,7 @@ if __name__ == "__main__":
     ## dataloader
     df = pd.read_csv(csv_file)
     crossValData = crossValDataloader(dataset, bs)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCEWithLogitsLoss(reduction = 'None')
     ## tensorboard writer
     writerDir = './runs'
     ## weight saving
