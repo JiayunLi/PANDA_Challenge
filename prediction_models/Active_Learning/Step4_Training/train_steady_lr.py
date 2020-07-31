@@ -52,7 +52,6 @@ class Train(object):
             self.optimizer.step()
             train_loss.append(loss.detach().cpu().numpy())
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
-            print(loss, smooth_loss)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
         train_sample_loss = np.concatenate(train_sample_loss, 0)
         result['train_loss'] = np.mean(train_loss)
@@ -76,6 +75,7 @@ class Train(object):
                 outputs_main = model(inputs.cuda().float())
                 # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss = criterion(outputs_main, labels.float().cuda())
+                loss = torch.sum(loss, 1)
                 # print("output_main", outputs_main.shape)
                 # print("labels", labels.shape)
                 val_loss.append(loss.detach().cup().numpy())
