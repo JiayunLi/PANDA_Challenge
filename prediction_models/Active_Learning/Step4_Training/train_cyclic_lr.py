@@ -124,6 +124,8 @@ if __name__ == "__main__":
                         help='number of patches used for training')
     parser.add_argument('--bs', default=6, type=int,
                         help='batch size')
+    parser.add_argument('--cycle', default=5, type=int,
+                        help='scheduler cycle')
     parser.add_argument('--epochs', default=30, type=int,
                         help='epochs for training')
     # parser.add_argument('--local_rank', default=-1, type=int,
@@ -132,6 +134,7 @@ if __name__ == "__main__":
     # dist.init_process_group(backend='nccl')
     # torch.cuda.set_device(args.local_rank)
     folds = args.fold
+    scheduler_cycle = args.cycle
     mode = args.mode
     folds = folds.split(',')
     folds = [int(i) for i in folds]
@@ -175,13 +178,16 @@ if __name__ == "__main__":
         print(f"training fold {fold}!")
         train_idx = list(np.load(f"../Idxs/{mode}_{fold}.npy"))
         val_idx = df.index[df['split'] == fold].tolist()
-        loader = crossValData(train_idx, val_idx)
-        trainloader, valloader = loader['trainloader'], loader['valloader']
+        unlabel_idx = list(set([x for x in range(len(df))]) - set(val_idx) - set(train_idx))
+        df_train_loss = pd.DataFrame(np.asarray(train_idx).reshape(-1,1), columns = ["image_idx"])
+        df_unlabel_entropy = pd.DataFrame(np.asarray(unlabel_idx).reshape(-1,1), columns = ["image_idx"])
+
+        loader = crossValData(train_idx, val_idx, unlabel_idx)
+        trainloader, valloader, unlabelloader = loader['trainloader'], loader['valloader'], loader['unlabelloader']
         model = Model.from_pretrained('efficientnet-b0', num_classes = 5).cuda()
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
 
         best_kappa = 0
         best_kappa_k = 0
@@ -204,9 +210,12 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
+            if epoch % scheduler_cycle == 0:
+                del scheduler
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
             # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
-            # np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
+            np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
             ## TODO: unlabeled data monitoring
             # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)

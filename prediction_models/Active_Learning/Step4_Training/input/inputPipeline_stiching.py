@@ -20,7 +20,8 @@ class crossValDataloader(object):
         self.dataset = dataset
         self.bs = bs
 
-    def __call__(self, train_idx, val_idx):
+    def __call__(self, train_idx, val_idx, unlabel_idx = None):
+        loader = OrderedDict()
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
         train_sampler = RandomSampler(train)
@@ -31,7 +32,15 @@ class crossValDataloader(object):
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=val_sampler,
                                                 drop_last=False)
-        return trainloader, valloader
+        if unlabel_idx:
+            unlabel = torch.utils.data.Subset(self.dataset, unlabel_idx)
+            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=4,
+                                                    collate_fn=None, pin_memory=True, sampler=val_sampler,
+                                                    drop_last=False)
+            loader['unlabelloader'] = unlabelloader
+        loader['trainloader'] = trainloader
+        loader['valloader'] = valloader
+        return loader
 
 class PandaPatchDataset(Dataset):
     """
