@@ -44,8 +44,6 @@ class Train(object):
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
-            print(loss.shape)
-            exit()
             train_loss.append(loss.detach().cpu().numpy())
             train_idx.append(img_idx)
             loss = torch.mean(loss)
