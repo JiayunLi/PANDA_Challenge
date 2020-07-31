@@ -163,7 +163,7 @@ if __name__ == "__main__":
                         help='batch size')
     parser.add_argument('--cycle', default=5, type=int,
                         help='scheduler cycle')
-    parser.add_argument('--epochs', default=30, type=int,
+    parser.add_argument('--epochs', default=20, type=int,
                         help='epochs for training')
     # parser.add_argument('--local_rank', default=-1, type=int,
     #                     help='node rank for distributed training')
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     image_dir = '../../tile_concat_wy/input/panda-36x256x256-tiles-data-opt/train/'
     bs = args.bs
     epochs = args.epochs
-    Pre_Train = False
+    Pre_Train = True
     start_epoch = 0
 
     ## image transformation
@@ -233,18 +233,14 @@ if __name__ == "__main__":
         best_kappa_k = 0
         best_kappa_r = 0
         if Pre_Train:
-            model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_best.pth.tar'.format(provider,provider,fold)
-            map_location = {"cuda:0": "cuda:{}".format(args.local_rank)}
-            state = torch.load(model_path, map_location = map_location)
+            model_path = f'./weights/{fname}/{fname}_{fold}_best.pth.tar'
+            state = torch.load(model_path)
             pretrained_dict = state['state_dict']
-            start_epoch = state['epoch'] + 1
-            optimizer.load_state_dict(state['optimizer'])
-            # model_dict = model.state_dict()
-            # pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-            # model_dict.update(pretrained_dict)
+            model_dict = model.state_dict()
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+            model_dict.update(pretrained_dict)
             model.load_state_dict(pretrained_dict)
-            # best_kappa = state['kappa']
-            print(f"Load pre-trained weights for model, start epoch {start_epoch}.")
+            print(f"Load pre-trained weights for model from {model_path}.")
 
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
@@ -279,32 +275,32 @@ if __name__ == "__main__":
                                                                                            val['kappa']))
             ## save the checkpoints and best model
             # if args.local_rank == 0:
-            is_best = val['kappa'] > best_kappa
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath)
-            best_kappa = val['kappa'] if is_best else best_kappa
-
-            is_best = val['kappa_r'] > best_kappa_r
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath + "_rad")
-            best_kappa_r = val['kappa_r'] if is_best else best_kappa_r
-
-            is_best = val['kappa_k'] > best_kappa_k
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath + "_kar")
-            best_kappa_k = val['kappa_k'] if is_best else best_kappa_k
+            # is_best = val['kappa'] > best_kappa
+            # save_checkpoint({
+            #     'epoch': epoch,
+            #     'state_dict': model.state_dict(),
+            #     'kappa': val['kappa'],
+            #     'optimizer': optimizer.state_dict(),
+            # }, is_best, weightsPath)
+            # best_kappa = val['kappa'] if is_best else best_kappa
+            #
+            # is_best = val['kappa_r'] > best_kappa_r
+            # save_checkpoint({
+            #     'epoch': epoch,
+            #     'state_dict': model.state_dict(),
+            #     'kappa': val['kappa'],
+            #     'optimizer': optimizer.state_dict(),
+            # }, is_best, weightsPath + "_rad")
+            # best_kappa_r = val['kappa_r'] if is_best else best_kappa_r
+            #
+            # is_best = val['kappa_k'] > best_kappa_k
+            # save_checkpoint({
+            #     'epoch': epoch,
+            #     'state_dict': model.state_dict(),
+            #     'kappa': val['kappa'],
+            #     'optimizer': optimizer.state_dict(),
+            # }, is_best, weightsPath + "_kar")
+            # best_kappa_k = val['kappa_k'] if is_best else best_kappa_k
 
         del model
         del optimizer
