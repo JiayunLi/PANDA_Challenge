@@ -52,7 +52,7 @@ class Train(object):
             self.optimizer.step()
             train_loss.append(loss.detach().cpu().numpy())
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
-            print(loss)
+            print(loss, smooth_loss)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
         train_sample_loss = np.concatenate(train_sample_loss, 0)
         result['train_loss'] = np.mean(train_loss)
