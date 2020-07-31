@@ -34,8 +34,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            if i >= 5:
-                break
+            # if i >= 5:
+            #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
             # print(labels)
@@ -66,8 +66,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                if i > 20:
-                    break
+                # if i > 20:
+                #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider, img_idx = data['img'], data['isup_grade'], data['datacenter'], data['idx']
                 # zero the parameter gradients
@@ -99,7 +99,7 @@ class Train(object):
         val_loss = np.concatenate(val_loss, 0)
         val_idx = torch.cat(val_idx).numpy()
         result['val_loss'] = np.mean(val_loss)
-        result['val_sample_loss'] = np.stack(np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1),
+        result['val_sample_loss'] = np.stack([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
                                              1)
         result['kappa'] = kappa
         result['kappa_r'] = kappa_r
