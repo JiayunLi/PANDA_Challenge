@@ -67,7 +67,7 @@ class Train(object):
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
                 if i > 20:
                     break
-                get the inputs; data is a list of [inputs, labels]
+                # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider, img_idx = data['img'], data['isup_grade'], data['datacenter'], data['idx']
                 # zero the parameter gradients
                 optimizer.zero_grad()
