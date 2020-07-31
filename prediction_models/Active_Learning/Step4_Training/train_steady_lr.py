@@ -34,7 +34,7 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            if i >= 20:
+            if i >= 5:
                 break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
@@ -54,6 +54,8 @@ class Train(object):
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
         train_sample_loss = np.concatenate(train_sample_loss, 0)
+        print(train_idx)
+        print(train_sample_loss, train_sample_loss.shape)
         result['train_loss'] = np.mean(train_loss)
         result['train_sample_loss'] = np.stack(np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
                                                1)
