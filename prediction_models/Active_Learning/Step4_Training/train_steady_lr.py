@@ -30,7 +30,7 @@ class Train(object):
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
-        train_loss, train_idx = [], []
+        train_loss, train_sample_loss, train_idx = [], [], []
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
@@ -46,16 +46,17 @@ class Train(object):
             loss = criterion(outputs_main, labels.cuda().float())
             train_idx.append(img_idx)
             loss = torch.sum(loss, 1)
-            train_loss.append(loss.detach().cpu().numpy())
+            train_sample_loss.append(loss)
             loss = torch.mean(loss)
             loss.backward()
             self.optimizer.step()
+            train_loss.append(loss.detach().cpu().numpy())
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             print(loss)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
-        train_loss = np.concatenate(train_loss, 0)
+        train_sample_loss = np.concatenate(train_sample_loss, 0)
         result['train_loss'] = np.mean(train_loss)
-        result['train_sample_loss'] = np.stack(np.asarray(train_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
+        result['train_sample_loss'] = np.stack(np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
                                                1)
         return result
 
