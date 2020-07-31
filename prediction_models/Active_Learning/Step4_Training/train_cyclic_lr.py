@@ -233,7 +233,7 @@ if __name__ == "__main__":
         best_kappa_k = 0
         best_kappa_r = 0
         if Pre_Train:
-            model_path = f'./weights/{fname}/{fname}_{fold}_best.pth.tar'
+            model_path = f'./weights/Resnext50_{N}patch_constant_lr_{mode}/Resnext50_{N}patch_constant_lr_{mode}_{fold}_best.pth.tar'
             state = torch.load(model_path)
             pretrained_dict = state['state_dict']
             model_dict = model.state_dict()
