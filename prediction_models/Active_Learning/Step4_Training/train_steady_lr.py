@@ -44,6 +44,8 @@ class Train(object):
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
+            print(loss.shape)
+            exit()
             train_loss.append(loss.detach().cpu().numpy())
             train_idx.append(img_idx)
             loss = torch.mean(loss)
@@ -155,7 +157,7 @@ if __name__ == "__main__":
     ## dataloader
     df = pd.read_csv(csv_file)
     crossValData = crossValDataloader(dataset, bs)
-    criterion = nn.BCEWithLogitsLoss(reduction = 'None')
+    criterion = nn.BCEWithLogitsLoss(reduction = 'none')
     ## tensorboard writer
     writerDir = './runs'
     ## weight saving
@@ -178,6 +180,7 @@ if __name__ == "__main__":
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
 
         best_kappa = 0
+        best_kappa_k = 0
         best_kappa_k = 0
         best_kappa_r = 0
         if Pre_Train:
