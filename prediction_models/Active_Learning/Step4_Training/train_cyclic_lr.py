@@ -159,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument('--provider', type=str, default="whole", help='which dataset to train.')
     parser.add_argument('--patch', default=36, type=int,
                         help='number of patches used for training')
-    parser.add_argument('--bs', default=6, type=int,
+    parser.add_argument('--bs', default=7, type=int,
                         help='batch size')
     parser.add_argument('--cycle', default=5, type=int,
                         help='scheduler cycle')
@@ -225,6 +225,7 @@ if __name__ == "__main__":
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
         entropy = Entropy()
 
         best_kappa = 0
