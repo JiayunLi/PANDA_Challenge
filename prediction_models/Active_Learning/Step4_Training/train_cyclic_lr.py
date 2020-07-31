@@ -60,14 +60,40 @@ class Train(object):
                                                1)
         return result
 
+    def unlabel_entropy(self, unlabelloader, metric):
+        model.eval()
+        unlabel_metric, unlabel_idx = [], []
+        result = OrderedDict()
+        with torch.no_grad():
+            for i, data in enumerate(tqdm(unlabelloader, desc='unlabelIter'), start=0):
+                # if i > 20:
+                #     break
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, provider, img_idx = data['img'], data['datacenter'], data['idx']
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                # forward + backward + optimize
+                outputs_main = model(inputs.cuda().float())
+                # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
+                entropy = metric(outputs_main)
+                unlabel_metric.append(entropy.detach().cpu().numpy())
+                unlabel_idx.append(img_idx)
+
+        unlabel_metric = np.concatenate(unlabel_metric, 0)
+        unlabel_idx = torch.cat(unlabel_idx).numpy()
+        result['unlabel_sample_entropy'] = np.concatenate(
+            [np.asarray(unlabel_metric).reshape(-1, 1), np.asarray(unlabel_idx).reshape(-1, 1)],
+            1)
+        return result
+
     def val_epoch(self, valloader, criterion):   ## val
         model.eval()
         val_loss, val_label, val_preds, val_provider, val_idx = [], [], [], [], []
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                # if i > 20:
-                #     break
+                if i > 20:
+                    break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider, img_idx = data['img'], data['isup_grade'], data['datacenter'], data['idx']
                 # zero the parameter gradients
@@ -113,6 +139,17 @@ def save_checkpoint(state, is_best, fname):
         state = state['state_dict']
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
+class Entropy(nn.Module):
+    def __init__(self):
+        super(Entropy, self).__init__()
+        self.sigmoid = nn.Sigmoid()
+        self.logsigmoid = nn.LogSigmoid()
+
+    def forward(self, x):
+        b = -self.sigmoid(x) * self.logsigmoid(x)
+        b = torch.sum(b,1)
+        return b
+
 
 if __name__ == "__main__":
     """Define Your Input"""
@@ -141,7 +178,7 @@ if __name__ == "__main__":
     provider = args.provider
     nfolds = 4
     N = args.patch ## number of patches
-    fname = f'Resnext50_{N}patch_constant_lr_{mode}'
+    fname = f'Resnext50_{N}patch_cyclic_lr_{mode}'
 
     if provider == "rad":
         csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
@@ -179,8 +216,8 @@ if __name__ == "__main__":
         train_idx = list(np.load(f"../Idxs/{mode}_{fold}.npy"))
         val_idx = df.index[df['split'] == fold].tolist()
         unlabel_idx = list(set([x for x in range(len(df))]) - set(val_idx) - set(train_idx))
-        df_train_loss = pd.DataFrame(np.asarray(train_idx).reshape(-1,1), columns = ["image_idx"])
-        df_unlabel_entropy = pd.DataFrame(np.asarray(unlabel_idx).reshape(-1,1), columns = ["image_idx"])
+        df_train_loss = pd.DataFrame(np.sort(train_idx).reshape(-1,1), columns = ["image_idx"])
+        df_unlabel_entropy = pd.DataFrame(np.sort(unlabel_idx).reshape(-1,1), columns = ["image_idx"])
 
         loader = crossValData(train_idx, val_idx, unlabel_idx)
         trainloader, valloader, unlabelloader = loader['trainloader'], loader['valloader'], loader['unlabelloader']
@@ -188,6 +225,7 @@ if __name__ == "__main__":
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        entropy = Entropy()
 
         best_kappa = 0
         best_kappa_k = 0
@@ -215,8 +253,12 @@ if __name__ == "__main__":
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
             # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
-            np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
-            ## TODO: unlabeled data monitoring
+            train_sample_loss = train['train_sample_loss']
+            df_train_loss[f"epoch_{epoch}"] = train_sample_loss[train_sample_loss[:,1].argsort()][:,0]
+            # np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
+            unlabel = Training.unlabel_entropy(unlabelloader, entropy)
+            unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
+            df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
             # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
@@ -266,4 +308,6 @@ if __name__ == "__main__":
         del model
         del optimizer
         del Training
+    df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index = False)
+    df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
     writer.close()
