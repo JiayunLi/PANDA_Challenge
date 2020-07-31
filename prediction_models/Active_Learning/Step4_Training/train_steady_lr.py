@@ -57,7 +57,7 @@ class Train(object):
         train_idx = torch.cat(train_idx).numpy()
         print(train_idx)
         result['train_loss'] = np.mean(train_loss)
-        result['train_sample_loss'] = np.stack(np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
+        result['train_sample_loss'] = np.stack([np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1)],
                                                1)
         return result
 
