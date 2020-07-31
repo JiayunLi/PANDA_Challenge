@@ -47,6 +47,7 @@ class Train(object):
             train_loss.append(loss.detach().cpu().numpy())
             train_idx.append(img_idx)
             loss = torch.mean(loss)
+            print(loss.shape)
             loss.backward()
             self.optimizer.step()
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
