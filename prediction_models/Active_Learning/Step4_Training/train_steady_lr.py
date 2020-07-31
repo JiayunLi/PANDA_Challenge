@@ -44,9 +44,10 @@ class Train(object):
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
-            train_loss.append(loss.detach().cpu().numpy())
             train_idx.append(img_idx)
-            loss = torch.mean(torch.sum(loss, 1))
+            loss = torch.sum(loss, 1)
+            train_loss.append(loss.detach().cpu().numpy())
+            loss = torch.mean(loss)
             loss.backward()
             self.optimizer.step()
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
