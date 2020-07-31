@@ -54,8 +54,8 @@ class Train(object):
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
         train_sample_loss = np.concatenate(train_sample_loss, 0)
+        train_idx = torch.cat(train_idx).numpy()
         print(train_idx)
-        print(train_sample_loss, train_sample_loss.shape)
         result['train_loss'] = np.mean(train_loss)
         result['train_sample_loss'] = np.stack(np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1),
                                                1)
