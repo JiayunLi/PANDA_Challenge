@@ -55,7 +55,6 @@ class Train(object):
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
         train_sample_loss = np.concatenate(train_sample_loss, 0)
         train_idx = torch.cat(train_idx).numpy()
-        print(train_idx)
         result['train_loss'] = np.mean(train_loss)
         result['train_sample_loss'] = np.stack([np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1)],
                                                1)
@@ -98,6 +97,7 @@ class Train(object):
         kappa_r = cohen_kappa_score(val_label[index_r], val_preds[index_r], weights='quadratic')
         kappa_k = cohen_kappa_score(val_label[index_k], val_preds[index_k], weights='quadratic')
         val_loss = np.concatenate(val_loss, 0)
+        val_idx = torch.cat(val_idx).numpy()
         result['val_loss'] = np.mean(val_loss)
         result['val_sample_loss'] = np.stack(np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1),
                                              1)
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
-            np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"))
+            np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
             ## TODO: unlabeled data monitoring
             # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)
