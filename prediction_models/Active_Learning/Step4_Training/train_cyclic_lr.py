@@ -275,10 +275,7 @@ if __name__ == "__main__":
             #     writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
             #     writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
             # writer.flush()
-            tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
-                                                                                           train['train_loss'],
-                                                                                           val['val_loss'],
-                                                                                           val['kappa']))
+            tqdm.write("Epoch {}, train loss: {:.4f}".format(epoch,train['train_loss']))
             ## save the checkpoints and best model
             # if args.local_rank == 0:
             # is_best = val['kappa'] > best_kappa
