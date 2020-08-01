@@ -247,7 +247,11 @@ if __name__ == "__main__":
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             if epoch % scheduler_cycle == 0:
                 del scheduler
+                del optimizer
+                del Training
+                optimizer = optim.Adam(model.parameters(), lr=0.0003)
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle, eta_min=0.00003)
+                Training = Train(model, optimizer, None)
             # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
             train_sample_loss = train['train_sample_loss']
