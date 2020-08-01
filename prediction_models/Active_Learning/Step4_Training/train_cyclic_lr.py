@@ -22,10 +22,9 @@ from utiles.flatten_cosanneal import *
 from Model.efficientnet.model import EfficientNet as Model
 
 class Train(object):
-    def __init__(self, model, optimizer, scheduler):
+    def __init__(self, model, optimizer):
         self.model = model
         self.optimizer = optimizer
-        self.scheduler = scheduler
 
     def train_epoch(self,trainloader, criterion):
         ## train
@@ -112,8 +111,8 @@ class Train(object):
                 val_provider += provider
                 # print("postval_label", labels.sum(1))
                 # print("postval_label", outputs_main.sigmoid().sum(1).round())
-        if self.scheduler:
-            self.scheduler.step()
+        # if self.scheduler:
+        #     self.scheduler.step()
         val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0)
         # print(val_label.shape, val_preds.shape)
@@ -264,6 +263,7 @@ if __name__ == "__main__":
             # df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
             # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)
+            scheduler.step()
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
             writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
