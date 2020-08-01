@@ -224,7 +224,7 @@ if __name__ == "__main__":
         model = Model.from_pretrained('efficientnet-b0', num_classes = 5).cuda()
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
-        optimizer = optim.Adam(model.parameters(), lr=0.00003)  # current best 0.00003
+        optimizer = optim.Adam(model.parameters(), lr=0.003)  # current best 0.00003
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
         entropy = Entropy()
 
