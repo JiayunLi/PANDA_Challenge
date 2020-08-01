@@ -262,19 +262,19 @@ if __name__ == "__main__":
             # unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
             # df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
             # if args.local_rank == 0:
-            val = Training.val_epoch(valloader, criterion)
+            # val = Training.val_epoch(valloader, criterion)
             scheduler.step()
-            writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
-            writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
-            writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            if provider == "rad":
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-            elif provider == "kar":
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            else:
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            writer.flush()
+            # writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
+            # writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
+            # writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
+            # if provider == "rad":
+            #     writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            # elif provider == "kar":
+            #     writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+            # else:
+            #     writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+            #     writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+            # writer.flush()
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                            train['train_loss'],
                                                                                            val['val_loss'],
