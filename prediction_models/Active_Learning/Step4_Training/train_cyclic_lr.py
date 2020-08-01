@@ -253,9 +253,9 @@ if __name__ == "__main__":
             train_sample_loss = train['train_sample_loss']
             df_train_loss[f"epoch_{epoch}"] = train_sample_loss[train_sample_loss[:,1].argsort()][:,0]
             # np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
-            unlabel = Training.unlabel_entropy(unlabelloader, entropy)
-            unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
-            df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
+            # unlabel = Training.unlabel_entropy(unlabelloader, entropy)
+            # unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
+            # df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
             # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
@@ -306,5 +306,5 @@ if __name__ == "__main__":
         del optimizer
         del Training
     df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index = False)
-    df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
+    # df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
     writer.close()
