@@ -311,6 +311,7 @@ if __name__ == "__main__":
         del model
         del optimizer
         del Training
+        df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index=False)
     df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index = False)
     # df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
     writer.close()
