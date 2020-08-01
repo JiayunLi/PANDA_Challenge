@@ -225,7 +225,7 @@ if __name__ == "__main__":
         # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
         # optimizer = optim.Adam(model.parameters(), lr=0.0003)  # current best 0.00003
-        optimizer = optim.SGD(model.parameters(), lr = 0.003)
+        optimizer = optim.SGD(model.parameters(), lr = 0.03)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
         entropy = Entropy()
 
