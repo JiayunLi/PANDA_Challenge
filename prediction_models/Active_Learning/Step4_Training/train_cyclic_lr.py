@@ -242,7 +242,7 @@ if __name__ == "__main__":
             model.load_state_dict(pretrained_dict)
             print(f"Load pre-trained weights for model from {model_path}.")
 
-        Training = Train(model, optimizer, None)
+        Training = Train(model, optimizer)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             if epoch % scheduler_cycle == 0:
