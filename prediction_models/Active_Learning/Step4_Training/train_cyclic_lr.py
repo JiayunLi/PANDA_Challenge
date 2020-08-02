@@ -215,6 +215,8 @@ if __name__ == "__main__":
         train_idx = list(np.load(f"../Idxs/{mode}_{fold}.npy"))
         val_idx = df.index[df['split'] == fold].tolist()
         unlabel_idx = list(set([x for x in range(len(df))]) - set(val_idx) - set(train_idx))
+        ## select random unlabel_idx
+        unlabel_idx = list(np.random.choice(unlabel_idx, size = 4000, replace = False))
         df_train_loss = pd.DataFrame(np.sort(train_idx).reshape(-1,1), columns = ["image_idx"])
         df_unlabel_entropy = pd.DataFrame(np.sort(unlabel_idx).reshape(-1,1), columns = ["image_idx"])
 
@@ -258,9 +260,9 @@ if __name__ == "__main__":
             train_sample_loss = train['train_sample_loss']
             df_train_loss[f"epoch_{epoch}"] = train_sample_loss[train_sample_loss[:,1].argsort()][:,0]
             # np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
-            # unlabel = Training.unlabel_entropy(unlabelloader, entropy)
-            # unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
-            # df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
+            unlabel = Training.unlabel_entropy(unlabelloader, entropy)
+            unlabel_sample_entropy = unlabel['unlabel_sample_entropy']
+            df_unlabel_entropy[f"epoch_{epoch}"] = unlabel_sample_entropy[unlabel_sample_entropy[:, 1].argsort()][:, 0]
             # if args.local_rank == 0:
             # val = Training.val_epoch(valloader, criterion)
             scheduler.step()
@@ -309,6 +311,7 @@ if __name__ == "__main__":
         del optimizer
         del Training
         df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index=False)
+        df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index=False)
     df_train_loss.to_csv(os.path.join(writerDir, f"train_sample_loss_{fold}_{mode}.csv"), index = False)
-    # df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
+    df_unlabel_entropy.to_csv(os.path.join(writerDir, f"unlabel_sample_entropy_{fold}_{mode}.csv"), index = False)
     writer.close()
