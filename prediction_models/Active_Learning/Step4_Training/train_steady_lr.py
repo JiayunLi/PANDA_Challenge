@@ -45,19 +45,19 @@ class Train(object):
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
             train_idx.append(img_idx)
-            loss = torch.sum(loss, 1)
-            train_sample_loss.append(loss.detach().cpu().numpy())
-            loss = torch.mean(loss)
+            # loss = torch.sum(loss, 1)
+            # train_sample_loss.append(loss.detach().cpu().numpy())
+            # loss = torch.mean(loss)
             loss.backward()
             self.optimizer.step()
             train_loss.append(loss.detach().cpu().numpy())
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
-        train_sample_loss = np.concatenate(train_sample_loss, 0)
-        train_idx = torch.cat(train_idx).numpy()
+        # train_sample_loss = np.concatenate(train_sample_loss, 0)
+        # train_idx = torch.cat(train_idx).numpy()
         result['train_loss'] = np.mean(train_loss)
-        result['train_sample_loss'] = np.concatenate([np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1)],
-                                               1)
+        # result['train_sample_loss'] = np.concatenate([np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1)],
+        #                                        1)
         return result
 
     def val_epoch(self, valloader, criterion):   ## val
@@ -76,7 +76,7 @@ class Train(object):
                 outputs_main = model(inputs.cuda().float())
                 # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss = criterion(outputs_main, labels.float().cuda())
-                loss = torch.sum(loss, 1)
+                # loss = torch.sum(loss, 1)
                 # print("output_main", outputs_main.shape)
                 # print("labels", labels.shape)
                 val_loss.append(loss.detach().cpu().numpy())
@@ -99,8 +99,8 @@ class Train(object):
         val_loss = np.concatenate(val_loss, 0)
         val_idx = torch.cat(val_idx).numpy()
         result['val_loss'] = np.mean(val_loss)
-        result['val_sample_loss'] = np.concatenate([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
-                                             1)
+        # result['val_sample_loss'] = np.concatenate([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
+        #                                      1)
         result['kappa'] = kappa
         result['kappa_r'] = kappa_r
         result['kappa_k'] = kappa_k
@@ -160,7 +160,8 @@ if __name__ == "__main__":
     ## dataloader
     df = pd.read_csv(csv_file)
     crossValData = crossValDataloader(dataset, bs)
-    criterion = nn.BCEWithLogitsLoss(reduction = 'none')
+    # criterion = nn.BCEWithLogitsLoss(reduction = 'none')
+    criterion = nn.BCEWithLogitsLoss()
     ## tensorboard writer
     writerDir = './runs'
     ## weight saving
