@@ -96,8 +96,8 @@ class Train(object):
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
         kappa_r = cohen_kappa_score(val_label[index_r], val_preds[index_r], weights='quadratic')
         kappa_k = cohen_kappa_score(val_label[index_k], val_preds[index_k], weights='quadratic')
-        val_loss = np.concatenate(val_loss, 0)
-        val_idx = torch.cat(val_idx).numpy()
+        # val_loss = np.concatenate(val_loss, 0)
+        # val_idx = torch.cat(val_idx).numpy()
         result['val_loss'] = np.mean(val_loss)
         # result['val_sample_loss'] = np.concatenate([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
         #                                      1)
