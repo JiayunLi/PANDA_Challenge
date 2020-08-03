@@ -126,7 +126,8 @@ class PandaPatchDataset(Dataset):
         secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
-        result['idx'] = self.train_csv.loc[idx, 'image_idx']
+        img_idx = self.train_csv.loc[idx, 'image_idx']
+        result['idx'] = torch.tensor(img_idx)
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
@@ -134,7 +135,7 @@ class PandaPatchDataset(Dataset):
         # secondary_gls[:gleason_score[1]] = 1.
         # result['primary_gls'] = torch.tensor(primary_gls)
         # result['secondary_gls'] = torch.tensor(secondary_gls)
-        result['name'] = torch.tensor(img_id)
+        result['name'] = img_id
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
