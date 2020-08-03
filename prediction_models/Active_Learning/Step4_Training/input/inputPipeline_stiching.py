@@ -26,7 +26,7 @@ class crossValDataloader(object):
         val = torch.utils.data.Subset(self.dataset, val_idx)
         # train_sampler = RandomSampler(train)
         # val_sampler = SequentialSampler(val)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=True, num_workers=4,
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
                                                   sampler=None,collate_fn=None, pin_memory=True,
                                                   drop_last=False)
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
@@ -71,6 +71,7 @@ class PandaPatchDataset(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
+        print(idx)
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         # name = self.train_csv.image_id[idx]
@@ -121,9 +122,9 @@ class PandaPatchDataset(Dataset):
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
-        # gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
-        # primary_gls = np.zeros(4).astype(np.float32)
-        # secondary_gls = np.zeros(4).astype(np.float32)
+        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
+        primary_gls = np.zeros(4).astype(np.float32)
+        secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
         img_idx = self.train_csv.loc[idx, 'image_idx']
@@ -131,10 +132,10 @@ class PandaPatchDataset(Dataset):
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
-        # primary_gls[:gleason_score[0]] = 1.
-        # secondary_gls[:gleason_score[1]] = 1.
-        # result['primary_gls'] = torch.tensor(primary_gls)
-        # result['secondary_gls'] = torch.tensor(secondary_gls)
+        primary_gls[:gleason_score[0]] = 1.
+        secondary_gls[:gleason_score[1]] = 1.
+        result['primary_gls'] = torch.tensor(primary_gls)
+        result['secondary_gls'] = torch.tensor(secondary_gls)
         result['name'] = img_id
         return result
 
@@ -185,6 +186,7 @@ def dataloader_collte_fn(batch):
     primary_gls = [item['primary_gls'] for item in batch]
     secondary_gls = [item['secondary_gls'] for item in batch]
     idx = [item['idx'] for item in batch]
+    idx = torch.cat(idx)
     name = [item['name'] for item in batch]
     result['img'] = imgs
     result['isup_grade'] = target
