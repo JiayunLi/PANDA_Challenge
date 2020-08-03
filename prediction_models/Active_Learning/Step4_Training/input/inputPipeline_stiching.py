@@ -28,7 +28,7 @@ class crossValDataloader(object):
         val_sampler = SequentialSampler(val)
         trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
                                                   sampler=train_sampler,collate_fn=None, pin_memory=True,
-                                                  drop_last=False)
+                                                  drop_last=True)
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=val_sampler,
                                                 drop_last=False)
@@ -72,9 +72,8 @@ class PandaPatchDataset(Dataset):
 
     def __getitem__(self, idx):
         result = OrderedDict()
-
         name = self.train_csv.loc[idx, 'image_id']
-        print(name)
+        # print(name)
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:
