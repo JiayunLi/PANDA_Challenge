@@ -188,7 +188,9 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
-            for i, data in tqdm(enumerate(trainloader)):
+            bar = tqdm(trainloader, desc='trainIter')
+            result = OrderedDict()
+            for i, data in enumerate(bar, start=0):
                 img = data['img']
         #     train = Training.train_epoch(trainloader, criterion)
         #     val = Training.val_epoch(valloader, criterion)
