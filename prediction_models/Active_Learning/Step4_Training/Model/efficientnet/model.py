@@ -216,6 +216,7 @@ class EfficientNet(nn.Module):
             layer in the efficientnet model.
         """
         # Stem
+        bs = inputs.size(0)
         x = self._swish(self._bn0(self._conv_stem(inputs)))
 
         # Blocks
@@ -227,6 +228,10 @@ class EfficientNet(nn.Module):
 
         # Head
         x = self._swish(self._bn1(self._conv_head(x)))
+
+        ### modified by wenyuanli @ 08/02/2020
+        x = self._avg_pooling(x)
+        x = x.view(bs, -1)
 
         return x
 
