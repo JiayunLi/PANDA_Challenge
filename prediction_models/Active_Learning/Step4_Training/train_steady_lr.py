@@ -188,11 +188,11 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
-            bar = tqdm(trainloader, desc='trainIter')
-            result = OrderedDict()
-            for i, data in enumerate(bar, start=0):
-                img = data['img']
-        #     train = Training.train_epoch(trainloader, criterion)
+            # bar = tqdm(trainloader, desc='trainIter')
+            # result = OrderedDict()
+            # for i, data in enumerate(bar, start=0):
+            #     img = data['img']
+            train = Training.train_epoch(trainloader, criterion)
         #     val = Training.val_epoch(valloader, criterion)
         #     writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
         #     writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
