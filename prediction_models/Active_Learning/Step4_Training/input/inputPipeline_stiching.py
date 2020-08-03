@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 # from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import SequentialSampler
-from torch.utils.data.sampler import RandomSampler
+# from torch.utils.data.sampler import RandomSampler
 from collections import OrderedDict
 import albumentations
 from scipy.special import softmax
@@ -24,13 +24,13 @@ class crossValDataloader(object):
         loader = OrderedDict()
         train = torch.utils.data.Subset(self.dataset, train_idx)
         val = torch.utils.data.Subset(self.dataset, val_idx)
-        train_sampler = RandomSampler(train)
-        val_sampler = SequentialSampler(val)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                  sampler=train_sampler,collate_fn=None, pin_memory=True,
+        # train_sampler = RandomSampler(train)
+        # val_sampler = SequentialSampler(val)
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=True, num_workers=4,
+                                                  sampler=None,collate_fn=None, pin_memory=True,
                                                   drop_last=False)
         valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                collate_fn=None, pin_memory=True, sampler=val_sampler,
+                                                collate_fn=None, pin_memory=True, sampler= None,
                                                 drop_last=False)
         if unlabel_idx:
             unlabel = torch.utils.data.Subset(self.dataset, unlabel_idx)
