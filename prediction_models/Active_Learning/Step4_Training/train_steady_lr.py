@@ -30,7 +30,7 @@ class Train(object):
     def train_epoch(self,trainloader, criterion):
         ## train
         self.model.train()
-        train_loss, train_sample_loss, train_idx = [], [], []
+        train_loss = []
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
@@ -38,7 +38,6 @@ class Train(object):
             #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
-            # print(labels)
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
@@ -46,23 +45,18 @@ class Train(object):
             loss = criterion(outputs_main, labels.cuda().float())
             train_idx.append(img_idx)
             loss = torch.sum(loss, 1)
-            train_sample_loss.append(loss.detach().cpu().numpy())
             loss = torch.mean(loss)
             loss.backward()
             self.optimizer.step()
             train_loss.append(loss.detach().cpu().numpy())
             smooth_loss = sum(train_loss[-100:]) / min(len(train_loss), 100)
             bar.set_description('loss: %.5f, smth: %.5f' % (loss.detach().cpu(), smooth_loss))
-        train_sample_loss = np.concatenate(train_sample_loss, 0)
-        train_idx = torch.cat(train_idx).numpy()
         result['train_loss'] = np.mean(train_loss)
-        result['train_sample_loss'] = np.concatenate([np.asarray(train_sample_loss).reshape(-1,1), np.asarray(train_idx).reshape(-1,1)],
-                                               1)
         return result
 
     def val_epoch(self, valloader, criterion):   ## val
         model.eval()
-        val_loss, val_label, val_preds, val_provider, val_idx = [], [], [], [], []
+        val_loss, val_label, val_preds, val_provider = [], [], [], []
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
@@ -77,15 +71,10 @@ class Train(object):
                 # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss = criterion(outputs_main, labels.float().cuda())
                 loss = torch.sum(loss, 1)
-                # print("output_main", outputs_main.shape)
-                # print("labels", labels.shape)
                 val_loss.append(loss.detach().cpu().numpy())
-                val_idx.append(img_idx)
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
                 val_provider += provider
-                # print("postval_label", labels.sum(1))
-                # print("postval_label", outputs_main.sigmoid().sum(1).round())
         if self.scheduler:
             self.scheduler.step()
         val_label = torch.cat(val_label, 0)
@@ -97,10 +86,7 @@ class Train(object):
         kappa_r = cohen_kappa_score(val_label[index_r], val_preds[index_r], weights='quadratic')
         kappa_k = cohen_kappa_score(val_label[index_k], val_preds[index_k], weights='quadratic')
         val_loss = np.concatenate(val_loss, 0)
-        val_idx = torch.cat(val_idx).numpy()
-        # result['val_loss'] = np.mean(val_loss)
-        # result['val_sample_loss'] = np.concatenate([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
-        #                                      1)
+        result['val_loss'] = np.mean(val_loss)
         result['kappa'] = kappa
         result['kappa_r'] = kappa_r
         result['kappa_k'] = kappa_k
@@ -126,11 +112,7 @@ if __name__ == "__main__":
                         help='batch size')
     parser.add_argument('--epochs', default=30, type=int,
                         help='epochs for training')
-    # parser.add_argument('--local_rank', default=-1, type=int,
-    #                     help='node rank for distributed training')
     args = parser.parse_args()
-    # dist.init_process_group(backend='nccl')
-    # torch.cuda.set_device(args.local_rank)
     folds = args.fold
     mode = args.mode
     folds = folds.split(',')
@@ -160,8 +142,8 @@ if __name__ == "__main__":
     ## dataloader
     df = pd.read_csv(csv_file)
     crossValData = crossValDataloader(dataset, bs)
-    # criterion = nn.BCEWithLogitsLoss(reduction = 'none')
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCEWithLogitsLoss(reduction = 'none')
+    # criterion = nn.BCEWithLogitsLoss()
     ## tensorboard writer
     writerDir = './runs'
     ## weight saving
@@ -205,11 +187,7 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
-            # trainSampler.set_epoch(epoch) ## have to use this for shuffle the image
             train = Training.train_epoch(trainloader,criterion)
-            # np.save(os.path.join(writerDir, f"train_sample_loss_{fold}_{epoch}_{mode}.npy"), train['train_sample_loss'])
-            ## TODO: unlabeled data monitoring
-            # if args.local_rank == 0:
             val = Training.val_epoch(valloader, criterion)
             writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
             writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
