@@ -34,8 +34,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            # if i >= 50:
-            #     break
+            if i >= 50:
+                break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
             # zero the parameter gradients
