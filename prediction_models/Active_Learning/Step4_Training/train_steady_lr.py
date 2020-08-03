@@ -34,7 +34,7 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            if i >= 5:
+            if i >= 50:
                 break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
@@ -60,7 +60,7 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                if i > 50:
+                if i > 5:
                     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider, img_idx = data['img'], data['isup_grade'], data['datacenter'], data['idx']
