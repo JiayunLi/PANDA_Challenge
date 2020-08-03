@@ -121,9 +121,9 @@ class PandaPatchDataset(Dataset):
         images = images.transpose(2, 0, 1)
         label = np.zeros(5).astype(np.float32)
         isup_grade = self.train_csv.loc[idx, 'isup_grade']
-        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
-        primary_gls = np.zeros(4).astype(np.float32)
-        secondary_gls = np.zeros(4).astype(np.float32)
+        # gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
+        # primary_gls = np.zeros(4).astype(np.float32)
+        # secondary_gls = np.zeros(4).astype(np.float32)
         datacenter = self.train_csv.loc[idx, 'data_provider']
         label[:isup_grade] = 1.
         img_idx = self.train_csv.loc[idx, 'image_idx']
