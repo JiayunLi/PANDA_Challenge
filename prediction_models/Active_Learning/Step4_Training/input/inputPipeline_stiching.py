@@ -72,8 +72,8 @@ class PandaPatchDataset(Dataset):
 
     def __getitem__(self, idx):
         result = OrderedDict()
-        name = self.train_csv.loc[idx, 'image_id']
-        # print(name)
+        img_id = self.train_csv.loc[idx, 'image_id']
+        name = self.train_csv.image_id[idx]
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:
@@ -81,7 +81,7 @@ class PandaPatchDataset(Dataset):
 
         tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
         idxes = idx_selection(tile_pix, self.N, "deterministic")
-        fnames = [os.path.join(self.image_dir, name + '_' + str(i) + '.png')
+        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
                                 for i in idxes]
 
         imgs = []
@@ -148,7 +148,6 @@ class PandaPatchDataset(Dataset):
 
 def idx_selection(logit_list, N = 36, mode = "deterministic"):
     """
-
     :param logit_list: numpy array, the larger, the more probability to select
     :param mode:
     :return:

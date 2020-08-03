@@ -1,221 +1,374 @@
-import os
-import warnings
-warnings.filterwarnings("ignore")
-from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-# from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data.sampler import SequentialSampler
-from torch.utils.data.sampler import RandomSampler
+"""model.py - Model and module class for EfficientNet.
+   They are built to mirror those in the official TensorFlow implementation.
+"""
+
+# Author: lukemelas (github username)
+# Github repo: https://github.com/lukemelas/EfficientNet-PyTorch
+# With adjustments and added comments by workingcoder (github username).
 from collections import OrderedDict
-import albumentations
-from scipy.special import softmax
+import torch
+from torch import nn
+from torch.nn import functional as F
+from .utils import (
+    round_filters,
+    round_repeats,
+    drop_connect,
+    get_same_padding_conv2d,
+    get_model_params,
+    efficientnet_params,
+    load_pretrained_weights,
+    Swish,
+    MemoryEfficientSwish,
+    calculate_output_image_size
+)
 
-class crossValDataloader(object):
-    def __init__(self, dataset, bs = 6):
-        self.dataset = dataset
-        self.bs = bs
-
-    def __call__(self, train_idx, val_idx, unlabel_idx = None):
-        loader = OrderedDict()
-        train = torch.utils.data.Subset(self.dataset, train_idx)
-        val = torch.utils.data.Subset(self.dataset, val_idx)
-        train_sampler = RandomSampler(train)
-        val_sampler = SequentialSampler(val)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                  sampler=train_sampler,collate_fn=None, pin_memory=True,
-                                                  drop_last=False)
-        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                collate_fn=None, pin_memory=True, sampler=val_sampler,
-                                                drop_last=False)
-        if unlabel_idx:
-            unlabel = torch.utils.data.Subset(self.dataset, unlabel_idx)
-            unlabel_sampler = SequentialSampler(unlabel)
-            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=4,
-                                                    collate_fn=None, pin_memory=True, sampler=unlabel_sampler,
-                                                    drop_last=False)
-            loader['unlabelloader'] = unlabelloader
-        loader['trainloader'] = trainloader
-        loader['valloader'] = valloader
-        return loader
-
-class PandaPatchDataset(Dataset):
+class MBConvBlock(nn.Module):
+    """Mobile Inverted Residual Bottleneck Block.
+    Args:
+        block_args (namedtuple): BlockArgs, defined in utils.py.
+        global_params (namedtuple): GlobalParam, defined in utils.py.
+        image_size (tuple or list): [image_height, image_width].
+    References:
+        [1] https://arxiv.org/abs/1704.04861 (MobileNet v1)
+        [2] https://arxiv.org/abs/1801.04381 (MobileNet v2)
+        [3] https://arxiv.org/abs/1905.02244 (MobileNet v3)
     """
-    gls2isu = {"0+0":0,'negative':0,'3+3':1,'3+4':2,'4+3':3,'4+4':4,'3+5':4,'5+3':4,'4+5':5,'5+4':5,'5+5':5}
-    """
-    gls = {"0+0": [0, 0], 'negative': [0, 0], '3+3': [1, 1], '3+4': [1, 2], '4+3': [2, 1], '4+4': [2, 2],
-           '3+5': [1, 3], '5+3': [3, 1], '4+5': [2, 3], '5+4': [3, 2], '5+5': [3, 3]}
-    """Panda Tile dataset. With fixed tiles for each slide."""
-    def __init__(self, csv_file, image_dir, image_size, N = 36, transform=None, rand=False, mode="br"):
-        """
+
+    def __init__(self, block_args, global_params, image_size=None):
+        super().__init__()
+        self._block_args = block_args
+        self._bn_mom = 1 - global_params.batch_norm_momentum  # pytorch's difference from tensorflow
+        self._bn_eps = global_params.batch_norm_epsilon
+        self.has_se = (self._block_args.se_ratio is not None) and (0 < self._block_args.se_ratio <= 1)
+        self.id_skip = block_args.id_skip  # whether to use skip connection and drop connect
+
+        # Expansion phase (Inverted Bottleneck)
+        inp = self._block_args.input_filters  # number of input channels
+        oup = self._block_args.input_filters * self._block_args.expand_ratio  # number of output channels
+        if self._block_args.expand_ratio != 1:
+            Conv2d = get_same_padding_conv2d(image_size=image_size)
+            self._expand_conv = Conv2d(in_channels=inp, out_channels=oup, kernel_size=1, bias=False)
+            self._bn0 = nn.BatchNorm2d(num_features=oup, momentum=self._bn_mom, eps=self._bn_eps)
+            # image_size = calculate_output_image_size(image_size, 1) <-- this wouldn't modify image_size
+
+        # Depthwise convolution phase
+        k = self._block_args.kernel_size
+        s = self._block_args.stride
+        Conv2d = get_same_padding_conv2d(image_size=image_size)
+        self._depthwise_conv = Conv2d(
+            in_channels=oup, out_channels=oup, groups=oup,  # groups makes it depthwise
+            kernel_size=k, stride=s, bias=False)
+        self._bn1 = nn.BatchNorm2d(num_features=oup, momentum=self._bn_mom, eps=self._bn_eps)
+        image_size = calculate_output_image_size(image_size, s)
+
+        # Squeeze and Excitation layer, if desired
+        if self.has_se:
+            Conv2d = get_same_padding_conv2d(image_size=(1, 1))
+            num_squeezed_channels = max(1, int(self._block_args.input_filters * self._block_args.se_ratio))
+            self._se_reduce = Conv2d(in_channels=oup, out_channels=num_squeezed_channels, kernel_size=1)
+            self._se_expand = Conv2d(in_channels=num_squeezed_channels, out_channels=oup, kernel_size=1)
+
+        # Pointwise convolution phase
+        final_oup = self._block_args.output_filters
+        Conv2d = get_same_padding_conv2d(image_size=image_size)
+        self._project_conv = Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
+        self._bn2 = nn.BatchNorm2d(num_features=final_oup, momentum=self._bn_mom, eps=self._bn_eps)
+        self._swish = MemoryEfficientSwish()
+
+    def forward(self, inputs, drop_connect_rate=None):
+        """MBConvBlock's forward function.
         Args:
-            csv_file (string): Path to the csv file with annotations.
-            image_dir (string): Directory with all the images.
-            N (interger): Number of tiles selected for each slide.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+            inputs (tensor): Input tensor.
+            drop_connect_rate (bool): Drop connect rate (float, between 0 and 1).
+        Returns:
+            Output of this block after processing.
         """
-        self.train_csv = pd.read_csv(csv_file)
-        self.image_dir = image_dir
-        self.image_size = image_size
-        self.transform = transform
-        self.N = N
-        self.rand = rand
-        self.mode = mode
 
-    def __len__(self):
-        return len(self.train_csv)
+        # Expansion and Depthwise Convolution
+        # result = OrderedDict()
+        x = inputs
+        if self._block_args.expand_ratio != 1:
+            x = self._expand_conv(inputs)
+            x = self._bn0(x)
+            x = self._swish(x)
 
-    def __getitem__(self, idx):
-        result = OrderedDict()
-        img_id = self.train_csv.loc[idx, 'image_id']
-        name = self.train_csv.image_id[idx]
-        if self.mode == "br":
-            tile_pix = str(self.train_csv.tile_blueratio[idx])
-        else:
-            tile_pix = str(self.train_csv.tile_pixel[idx])
+        x = self._depthwise_conv(x)
+        x = self._bn1(x)
+        x = self._swish(x)
 
-        tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
-        idxes = idx_selection(tile_pix, self.N, "deterministic")
-        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
-                                for i in idxes]
+        # Squeeze and Excitation
+        if self.has_se:
+            x_squeezed = F.adaptive_avg_pool2d(x, 1)
+            x_squeezed = self._se_reduce(x_squeezed)
+            x_squeezed = self._swish(x_squeezed)
+            x_squeezed = self._se_expand(x_squeezed)
+            x = torch.sigmoid(x_squeezed) * x
 
-        imgs = []
-        for i, fname in enumerate(fnames):
-            img = self.open_image(fname)
-            imgs.append({'img': img, 'idx': i})
+        # Pointwise Convolution
+        x = self._project_conv(x)
+        x = self._bn2(x)
 
-        if self.rand: ## random shuffle the order of tiles
-            idxes = np.random.choice(list(range(self.N)), self.N, replace=False)
-        else:
-            idxes = list(range(self.N))
-
-        n_row_tiles = int(np.sqrt(self.N))
-
-        images = np.zeros((self.image_size * n_row_tiles, self.image_size * n_row_tiles, 3)).astype(np.uint8)
-        for h in range(n_row_tiles):
-            for w in range(n_row_tiles):
-                i = h * n_row_tiles + w
-                if len(imgs) > idxes[i]:
-                    this_img = imgs[idxes[i]]['img'].astype(np.uint8)
-                else:
-                    this_img = np.ones((self.image_size, self.image_size, 3)).astype(np.uint8) * 255
-                # this_img = 255 - this_img ## todo: see how this trik plays out
-                if self.transform is not None:
-                    this_img = self.transform(image=this_img)['image']
-                h1 = h * self.image_size
-                w1 = w * self.image_size
-                images[h1:h1 + self.image_size, w1:w1 + self.image_size] = this_img
-
-        if self.transform is not None:
-            images = self.transform(image=images)['image']
-        images = images.astype(np.float32)
-        images /= 255.0
-        mean = np.asarray([0.79667089, 0.59347025, 0.75775308])
-        std = np.asarray([0.07021654, 0.13918451, 0.08442586])
-        images = (images - mean)/(std) ## normalize the image
-        images = images.transpose(2, 0, 1)
-        label = np.zeros(5).astype(np.float32)
-        isup_grade = self.train_csv.loc[idx, 'isup_grade']
-        gleason_score = self.gls[self.train_csv.loc[idx, 'gleason_score']]
-        primary_gls = np.zeros(4).astype(np.float32)
-        secondary_gls = np.zeros(4).astype(np.float32)
-        datacenter = self.train_csv.loc[idx, 'data_provider']
-        label[:isup_grade] = 1.
-        result['idx'] = self.train_csv.loc[idx, 'image_idx']
-        result['img'] = torch.tensor(images)
-        result['isup_grade'] = torch.tensor(label)
-        result['datacenter'] = datacenter
-        primary_gls[:gleason_score[0]] = 1.
-        secondary_gls[:gleason_score[1]] = 1.
-        result['primary_gls'] = torch.tensor(primary_gls)
-        result['secondary_gls'] = torch.tensor(secondary_gls)
-        result['name'] = name
-        return result
-
-    def open_image(self, fn, convert_mode='RGB', after_open=None):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)  # EXIF warning from TiffPlugin
-            x = Image.open(fn).convert(convert_mode)
-            x= np.asarray(x)
-        if after_open:
-            x = after_open(x)
+        # Skip connection and drop connect
+        input_filters, output_filters = self._block_args.input_filters, self._block_args.output_filters
+        if self.id_skip and self._block_args.stride == 1 and input_filters == output_filters:
+            # The combination of skip connection and drop connect brings about stochastic depth.
+            if drop_connect_rate:
+                x = drop_connect(x, p=drop_connect_rate, training=self.training)
+            x = x + inputs  # skip connection
+        # result['out'] = x
         return x
 
-def idx_selection(logit_list, N = 36, mode = "deterministic"):
+    def set_swish(self, memory_efficient=True):
+        """Sets swish function as memory efficient (for training) or standard (for export).
+        Args:
+            memory_efficient (bool): Whether to use memory-efficient version of swish.
+        """
+        self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
+
+class EfficientNet(nn.Module):
+    """EfficientNet model.
+       Most easily loaded with the .from_name or .from_pretrained methods.
+    Args:
+        blocks_args (list[namedtuple]): A list of BlockArgs to construct blocks.
+        global_params (namedtuple): A set of GlobalParams shared between blocks.
+
+    References:
+        [1] https://arxiv.org/abs/1905.11946 (EfficientNet)
+    Example:
+        >>> import torch
+        >>> from efficientnet.model import EfficientNet
+        >>> inputs = torch.rand(1, 3, 224, 224)
+        >>> model = EfficientNet.from_pretrained('efficientnet-b0')
+        >>> model.eval()
+        >>> outputs = model(inputs)
     """
-    :param logit_list: numpy array, the larger, the more probability to select
-    :param mode:
-    :return:
-    """
-    if mode == "deterministic":
-        if len(logit_list) >= N:
-            idx = list(np.argsort(logit_list)[::-1][:N])
-        else:
-            idx = list(range(len(logit_list)))
-            idx += list(np.argsort(logit_list)[::-1][:N - len(logit_list)])
-    else: ## random mode
-        logit_list = (logit_list - np.min(logit_list)) / (np.max(logit_list) - np.min(logit_list) + 1e-12)
-        prob = softmax(logit_list)
-        idx = np.random.choice(len(logit_list), N, p=prob, replace=True)
-    return idx
 
-def data_transform():
-    tsfm = albumentations.Compose([
-        albumentations.Transpose(p=0.5),
-        albumentations.VerticalFlip(p=0.5),
-        albumentations.HorizontalFlip(p=0.5),
-        albumentations.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1),
-        albumentations.HueSaturationValue(hue_shift_limit=7, sat_shift_limit=20)
-    ])
-    return tsfm
+    def __init__(self, blocks_args=None, global_params=None):
+        super().__init__()
+        assert isinstance(blocks_args, list), 'blocks_args should be a list'
+        assert len(blocks_args) > 0, 'block args must be greater than 0'
+        self._global_params = global_params
+        self._blocks_args = blocks_args
 
-def dataloader_collte_fn(batch):
-    result = OrderedDict()
-    imgs = [item['img'] for item in batch]
-    imgs = torch.stack(imgs)
-    target = [item['isup_grade'] for item in batch]
-    target = torch.stack(target)
-    datacenter = [item['datacenter'] for item in batch]
-    primary_gls = [item['primary_gls'] for item in batch]
-    secondary_gls = [item['secondary_gls'] for item in batch]
-    idx = [item['idx'] for item in batch]
-    name = [item['name'] for item in batch]
-    result['img'] = imgs
-    result['isup_grade'] = target
-    result['datacenter'] = datacenter
-    result['primary_gls'] = primary_gls
-    result['secondary_gls'] = secondary_gls
-    result['name'] = name
-    result['idx'] = idx
-    return result
+        # Batch norm parameters
+        bn_mom = 1 - self._global_params.batch_norm_momentum
+        bn_eps = self._global_params.batch_norm_epsilon
 
+        # Get stem static or dynamic convolution depending on image size
+        image_size = global_params.image_size
+        Conv2d = get_same_padding_conv2d(image_size=image_size)
 
-if __name__ == "__main__":
-    ## input files and folders
-    nfolds = 4
-    bs = 4
-    sz = 256
-    csv_file = './csv_pkl_files/{}_fold_train.csv'.format(nfolds)
-    image_dir = './panda-32x256x256-tiles-data/train/'
-    ## image transformation
-    tsfm = data_transform()
-    ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, sz, transform=tsfm, N=16, rand=True)
-    ## dataloader
-    dataloader = DataLoader(dataset, batch_size=bs,
-                            shuffle=True, num_workers=4, collate_fn=dataloader_collte_fn)
+        # Stem
+        in_channels = 3  # rgb
+        out_channels = round_filters(32, self._global_params)  # number of output channels
+        self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
+        self._bn0 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
+        image_size = calculate_output_image_size(image_size, 2)
 
-    ## fetch data from dataloader
-    data = iter(dataloader).next()
-    print("image size:{}, target sise:{}.".format(data['img'].size(), data['isup_grade'].size()))
+        # Build blocks
+        self._blocks = nn.ModuleList([])
+        for block_args in self._blocks_args:
 
-    ## cross val dataloader
-    crossValData = crossValDataloader(csv_file, dataset, bs)
-    trainloader, valloader = crossValData(0)
-    data = iter(valloader).next()
-    print("image size:{}, target sise:{}.".format(data['img'].size(), data['isup_grade'].size()))
+            # Update block input and output filters based on depth multiplier.
+            block_args = block_args._replace(
+                input_filters=round_filters(block_args.input_filters, self._global_params),
+                output_filters=round_filters(block_args.output_filters, self._global_params),
+                num_repeat=round_repeats(block_args.num_repeat, self._global_params)
+            )
+
+            # The first block needs to take care of stride and filter size increase.
+            self._blocks.append(MBConvBlock(block_args, self._global_params, image_size=image_size))
+            image_size = calculate_output_image_size(image_size, block_args.stride)
+            if block_args.num_repeat > 1:  # modify block_args to keep same output size
+                block_args = block_args._replace(input_filters=block_args.output_filters, stride=1)
+            for _ in range(block_args.num_repeat - 1):
+                self._blocks.append(MBConvBlock(block_args, self._global_params, image_size=image_size))
+                # image_size = calculate_output_image_size(image_size, block_args.stride)  # stride = 1
+
+        # Head
+        in_channels = block_args.output_filters  # output of final block
+        out_channels = round_filters(1280, self._global_params)
+        Conv2d = get_same_padding_conv2d(image_size=image_size)
+        self._conv_head = Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        self._bn1 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
+
+        # Final linear layer
+        self._avg_pooling = nn.AdaptiveAvgPool2d(1)
+        self._dropout = nn.Dropout(self._global_params.dropout_rate)
+        self._fc = nn.Linear(out_channels, self._global_params.num_classes)
+        self._swish = MemoryEfficientSwish()
+
+    def set_swish(self, memory_efficient=True):
+        """Sets swish function as memory efficient (for training) or standard (for export).
+        Args:
+            memory_efficient (bool): Whether to use memory-efficient version of swish.
+        """
+        self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
+        for block in self._blocks:
+            block.set_swish(memory_efficient)
+
+    def extract_features(self, inputs):
+        """use convolution layer to extract feature .
+        Args:
+            inputs (tensor): Input tensor.
+        Returns:
+            Output of the final convolution
+            layer in the efficientnet model.
+        """
+        # Stem
+        bs = inputs.size(0)
+        x = self._swish(self._bn0(self._conv_stem(inputs)))
+
+        # Blocks
+        for idx, block in enumerate(self._blocks):
+            drop_connect_rate = self._global_params.drop_connect_rate
+            if drop_connect_rate:
+                drop_connect_rate *= float(idx) / len(self._blocks)  # scale drop connect_rate
+            x = block(x, drop_connect_rate=drop_connect_rate)
+
+        # Head
+        x = self._swish(self._bn1(self._conv_head(x)))
+        return x
+
+    def extract_features_mode(self, inputs):
+        """use convolution layer to extract feature .
+        Args:
+            inputs (tensor): Input tensor.
+        Returns:
+            Output of the final convolution
+            layer in the efficientnet model.
+        """
+        # Stem
+        bs = inputs.size(0)
+        x = self._swish(self._bn0(self._conv_stem(inputs)))
+
+        # Blocks
+        for idx, block in enumerate(self._blocks):
+            drop_connect_rate = self._global_params.drop_connect_rate
+            if drop_connect_rate:
+                drop_connect_rate *= float(idx) / len(self._blocks)  # scale drop connect_rate
+            x = block(x, drop_connect_rate=drop_connect_rate)
+
+        # Head
+        x = self._swish(self._bn1(self._conv_head(x)))
+
+        ### modified by wenyuanli @ 08/02/2020
+        x = self._avg_pooling(x)
+        x = x.view(bs, -1)
+
+        return x
+
+    def forward(self, inputs):
+        """EfficientNet's forward function.
+           Calls extract_features to extract features, applies final linear layer, and returns logits.
+        Args:
+            inputs (tensor): Input tensor.
+        Returns:
+            Output of this model after processing.
+        """
+        bs = inputs.size(0)
+
+        # Convolution layers
+        x = self.extract_features(inputs)
+
+        # Pooling and final linear layer
+        x = self._avg_pooling(x)
+        x = x.view(bs, -1)
+        x = self._dropout(x)
+        x = self._fc(x)
+
+        return x
+
+    @classmethod
+    def from_name(cls, model_name, in_channels=3, **override_params):
+        """create an efficientnet model according to name.
+        Args:
+            model_name (str): Name for efficientnet.
+            in_channels (int): Input data's channel number.
+            override_params (other key word params):
+                Params to override model's global_params.
+                Optional key:
+                    'width_coefficient', 'depth_coefficient',
+                    'image_size', 'dropout_rate',
+                    'num_classes', 'batch_norm_momentum',
+                    'batch_norm_epsilon', 'drop_connect_rate',
+                    'depth_divisor', 'min_depth'
+        Returns:
+            An efficientnet model.
+        """
+        cls._check_model_name_is_valid(model_name)
+        blocks_args, global_params = get_model_params(model_name, override_params)
+        model = cls(blocks_args, global_params)
+        model._change_in_channels(in_channels)
+        return model
+
+    @classmethod
+    def from_pretrained(cls, model_name, weights_path=None, advprop=False,
+                        in_channels=3, num_classes=1000, **override_params):
+        """create an efficientnet model according to name.
+        Args:
+            model_name (str): Name for efficientnet.
+            weights_path (None or str):
+                str: path to pretrained weights file on the local disk.
+                None: use pretrained weights downloaded from the Internet.
+            advprop (bool):
+                Whether to load pretrained weights
+                trained with advprop (valid when weights_path is None).
+            in_channels (int): Input data's channel number.
+            num_classes (int):
+                Number of categories for classification.
+                It controls the output size for final linear layer.
+            override_params (other key word params):
+                Params to override model's global_params.
+                Optional key:
+                    'width_coefficient', 'depth_coefficient',
+                    'image_size', 'dropout_rate',
+                    'num_classes', 'batch_norm_momentum',
+                    'batch_norm_epsilon', 'drop_connect_rate',
+                    'depth_divisor', 'min_depth'
+        Returns:
+            A pretrained efficientnet model.
+        """
+        model = cls.from_name(model_name, num_classes=num_classes, **override_params)
+        load_pretrained_weights(model, model_name, weights_path=weights_path, load_fc=(num_classes == 1000),
+                                advprop=advprop)
+        model._change_in_channels(in_channels)
+        return model
+
+    @classmethod
+    def get_image_size(cls, model_name):
+        """Get the input image size for a given efficientnet model.
+        Args:
+            model_name (str): Name for efficientnet.
+        Returns:
+            Input image size (resolution).
+        """
+        cls._check_model_name_is_valid(model_name)
+        _, _, res, _ = efficientnet_params(model_name)
+        return res
+
+    @classmethod
+    def _check_model_name_is_valid(cls, model_name):
+        """Validates model name.
+        Args:
+            model_name (str): Name for efficientnet.
+        Returns:
+            bool: Is a valid name or not.
+        """
+        valid_models = ['efficientnet-b' + str(i) for i in range(9)]
+
+        # Support the construction of 'efficientnet-l2' without pretrained weights
+        valid_models += ['efficientnet-l2']
+
+        if model_name not in valid_models:
+            raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
+
+    def _change_in_channels(self, in_channels):
+        """Adjust model's first convolution layer to in_channels, if in_channels not equals 3.
+        Args:
+            in_channels (int): Input data's channel number.
+        """
+        if in_channels != 3:
+            Conv2d = get_same_padding_conv2d(image_size=self._global_params.image_size)
+            out_channels = round_filters(32, self._global_params)
+            self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
