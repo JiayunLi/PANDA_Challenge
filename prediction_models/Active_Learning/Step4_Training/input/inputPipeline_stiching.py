@@ -26,16 +26,16 @@ class crossValDataloader(object):
         val = torch.utils.data.Subset(self.dataset, val_idx)
         train_sampler = RandomSampler(train)
         val_sampler = SequentialSampler(val)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=1,
                                                   sampler=train_sampler,collate_fn=dataloader_collte_fn, pin_memory=True,
                                                   drop_last=False)
-        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
+        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=1,
                                                 collate_fn=dataloader_collte_fn, pin_memory=True, sampler=val_sampler,
                                                 drop_last=False)
         if unlabel_idx:
             unlabel = torch.utils.data.Subset(self.dataset, unlabel_idx)
             unlabel_sampler = SequentialSampler(unlabel)
-            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=4,
+            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=1,
                                                     collate_fn=dataloader_collte_fn, pin_memory=True, sampler=unlabel_sampler,
                                                     drop_last=False)
             loader['unlabelloader'] = unlabelloader
