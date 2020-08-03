@@ -125,7 +125,7 @@ if __name__ == "__main__":
     if mode.split("_")[0] == "random":
         csv_file = '../Data_CSV/Train_Data.csv'
     else:
-        csv_file = f'../Data_CSV/Train_Data_{mode}_{fold}.csv'
+        csv_file = f'../Data_CSV/Train_Data_{mode}_{folds}.csv'
     image_dir = '../../tile_concat_wy/input/panda-36x256x256-tiles-data-opt/train/'
     bs = args.bs
     epochs = args.epochs
