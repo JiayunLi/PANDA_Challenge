@@ -71,10 +71,9 @@ class PandaPatchDataset(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
-        print(idx)
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
-        name = self.train_csv.image_id[idx]
+        # name = self.train_csv.image_id[idx]
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:
@@ -131,11 +130,11 @@ class PandaPatchDataset(Dataset):
         result['img'] = torch.tensor(images)
         result['isup_grade'] = torch.tensor(label)
         result['datacenter'] = datacenter
-        primary_gls[:gleason_score[0]] = 1.
-        secondary_gls[:gleason_score[1]] = 1.
-        result['primary_gls'] = torch.tensor(primary_gls)
-        result['secondary_gls'] = torch.tensor(secondary_gls)
-        result['name'] = name
+        # primary_gls[:gleason_score[0]] = 1.
+        # secondary_gls[:gleason_score[1]] = 1.
+        # result['primary_gls'] = torch.tensor(primary_gls)
+        # result['secondary_gls'] = torch.tensor(secondary_gls)
+        result['name'] = torch.tensor(img_id)
         return result
 
     def open_image(self, fn, convert_mode='RGB', after_open=None):
