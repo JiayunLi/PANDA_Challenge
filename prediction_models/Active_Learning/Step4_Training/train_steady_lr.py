@@ -27,7 +27,7 @@ class Train(object):
         self.optimizer = optimizer
         self.scheduler = scheduler
 
-    def train_epoch(self,trainloader, criterion):
+    def train_epoch(self, trainloader, criterion):
         ## train
         self.model.train()
         train_loss = []
@@ -37,13 +37,12 @@ class Train(object):
             # if i >= 50:
             #     break
             # get the inputs; data is a list of [inputs, labels]
-            inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
+            inputs, labels = data['img'], data['isup_grade']
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
             outputs_main = model(inputs.cuda().float())
             loss = criterion(outputs_main, labels.cuda().float())
-            train_idx.append(img_idx)
             loss = torch.sum(loss, 1)
             loss = torch.mean(loss)
             loss.backward()
