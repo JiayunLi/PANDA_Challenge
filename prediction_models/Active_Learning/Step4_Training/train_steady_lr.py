@@ -188,53 +188,55 @@ if __name__ == "__main__":
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
-            train = Training.train_epoch(trainloader,criterion)
-            val = Training.val_epoch(valloader, criterion)
-            writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
-            writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
-            writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
-            if provider == "rad":
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-            elif provider == "kar":
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            else:
-                writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
-                writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
-            writer.flush()
-            tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
-                                                                                           train['train_loss'],
-                                                                                           val['val_loss'],
-                                                                                           val['kappa']))
-            ## save the checkpoints and best model
-            # if args.local_rank == 0:
-            is_best = val['kappa'] > best_kappa
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath)
-            best_kappa = val['kappa'] if is_best else best_kappa
-
-            is_best = val['kappa_r'] > best_kappa_r
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath + "_rad")
-            best_kappa_r = val['kappa_r'] if is_best else best_kappa_r
-
-            is_best = val['kappa_k'] > best_kappa_k
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'kappa': val['kappa'],
-                'optimizer': optimizer.state_dict(),
-            }, is_best, weightsPath + "_kar")
-            best_kappa_k = val['kappa_k'] if is_best else best_kappa_k
-
-        del model
-        del optimizer
-        del Training
+            for i, data in tqdm(enumerate(trainloader)):
+                img = data['img']
+        #     train = Training.train_epoch(trainloader, criterion)
+        #     val = Training.val_epoch(valloader, criterion)
+        #     writer.add_scalar('Fold:{}/train_loss'.format(fold), train['train_loss'], epoch)
+        #     writer.add_scalar('Fold:{}/val_loss'.format(fold), val['val_loss'], epoch)
+        #     writer.add_scalar('Fold:{}/kappa_score'.format(fold), val['kappa'], epoch)
+        #     if provider == "rad":
+        #         writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+        #     elif provider == "kar":
+        #         writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+        #     else:
+        #         writer.add_scalar('Fold:{}/kappa_score_r'.format(fold), val['kappa_r'], epoch)
+        #         writer.add_scalar('Fold:{}/kappa_score_k'.format(fold), val['kappa_k'], epoch)
+        #     writer.flush()
+        #     tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
+        #                                                                                    train['train_loss'],
+        #                                                                                    val['val_loss'],
+        #                                                                                    val['kappa']))
+        #     ## save the checkpoints and best model
+        #     # if args.local_rank == 0:
+        #     is_best = val['kappa'] > best_kappa
+        #     save_checkpoint({
+        #         'epoch': epoch,
+        #         'state_dict': model.state_dict(),
+        #         'kappa': val['kappa'],
+        #         'optimizer': optimizer.state_dict(),
+        #     }, is_best, weightsPath)
+        #     best_kappa = val['kappa'] if is_best else best_kappa
+        #
+        #     is_best = val['kappa_r'] > best_kappa_r
+        #     save_checkpoint({
+        #         'epoch': epoch,
+        #         'state_dict': model.state_dict(),
+        #         'kappa': val['kappa'],
+        #         'optimizer': optimizer.state_dict(),
+        #     }, is_best, weightsPath + "_rad")
+        #     best_kappa_r = val['kappa_r'] if is_best else best_kappa_r
+        #
+        #     is_best = val['kappa_k'] > best_kappa_k
+        #     save_checkpoint({
+        #         'epoch': epoch,
+        #         'state_dict': model.state_dict(),
+        #         'kappa': val['kappa'],
+        #         'optimizer': optimizer.state_dict(),
+        #     }, is_best, weightsPath + "_kar")
+        #     best_kappa_k = val['kappa_k'] if is_best else best_kappa_k
+        #
+        # del model
+        # del optimizer
+        # del Training
     writer.close()
