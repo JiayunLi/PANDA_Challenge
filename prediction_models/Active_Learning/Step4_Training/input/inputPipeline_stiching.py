@@ -71,6 +71,7 @@ class PandaPatchDataset(Dataset):
         return len(self.train_csv)
 
     def __getitem__(self, idx):
+        print(idx)
         result = OrderedDict()
         img_id = self.train_csv.loc[idx, 'image_id']
         name = self.train_csv.image_id[idx]
