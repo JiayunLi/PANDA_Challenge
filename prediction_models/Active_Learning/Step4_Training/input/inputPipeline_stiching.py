@@ -72,7 +72,9 @@ class PandaPatchDataset(Dataset):
 
     def __getitem__(self, idx):
         result = OrderedDict()
+
         name = self.train_csv.loc[idx, 'image_id']
+        print(name)
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:

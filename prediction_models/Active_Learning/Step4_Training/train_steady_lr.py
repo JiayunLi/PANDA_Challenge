@@ -34,8 +34,8 @@ class Train(object):
         bar = tqdm(trainloader, desc='trainIter')
         result = OrderedDict()
         for i, data in enumerate(bar, start=0):
-            if i >= 5:
-                break
+            # if i >= 5:
+            #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels, img_idx = data['img'], data['isup_grade'], data['idx']
             # zero the parameter gradients
@@ -60,8 +60,8 @@ class Train(object):
         result = OrderedDict()
         with torch.no_grad():
             for i, data in enumerate(tqdm(valloader, desc='valIter'), start=0):
-                if i > 5:
-                    break
+                # if i > 20:
+                #     break
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels, provider, img_idx = data['img'], data['isup_grade'], data['datacenter'], data['idx']
                 # zero the parameter gradients
@@ -75,6 +75,7 @@ class Train(object):
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
                 val_provider += provider
+
         if self.scheduler:
             self.scheduler.step()
         val_label = torch.cat(val_label, 0)
@@ -87,6 +88,8 @@ class Train(object):
         kappa_k = cohen_kappa_score(val_label[index_k], val_preds[index_k], weights='quadratic')
         val_loss = np.concatenate(val_loss, 0)
         result['val_loss'] = np.mean(val_loss)
+        # result['val_sample_loss'] = np.concatenate([np.asarray(val_loss).reshape(-1,1), np.asarray(val_idx).reshape(-1,1)],
+        #                                      1)
         result['kappa'] = kappa
         result['kappa_r'] = kappa_r
         result['kappa_k'] = kappa_k
@@ -186,8 +189,6 @@ if __name__ == "__main__":
 
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
-
-
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
             val = Training.val_epoch(valloader, criterion)
