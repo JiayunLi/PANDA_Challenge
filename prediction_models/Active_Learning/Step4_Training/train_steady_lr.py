@@ -186,6 +186,8 @@ if __name__ == "__main__":
 
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
+
+
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             train = Training.train_epoch(trainloader,criterion)
             val = Training.val_epoch(valloader, criterion)
