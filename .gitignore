@@ -109,6 +109,8 @@ venv.bak/
 *.csv
 *.png
 *.pth
+*.pkl
+*.npy
 
 # weights and tensorboard
 runs/
