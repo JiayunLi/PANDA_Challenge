@@ -112,6 +112,8 @@ if __name__ == "__main__":
                         help='batch size')
     parser.add_argument('--epochs', default=30, type=int,
                         help='epochs for training')
+    parser.add_argument('--pretrain', default=True, type=bool,
+                        help='load pretrained weights')
     args = parser.parse_args()
     folds = args.fold
     mode = args.mode
@@ -129,7 +131,7 @@ if __name__ == "__main__":
     image_dir = '../../tile_concat_wy/input/panda-36x256x256-tiles-data-opt/train/'
     bs = args.bs
     epochs = args.epochs
-    Pre_Train = False
+    Pre_Train = args.pretrain
     start_epoch = 0
 
     ## image transformation
@@ -167,18 +169,12 @@ if __name__ == "__main__":
         best_kappa_k = 0
         best_kappa_r = 0
         if Pre_Train:
-            model_path = './weights/Resnext50_36patch_adam_cos_spine_{}/Resnext50_36patch_adam_cos_spine_{}_{}_best.pth.tar'.format(provider,provider,fold)
-            map_location = {"cuda:0": "cuda:{}".format(args.local_rank)}
-            state = torch.load(model_path, map_location = map_location)
-            pretrained_dict = state['state_dict']
-            start_epoch = state['epoch'] + 1
-            optimizer.load_state_dict(state['optimizer'])
-            # model_dict = model.state_dict()
-            # pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-            # model_dict.update(pretrained_dict)
+            c = mode.split("_")[-1][:2]
+            path_name = mode.replace(c, str(int(c) - 10))
+            model_path = f'./weights/Resnext50_36patch_constant_lr_{path_name}/Resnext50_36patch_constant_lr_{path_name}_{folds[0]}_best.pth.tar'
+            pretrained_dict = torch.load(model_path)
             model.load_state_dict(pretrained_dict)
-            # best_kappa = state['kappa']
-            print(f"Load pre-trained weights for model, start epoch {start_epoch}.")
+            print(f"Load pre-trained weights from {model_path}.")
 
         Training = Train(model, optimizer, None)
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
