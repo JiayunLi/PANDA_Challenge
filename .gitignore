@@ -111,6 +111,7 @@ venv.bak/
 *.pth
 *.pkl
 *.npy
+*.ipynb
 
 # weights and tensorboard
 runs/
