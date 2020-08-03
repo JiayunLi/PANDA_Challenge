@@ -26,16 +26,16 @@ class crossValDataloader(object):
         val = torch.utils.data.Subset(self.dataset, val_idx)
         train_sampler = RandomSampler(train)
         val_sampler = SequentialSampler(val)
-        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=1,
+        trainloader = torch.utils.data.DataLoader(train, batch_size=self.bs, shuffle=False, num_workers=4,
                                                   sampler=train_sampler,collate_fn=None, pin_memory=True,
                                                   drop_last=False)
-        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=1,
+        valloader = torch.utils.data.DataLoader(val, batch_size=self.bs, shuffle=False, num_workers=4,
                                                 collate_fn=None, pin_memory=True, sampler=val_sampler,
                                                 drop_last=False)
         if unlabel_idx:
             unlabel = torch.utils.data.Subset(self.dataset, unlabel_idx)
             unlabel_sampler = SequentialSampler(unlabel)
-            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=1,
+            unlabelloader = torch.utils.data.DataLoader(unlabel, batch_size=self.bs, shuffle=False, num_workers=4,
                                                     collate_fn=None, pin_memory=True, sampler=unlabel_sampler,
                                                     drop_last=False)
             loader['unlabelloader'] = unlabelloader
@@ -72,8 +72,7 @@ class PandaPatchDataset(Dataset):
 
     def __getitem__(self, idx):
         result = OrderedDict()
-        img_id = self.train_csv.loc[idx, 'image_id']
-        name = self.train_csv.image_id[idx]
+        name = self.train_csv.loc[idx, 'image_id']
         if self.mode == "br":
             tile_pix = str(self.train_csv.tile_blueratio[idx])
         else:
@@ -81,7 +80,7 @@ class PandaPatchDataset(Dataset):
 
         tile_pix = np.asarray(tile_pix.split(",")[:-1]).astype(int)
         idxes = idx_selection(tile_pix, self.N, "deterministic")
-        fnames = [os.path.join(self.image_dir, img_id + '_' + str(i) + '.png')
+        fnames = [os.path.join(self.image_dir, name + '_' + str(i) + '.png')
                                 for i in idxes]
 
         imgs = []
