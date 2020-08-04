@@ -99,19 +99,13 @@ class Train(object):
                 optimizer.zero_grad()
                 # forward + backward + optimize
                 outputs_main = model(inputs.cuda().float())
-                # outputs_aux = outputs['aux'].squeeze(dim=1)  # for regression
                 loss = criterion(outputs_main, labels.float().cuda())
                 loss = torch.sum(loss, 1)
-                # print("output_main", outputs_main.shape)
-                # print("labels", labels.shape)
                 val_loss.append(loss.detach().cpu().numpy())
                 val_idx.append(img_idx)
                 val_label.append(labels.sum(1).cpu())
                 val_preds.append(outputs_main.sigmoid().sum(1).round().cpu())
                 val_provider += provider
-                # print("postval_label", labels.sum(1))
-                # print("postval_label", outputs_main.sigmoid().sum(1).round())
-        # if self.scheduler:
         #     self.scheduler.step()
         val_label = torch.cat(val_label, 0)
         val_preds = torch.cat(val_preds, 0)
@@ -164,11 +158,7 @@ if __name__ == "__main__":
                         help='scheduler cycle')
     parser.add_argument('--epochs', default=20, type=int,
                         help='epochs for training')
-    # parser.add_argument('--local_rank', default=-1, type=int,
-    #                     help='node rank for distributed training')
     args = parser.parse_args()
-    # dist.init_process_group(backend='nccl')
-    # torch.cuda.set_device(args.local_rank)
     folds = args.fold
     scheduler_cycle = args.cycle
     mode = args.mode
@@ -223,9 +213,6 @@ if __name__ == "__main__":
         loader = crossValData(train_idx, val_idx, unlabel_idx)
         trainloader, valloader, unlabelloader = loader['trainloader'], loader['valloader'], loader['unlabelloader']
         model = Model.from_pretrained('efficientnet-b0', num_classes = 5).cuda()
-        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        # model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[args.local_rank])
-        # optimizer = optim.Adam(model.parameters(), lr=0.0003)  # current best 0.00003
         optimizer = optim.SGD(model.parameters(), lr = 0.03)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle)
         entropy = Entropy()
@@ -249,9 +236,6 @@ if __name__ == "__main__":
         for epoch in tqdm(range(start_epoch,epochs), desc='epoch'):
             if epoch % scheduler_cycle == 0:
                 del scheduler
-                # del optimizer
-                # del Training
-                # optimizer = optim.Adam(model.parameters(), lr=0.003)
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, scheduler_cycle, eta_min=0.0003)
                 # Training = Train(model, optimizer, None)
                 print("reinitialize optimizer!")
