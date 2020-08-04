@@ -154,7 +154,7 @@ if __name__ == "__main__":
                         help='number of patches used for training')
     parser.add_argument('--bs', default=7, type=int,
                         help='batch size')
-    parser.add_argument('--cycle', default=5, type=int,
+    parser.add_argument('--cycle', default=10, type=int,
                         help='scheduler cycle')
     parser.add_argument('--epochs', default=20, type=int,
                         help='epochs for training')
