@@ -169,7 +169,7 @@ if __name__ == "__main__":
     N = args.patch ## number of patches
     fname = f'Resnext50_{N}patch_cyclic_lr_{mode}'
 
-    if mode.split("_")[0] == "random":
+    if mode.split("_")[0] == "random" or int(mode.split("_")[-1][:2]) == 10:
         csv_file = '../Data_CSV/Train_Data.csv'
     else:
         csv_file = f'../Data_CSV/Train_Data_{mode}_{folds[0]}.csv'
