@@ -169,12 +169,11 @@ if __name__ == "__main__":
     N = args.patch ## number of patches
     fname = f'Resnext50_{N}patch_cyclic_lr_{mode}'
 
-    if provider == "rad":
-        csv_file = '../input/csv_pkl_files/radboud_{}_fold_train_wo_sus.csv'.format(nfolds)
-    elif provider == 'kar':
-        csv_file = '../input/csv_pkl_files/karolinska_{}_fold_train_wo_sus.csv'.format(nfolds)
+    if mode.split("_")[0] == "random":
+        csv_file = '../Data_CSV/Train_Data.csv'
     else:
-        csv_file = '../Train_Data.csv'
+        csv_file = f'../Data_CSV/Train_Data_{mode}_{folds[0]}.csv'
+
     image_dir = '../../tile_concat_wy/input/panda-36x256x256-tiles-data-opt/train/'
     bs = args.bs
     epochs = args.epochs
@@ -197,8 +196,8 @@ if __name__ == "__main__":
     # if args.local_rank == 0:
     timeStamp = datetime.now(timezone('US/Pacific')).strftime("%m_%d_%H_%M_%S")
     writer = SummaryWriter('{}/{}_{}'.format(writerDir, fname, timeStamp))
-    check_folder_exists(weightsDir)
-    check_folder_exists(writerDir)
+    # check_folder_exists(weightsDir)
+    # check_folder_exists(writerDir)
 
     for fold in folds:
         print(f"training fold {fold}!")
