@@ -205,7 +205,7 @@ if __name__ == "__main__":
         val_idx = df.index[df['split'] == fold].tolist()
         unlabel_idx = list(set([x for x in range(len(df))]) - set(val_idx) - set(train_idx))
         ## select random unlabel_idx
-        unlabel_idx = list(np.random.choice(unlabel_idx, size = 4000, replace = False))
+        unlabel_idx = list(np.random.choice(unlabel_idx, size = min(4000, len(unlabel_idx)), replace = False))
         df_train_loss = pd.DataFrame(np.sort(train_idx).reshape(-1,1), columns = ["image_idx"])
         df_unlabel_entropy = pd.DataFrame(np.sort(unlabel_idx).reshape(-1,1), columns = ["image_idx"])
 
