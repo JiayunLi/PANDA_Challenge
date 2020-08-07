@@ -169,7 +169,7 @@ if __name__ == "__main__":
         best_kappa_k = 0
         best_kappa_r = 0
         if Pre_Train:
-            c = mode.split("_")[-1][:2]
+            c = ''.join(c for c in mode if c.isdigit())
             path_name = mode.replace(c, str(int(c) - 10))
             model_path = f'./weights/Resnext50_36patch_constant_lr_{path_name}/Resnext50_36patch_constant_lr_{path_name}_{folds[0]}_best.pth.tar'
             pretrained_dict = torch.load(model_path)
