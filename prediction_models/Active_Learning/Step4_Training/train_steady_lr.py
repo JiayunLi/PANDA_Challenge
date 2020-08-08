@@ -170,8 +170,11 @@ if __name__ == "__main__":
         best_kappa_r = 0
         if Pre_Train:
             c = ''.join(c for c in mode if c.isdigit())
-            path_name = mode.replace(c, str(int(c) - 10))
-            model_path = f'./weights/Resnext50_36patch_constant_lr_{path_name}/Resnext50_36patch_constant_lr_{path_name}_{folds[0]}_best.pth.tar'
+            if c == '20' and mode != "curriculum_easy_20idx":
+                model_path = f'./weights/Resnext50_36patch_constant_lr_random_10idx/Resnext50_36patch_constant_lr_random_10idx_{folds[0]}_best.pth.tar'
+            else:
+                path_name = mode.replace(c, str(int(c) - 10))
+                model_path = f'./weights/Resnext50_36patch_constant_lr_{path_name}/Resnext50_36patch_constant_lr_{path_name}_{folds[0]}_best.pth.tar'
             pretrained_dict = torch.load(model_path)
             model.load_state_dict(pretrained_dict)
             print(f"Load pre-trained weights from {model_path}.")
