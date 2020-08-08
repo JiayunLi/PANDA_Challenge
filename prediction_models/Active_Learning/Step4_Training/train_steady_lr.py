@@ -124,10 +124,10 @@ if __name__ == "__main__":
     N = args.patch ## number of patches
     fname = f'Resnext50_{N}patch_constant_lr_{mode}'
 
-    if mode.split("_")[0] == "random":
-        csv_file = '../Data_CSV/Train_Data.csv'
-    else:
+    if mode.split("_")[0] == "curriculum":
         csv_file = f'../Data_CSV/Train_Data_{mode}_{folds[0]}.csv'
+    else:
+        csv_file = '../Data_CSV/Train_Data.csv'
     image_dir = '../../tile_concat_wy/input/panda-36x256x256-tiles-data-opt/train/'
     bs = args.bs
     epochs = args.epochs
